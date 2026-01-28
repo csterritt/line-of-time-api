@@ -129,3 +129,98 @@ export const seedDatabase = async (): Promise<void> => {
     throw error
   }
 }
+
+/**
+ * Clear all events from the database
+ */
+export const clearEvents = async (): Promise<void> => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/test/database/clear-events',
+      { method: 'DELETE' }
+    )
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to clear events')
+    }
+
+    console.log('Events cleared successfully')
+  } catch (error) {
+    console.error('Failed to clear events:', error)
+    throw error
+  }
+}
+
+/**
+ * Seed database with test events
+ */
+export const seedEvents = async (): Promise<void> => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/test/database/seed-events',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+      eventsCreated?: number
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to seed events')
+    }
+
+    console.log(`Events seeded successfully: ${result.eventsCreated} events`)
+  } catch (error) {
+    console.error('Failed to seed events:', error)
+    throw error
+  }
+}
+
+/**
+ * Get event count from the database
+ */
+export const getEventCount = async (): Promise<number> => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/test/database/event-count',
+      { method: 'GET' }
+    )
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      count: number
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get event count')
+    }
+
+    return result.count
+  } catch (error) {
+    console.error('Failed to get event count:', error)
+    throw error
+  }
+}

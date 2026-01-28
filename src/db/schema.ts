@@ -85,6 +85,22 @@ export const interestedEmail = sqliteTable('interestedEmail', {
   email: text('email').primaryKey().unique(),
 })
 
+/**
+ * Event table schema definition for timeline events
+ */
+export const event = sqliteTable('event', {
+  id: text('id').primaryKey(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date'),
+  name: text('name').notNull(),
+  basicDescription: text('basic_description').notNull(),
+  longerDescription: text('longer_description'),
+  referenceUrls: text('reference_urls').notNull(),
+  relatedEventIds: text('related_event_ids'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
 // Define schema object for export
 export const schema = {
   user,
@@ -93,6 +109,7 @@ export const schema = {
   verification,
   interestedEmail,
   singleUseCode,
+  event,
 }
 
 export type User = typeof user.$inferSelect
@@ -101,6 +118,7 @@ export type Account = typeof account.$inferSelect
 export type Verification = typeof verification.$inferSelect
 export type InterestedEmail = typeof interestedEmail.$inferSelect
 export type SingleUseCode = typeof singleUseCode.$inferSelect
+export type Event = typeof event.$inferSelect
 
 export type NewUser = typeof user.$inferInsert
 export type NewSession = typeof session.$inferInsert
@@ -108,3 +126,4 @@ export type NewAccount = typeof account.$inferInsert
 export type NewVerification = typeof verification.$inferInsert
 export type NewInterestedEmail = typeof interestedEmail.$inferInsert
 export type NewSingleUseCode = typeof singleUseCode.$inferInsert
+export type NewEvent = typeof event.$inferInsert

@@ -54,6 +54,7 @@ import { testDatabaseRouter } from './routes/test/database' // PRODUCTION:REMOVE
 import { testSignUpModeRouter } from './routes/test/sign-up-mode' // PRODUCTION:REMOVE
 import { testSmtpRouter } from './routes/test/smtp-config' // PRODUCTION:REMOVE
 import { isTestRouteEnabled } from './lib/test-routes'
+import { eventsRouter } from './routes/time-info/events'
 
 /**
  * Validates that all required environment variables are set
@@ -209,6 +210,9 @@ buildProfile(app)
 buildDeleteConfirm(app)
 handleChangePassword(app)
 handleDeleteAccount(app)
+
+// Timeline API routes
+app.route('/time-info/events', eventsRouter)
 
 if (isTestRouteEnabledFlag) {
   handleSetClock(app) // PRODUCTION:REMOVE

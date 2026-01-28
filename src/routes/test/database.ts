@@ -14,6 +14,7 @@ import {
   session,
   singleUseCode,
   interestedEmail,
+  event,
 } from '../../db/schema'
 import { STANDARD_SECURE_HEADERS } from '../../constants'
 
@@ -41,6 +42,7 @@ testDatabaseRouter.delete(
       await db.delete(user)
       await db.delete(singleUseCode)
       await db.delete(interestedEmail)
+      await db.delete(event)
 
       console.log('Test database cleared successfully')
 
@@ -298,6 +300,158 @@ testDatabaseRouter.get(
         {
           success: false,
           error: 'Failed to check code existence',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        500
+      )
+    }
+  }
+)
+
+/**
+ * Clear all events from the database
+ * DELETE /test/database/clear-events
+ */
+testDatabaseRouter.delete(
+  '/clear-events',
+  secureHeaders(STANDARD_SECURE_HEADERS),
+  async (c) => {
+    try {
+      const db = createDbClient(c.env.PROJECT_DB)
+      await db.delete(event)
+
+      console.log('Test events cleared successfully')
+
+      return c.json({
+        success: true,
+        message: 'Events cleared successfully',
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error('Failed to clear test events:', error)
+
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to clear events',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        500
+      )
+    }
+  }
+)
+
+/**
+ * Seed the database with test events
+ * POST /test/database/seed-events
+ */
+testDatabaseRouter.post(
+  '/seed-events',
+  secureHeaders(STANDARD_SECURE_HEADERS),
+  async (c) => {
+    try {
+      const db = createDbClient(c.env.PROJECT_DB)
+      const now = new Date().toISOString()
+
+      const testEvents = [
+        {
+          id: 'test-event-1',
+          startDate: '1969-07-20T00:00:00.000Z',
+          endDate: null,
+          name: 'Moon Landing',
+          basicDescription: 'First human on the moon',
+          longerDescription:
+            'Apollo 11 was the American spaceflight that first landed humans on the Moon.',
+          referenceUrls: JSON.stringify([
+            'https://en.wikipedia.org/wiki/Apollo_11',
+          ]),
+          relatedEventIds: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'test-event-2',
+          startDate: '1939-09-01T00:00:00.000Z',
+          endDate: '1945-09-02T00:00:00.000Z',
+          name: 'World War II',
+          basicDescription: 'Global war from 1939 to 1945',
+          longerDescription: null,
+          referenceUrls: JSON.stringify([
+            'https://en.wikipedia.org/wiki/World_War_II',
+          ]),
+          relatedEventIds: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'test-event-3',
+          startDate: '1776-07-04T00:00:00.000Z',
+          endDate: null,
+          name: 'US Declaration of Independence',
+          basicDescription: 'Declaration of Independence signed',
+          longerDescription:
+            'The Continental Congress declared the thirteen American colonies free and independent states.',
+          referenceUrls: JSON.stringify([
+            'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
+          ]),
+          relatedEventIds: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]
+
+      for (const eventData of testEvents) {
+        await db.insert(event).values(eventData)
+      }
+
+      console.log('Test events seeded successfully')
+
+      return c.json({
+        success: true,
+        message: 'Events seeded successfully',
+        eventsCreated: testEvents.length,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error('Failed to seed test events:', error)
+
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to seed events',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        500
+      )
+    }
+  }
+)
+
+/**
+ * Get event count for testing
+ * GET /test/database/event-count
+ */
+testDatabaseRouter.get(
+  '/event-count',
+  secureHeaders(STANDARD_SECURE_HEADERS),
+  async (c) => {
+    try {
+      const db = createDbClient(c.env.PROJECT_DB)
+      const events = await db.select().from(event)
+
+      return c.json({
+        success: true,
+        count: events.length,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error('Failed to get event count:', error)
+
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to get event count',
           details: error instanceof Error ? error.message : 'Unknown error',
         },
         500
