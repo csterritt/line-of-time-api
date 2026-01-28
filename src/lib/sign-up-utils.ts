@@ -242,7 +242,7 @@ export const processGatedSignUp = async (
 ): Promise<Response> => {
   const { code, name, email, password } = data
   const trimmedCode = code.trim()
-  const dbClient = createDbClient(c.env.PROJECT_DB)
+  const dbClient = createDbClient(c.env.LINE_OF_TIME_DB)
 
   // Atomically claim the sign-up code before creating account
   const claimResult = await claimSingleUseCode(dbClient, trimmedCode, email)

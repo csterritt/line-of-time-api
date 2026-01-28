@@ -15,6 +15,24 @@ CREATE TABLE `account` (
 	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `event` (
+	`id` text PRIMARY KEY NOT NULL,
+	`start_timestamp` integer NOT NULL,
+	`end_timestamp` integer,
+	`name` text NOT NULL,
+	`basic_description` text NOT NULL,
+	`longer_description` text,
+	`reference_urls` text NOT NULL,
+	`related_event_ids` text,
+	`created_at` text NOT NULL,
+	`updated_at` text NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `startTimestamp_idx` ON `event` (`start_timestamp`);--> statement-breakpoint
+CREATE INDEX `endTimestamp_idx` ON `event` (`end_timestamp`);--> statement-breakpoint
+CREATE INDEX `name_idx` ON `event` (`name`);--> statement-breakpoint
+CREATE INDEX `basic_description_idx` ON `event` (`basic_description`);--> statement-breakpoint
+CREATE INDEX `longer_description_idx` ON `event` (`longer_description`);--> statement-breakpoint
 CREATE TABLE `interestedEmail` (
 	`email` text PRIMARY KEY NOT NULL
 );
@@ -34,7 +52,8 @@ CREATE TABLE `session` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
 CREATE TABLE `singleUseCode` (
-	`code` text PRIMARY KEY NOT NULL
+	`code` text PRIMARY KEY NOT NULL,
+	`email` text
 );
 --> statement-breakpoint
 CREATE TABLE `user` (

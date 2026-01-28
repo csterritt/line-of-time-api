@@ -18,7 +18,7 @@ export type SignInSession = {
 }
 
 export interface Bindings {
-  PROJECT_DB: D1Database
+  LINE_OF_TIME_DB: D1Database
   Session: Maybe<SignInSession>
   db?: string
   signUpType?: string

@@ -1,127 +1,87 @@
-# Timestamp Conversion Functions Plan
+# Schema and API Changes Plan
 
 ## Assumptions
 
-- `fromTimestamp` returns the full date string; it has a "precision" parameter to control the output level (year only, month+year, full date)
-- Timestamps are integers representing days since the birth of Christ (day 0 = Jan 1, 1 AD)
-- Negative timestamps = BC, positive = AD
-- Proleptic Gregorian calendar used for simplicity (no Julian calendar switch)
-- BC/AD vs BCE/CE formatting is a separate concern (user preference applied at display time)
+- No existing event data needs migration (early development)
+- Timestamps are integers (days since Jan 1, 1 AD) per SPECS.md
+- The `fromTimestamp`/`toTimestamp` functions in `src/lib/timestamp.ts` are ready to use
 
 ---
 
-## What is a Timestamp?
+## The Answer
 
-A **timestamp** is an integer representing the number of days since January 1, 1 AD:
+Change `startDate`/`endDate` from ISO strings to integer timestamps, update API routes to match new paths, and add the `GET /time-info/events/:start/:end` endpoint for filtering events by timestamp range.
 
-- `0` = January 1, 1 AD
-- `1` = January 2, 1 AD
-- `-1` = December 31, 1 BC
-- `-365` = approximately January 1, 1 BC
+**New API paths (per SPECS.md):**
 
----
-
-## Step 1: Define the Core Interface
-
-Create `src/lib/timestamp.ts`:
-
-```ts
-type DatePrecision = 'year' | 'month' | 'day'
-
-interface DateComponents {
-  year: number      // Negative for BC, positive for AD
-  month: number     // 1-12
-  day: number       // 1-31
-}
-
-interface FromTimestampOptions {
-  precision: DatePrecision
-  style: 'BC/AD' | 'BCE/CE'
-}
-
-const fromTimestamp = (timestamp: number, options: FromTimestampOptions): string => { ... }
-const toTimestamp = (dateString: string): number => { ... }
-```
+- `GET /time-info/events/:start/:end` — filter by timestamp range
+- `GET /time-info/event/:id` — get single event (was `/events/:id`)
+- `POST /time-info/new-event` — create event (was `/events`)
+- `PUT /time-info/event/:id` — update event (was `/events/:id`)
+- `DELETE /time-info/event/:id` — delete event (was `/events/:id`)
 
 ---
 
-## Step 2: Implement `toTimestamp`
+## The Plan
 
-Convert a date to days since epoch (Jan 1, 1 AD = day 0).
+### Step 1: Update Schema
 
-**Algorithm:**
+In `src/db/schema.ts`, change:
 
-1. Calculate total days from year 1 AD to the target year
-2. Account for leap years (Gregorian: divisible by 4, except centuries unless divisible by 400)
-3. Add days for months elapsed in the target year
-4. Add the day of month
-5. For BC years: negate and adjust (no year 0 in historical calendar)
+- `startDate: text('start_date')` → `startTimestamp: integer('start_timestamp')`
+- `endDate: text('end_date')` → `endTimestamp: integer('end_timestamp')`
 
----
+### Step 2: Generate Migration
 
-## Step 3: Implement `fromTimestamp`
+Run `npx drizzle-kit generate` to create the migration file.
 
-Convert days since epoch to a formatted date string.
+### Step 3: Update Event Validator
 
-**Parameters:**
+In `src/validators/event-validator.ts`:
 
-- `timestamp: number` — days since Jan 1, 1 AD
-- `options.precision: 'year' | 'month' | 'day'` — output detail level
-- `options.style: 'BC/AD' | 'BCE/CE'` — era suffix style
+- Change `startDate`/`endDate` validation from ISO date strings to integers
+- Remove `isValidIsoDate` checks, add integer range checks
 
-**Output by precision:**
+### Step 4: Restructure Routes
 
-- `'year'` → "40,000 BC", "2025 AD"
-- `'month'` → "January 306 BC", "June 2025 AD"
-- `'day'` → "January 1, 306 BC", "June 19, 2025 AD"
+Reorganize `src/routes/time-info/` to match new API paths:
 
-**Algorithm:**
+- Create `src/routes/time-info/events.ts` — handles `GET /events/:start/:end`
+- Create `src/routes/time-info/event.ts` — handles `GET/PUT/DELETE /event/:id`
+- Create `src/routes/time-info/new-event.ts` — handles `POST /new-event`
 
-1. Handle sign (negative = BC)
-2. Estimate year from days (days / 365.2425)
-3. Refine by calculating exact days to that year
-4. Subtract year days to get remaining days
-5. Walk through months to find month and day
-6. Format output based on precision parameter
+In each file:
 
----
+- Update interfaces to use `startTimestamp`/`endTimestamp`
+- Update handlers to accept/return integer timestamps
 
-## Step 4: Implement `toTimestamp`
+Update `src/index.ts` to mount the new routes:
 
-Parse a date string back to a timestamp.
+- `app.route('/time-info/events', eventsRouter)`
+- `app.route('/time-info/event', eventRouter)`
+- `app.route('/time-info/new-event', newEventRouter)`
 
-**Accepted formats:**
+### Step 5: Update Test Endpoints
 
-- "40,000 BC" or "40,000 BCE" → year only
-- "January 306 BC" → month + year (assumes day 1)
-- "January 1, 306 BC" → full date
-- "June 19, 2025 AD" or "June 19, 2025 CE"
+In `src/routes/test/database.ts`:
 
-**Algorithm:**
+- Update seed data to use integer timestamps instead of ISO dates
 
-1. Parse era suffix (BC/AD/BCE/CE) to determine sign
-2. Extract year (handle comma-formatted numbers like "40,000")
-3. Extract month name if present, convert to number
-4. Extract day if present, default to 1
-5. Calculate timestamp using year/month/day conversion
+### Step 6: Update E2E Tests
 
----
+In `e2e-tests/time-info/*.spec.ts` and `e2e-tests/support/db-helpers.ts`:
 
-## Step 5: Write Tests
+- Update test data to use integer timestamps
+- Add tests for the new `GET /:start/:end` endpoint
 
-Create `tests/timestamp.spec.ts`:
+### Step 7: Run Tests
 
-- Known dates: Jan 1, 1 AD = 0, Dec 31, 1 BC = -1
-- Round-trip: `toTimestamp(fromTimestamp(ts, {precision: 'day', style: 'BC/AD'}))` === ts
-- Edge cases: leap years, century boundaries, BC/AD transition
-- Large values: 40,000 BC, 14 billion years ago (if needed)
+Verify all tests pass with `bun test` and `npx playwright test`.
 
 ---
 
 ## Pitfalls
 
-- **No year zero** — Historical calendars skip from 1 BC to 1 AD; must handle this offset
-- **Leap year edge cases** — Feb 29 only valid in leap years; validation needed in `toTimestamp`
-- **Proleptic Gregorian assumption** — Real history used Julian calendar before 1582; may cause slight inaccuracies for ancient dates
-- **Large number precision** — 14 billion years = ~5 trillion days; fits in JS number but test for precision loss
-- **Month/day validation** — `toTimestamp` should reject invalid dates like Feb 30
+- **Route conflict resolved** — Separating `/events/:start/:end` and `/event/:id` into different base paths avoids ambiguity
+- **Integer vs string params** — Path params come as strings; must parse to integers
+- **Timestamp validation** — Large timestamps (billions of years) are valid; don't reject them

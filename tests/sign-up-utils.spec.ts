@@ -3,8 +3,7 @@
 // To run this, cd to this directory and type 'bun test'
 // ====================================
 
-import { describe, it } from 'node:test'
-import assert from 'node:assert'
+import { describe, it, expect } from 'bun:test'
 import { MESSAGES } from '../src/constants'
 
 // Test the error message sanitization logic
@@ -37,37 +36,37 @@ describe('sign-up error message sanitization', () => {
   it('should return generic message for internal DB errors', () => {
     const internalError = 'SQLITE_BUSY: database is locked'
     const result = getErrorMessageForUser(internalError)
-    assert.strictEqual(result, MESSAGES.REGISTRATION_GENERIC_ERROR)
-    assert.ok(!result.includes('SQLITE'))
-    assert.ok(!result.includes('database'))
+    expect(result).toBe(MESSAGES.REGISTRATION_GENERIC_ERROR)
+    expect(result.includes('SQLITE')).toBe(false)
+    expect(result.includes('database')).toBe(false)
   })
 
   it('should return generic message for stack traces', () => {
     const stackTrace = 'Error: Connection refused at Object.<anonymous>'
     const result = getErrorMessageForUser(stackTrace)
-    assert.strictEqual(result, MESSAGES.REGISTRATION_GENERIC_ERROR)
-    assert.ok(!result.includes('Connection'))
-    assert.ok(!result.includes('Object'))
+    expect(result).toBe(MESSAGES.REGISTRATION_GENERIC_ERROR)
+    expect(result.includes('Connection')).toBe(false)
+    expect(result.includes('Object')).toBe(false)
   })
 
   it('should return generic message for unknown errors', () => {
     const unknownError = 'Unexpected token in JSON at position 42'
     const result = getErrorMessageForUser(unknownError)
-    assert.strictEqual(result, MESSAGES.REGISTRATION_GENERIC_ERROR)
-    assert.ok(!result.includes('JSON'))
-    assert.ok(!result.includes('token'))
+    expect(result).toBe(MESSAGES.REGISTRATION_GENERIC_ERROR)
+    expect(result.includes('JSON')).toBe(false)
+    expect(result.includes('token')).toBe(false)
   })
 
   it('should return account exists message for duplicate email errors', () => {
     const duplicateError = 'User with this email already exists'
     const result = getErrorMessageForUser(duplicateError)
-    assert.strictEqual(result, MESSAGES.ACCOUNT_ALREADY_EXISTS)
+    expect(result).toBe(MESSAGES.ACCOUNT_ALREADY_EXISTS)
   })
 
   it('should return account exists message for unique constraint errors', () => {
     const constraintError = 'UNIQUE constraint failed: user.email'
     const result = getErrorMessageForUser(constraintError)
-    assert.strictEqual(result, MESSAGES.ACCOUNT_ALREADY_EXISTS)
+    expect(result).toBe(MESSAGES.ACCOUNT_ALREADY_EXISTS)
   })
 
   it('should not expose raw error messages to users', () => {
@@ -80,16 +79,12 @@ describe('sign-up error message sanitization', () => {
 
     for (const error of sensitiveErrors) {
       const result = getErrorMessageForUser(error)
-      assert.strictEqual(
-        result,
-        MESSAGES.REGISTRATION_GENERIC_ERROR,
-        `Expected generic message for: ${error}`
-      )
+      expect(result).toBe(MESSAGES.REGISTRATION_GENERIC_ERROR)
       // Verify none of the sensitive details leak through
-      assert.ok(!result.includes('D1_ERROR'))
-      assert.ok(!result.includes('TypeError'))
-      assert.ok(!result.includes('ECONNREFUSED'))
-      assert.ok(!result.includes('bcrypt'))
+      expect(result.includes('D1_ERROR')).toBe(false)
+      expect(result.includes('TypeError')).toBe(false)
+      expect(result.includes('ECONNREFUSED')).toBe(false)
+      expect(result.includes('bcrypt')).toBe(false)
     }
   })
 })

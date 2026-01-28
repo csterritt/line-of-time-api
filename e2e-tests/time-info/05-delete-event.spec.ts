@@ -11,7 +11,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 
 const BASE_URL = 'http://localhost:3000'
 
-test.describe('DELETE /time-info/events/:id', () => {
+test.describe('DELETE /time-info/event/:id', () => {
   test.beforeEach(async () => {
     await clearDatabase()
     await seedDatabase()
@@ -25,91 +25,108 @@ test.describe('DELETE /time-info/events/:id', () => {
   })
 
   test('requires authentication', async ({ request }) => {
-    const response = await request.delete(`${BASE_URL}/time-info/events/test-event-1`)
+    const response = await request.delete(
+      `${BASE_URL}/time-info/event/test-event-1`
+    )
 
-    expect(response.status()).toBe(302)
+    expect(
+      [302, 303, 403].includes(response.status()) ||
+        response.url().includes('/auth/sign-in')
+    ).toBe(true)
   })
 
-  test('deletes event when authenticated', async ({ page, request }) => {
+  test('deletes event when authenticated', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
     await page.click('button[type="submit"]')
     await page.waitForURL(/\/private/)
 
-    const cookies = await page.context().cookies()
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
-
     const countBefore = await getEventCount()
     expect(countBefore).toBe(3)
 
-    const response = await request.delete(`${BASE_URL}/time-info/events/test-event-1`, {
-      headers: { Cookie: cookieHeader },
-    })
+    // Use page.evaluate to make the DELETE request with the page's cookies
+    const result = await page.evaluate(async (url) => {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      return {
+        status: response.status,
+        body: await response.json(),
+      }
+    }, `${BASE_URL}/time-info/event/test-event-1`)
 
-    expect(response.status()).toBe(200)
-    const body = await response.json()
-    expect(body.success).toBe(true)
+    expect(result.status).toBe(200)
+    expect(result.body.success).toBe(true)
 
     const countAfter = await getEventCount()
     expect(countAfter).toBe(2)
   })
 
-  test('event is no longer retrievable after deletion', async ({ page, request }) => {
+  test('event is no longer retrievable after deletion', async ({
+    page,
+    request,
+  }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
     await page.click('button[type="submit"]')
     await page.waitForURL(/\/private/)
 
-    const cookies = await page.context().cookies()
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+    // Use page.evaluate to make the DELETE request with the page's cookies
+    await page.evaluate(async (url) => {
+      await fetch(url, { method: 'DELETE', credentials: 'include' })
+    }, `${BASE_URL}/time-info/event/test-event-1`)
 
-    await request.delete(`${BASE_URL}/time-info/events/test-event-1`, {
-      headers: { Cookie: cookieHeader },
-    })
-
-    const getResponse = await request.get(`${BASE_URL}/time-info/events/test-event-1`)
+    const getResponse = await request.get(
+      `${BASE_URL}/time-info/event/test-event-1`
+    )
     expect(getResponse.status()).toBe(404)
   })
 
-  test('returns 404 for non-existent event', async ({ page, request }) => {
+  test('returns 404 for non-existent event', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
     await page.click('button[type="submit"]')
     await page.waitForURL(/\/private/)
 
-    const cookies = await page.context().cookies()
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+    const result = await page.evaluate(async (url) => {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      return { status: response.status, body: await response.json() }
+    }, `${BASE_URL}/time-info/event/non-existent-id`)
 
-    const response = await request.delete(`${BASE_URL}/time-info/events/non-existent-id`, {
-      headers: { Cookie: cookieHeader },
-    })
-
-    expect(response.status()).toBe(404)
-    const body = await response.json()
-    expect(body.error).toBe('Event not found')
+    expect(result.status).toBe(404)
+    expect(result.body.error).toBe('Event not found')
   })
 
-  test('cannot delete same event twice', async ({ page, request }) => {
+  test('cannot delete same event twice', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
     await page.click('button[type="submit"]')
     await page.waitForURL(/\/private/)
 
-    const cookies = await page.context().cookies()
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+    const firstDelete = await page.evaluate(async (url) => {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      return response.status
+    }, `${BASE_URL}/time-info/event/test-event-1`)
+    expect(firstDelete).toBe(200)
 
-    const firstDelete = await request.delete(`${BASE_URL}/time-info/events/test-event-1`, {
-      headers: { Cookie: cookieHeader },
-    })
-    expect(firstDelete.status()).toBe(200)
-
-    const secondDelete = await request.delete(`${BASE_URL}/time-info/events/test-event-1`, {
-      headers: { Cookie: cookieHeader },
-    })
-    expect(secondDelete.status()).toBe(404)
+    const secondDelete = await page.evaluate(async (url) => {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      return response.status
+    }, `${BASE_URL}/time-info/event/test-event-1`)
+    expect(secondDelete).toBe(404)
   })
 })

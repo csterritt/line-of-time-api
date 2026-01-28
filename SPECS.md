@@ -85,10 +85,10 @@ A event's start time will be shown in the basic timeline view with a summarized 
 The API will be a REST API. There will be the following endpoints, initially:
 
 - GET /time-info/events/:start/:end
-- GET /time-info/events/:id
-- POST /time-info/events
-- PUT /time-info/events/:id
-- DELETE /time-info/events/:id
+- GET /time-info/event/:id
+- POST /time-info/new-event
+- PUT /time-info/event/:id
+- DELETE /time-info/event/:id
 
 The GET events can be retrieved by any user. For the first, the :start and :end parameters are timestamps. The POST, PUT, and DELETE events can only be retrieved by a signed-in user. The daisy-tw-worker-d1-drizzle template provides user authentication via the [better-auth](https://www.better-auth.com) library.
 

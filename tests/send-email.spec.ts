@@ -3,10 +3,11 @@
 // To run this, cd to this directory and type 'bun test'
 // ====================================
 
-import { describe, it } from 'node:test'
-import assert from 'node:assert'
+import { describe, it, expect } from 'bun:test'
 import { sendOtpToUserViaEmail } from '../src/lib/send-email'
-import { isOk } from 'true-myth/result'
+import type { Bindings } from '../src/local-types'
+
+const mockEnv = {} as Bindings
 
 describe('sendOtpToUserViaEmail', () => {
   it('sends email with correct content and OTP code', async () => {
@@ -17,6 +18,7 @@ describe('sendOtpToUserViaEmail', () => {
 
     // Create mock email agent that captures arguments and returns successfully
     const mockEmailAgent = async (
+      _env: Bindings,
       fromAddress: string,
       toAddress: string,
       subject: string,
@@ -28,29 +30,31 @@ describe('sendOtpToUserViaEmail', () => {
 
     // Call the function with our mock
     const result = await sendOtpToUserViaEmail(
+      mockEnv,
       testEmail,
       testOtp,
       mockEmailAgent
     )
 
     // Verify result is successful
-    assert.strictEqual(isOk(result), true)
+    expect(result.isOk).toBe(true)
 
     // Verify email was "sent" with correct parameters
-    assert.notStrictEqual(capturedArgs, null)
-    assert.strictEqual(capturedArgs?.fromAddress, 'noreply@cls.cloud')
-    assert.strictEqual(capturedArgs?.toAddress, testEmail)
-    assert.strictEqual(
-      capturedArgs?.subject,
-      'Your Mini-Auth Verification Code'
-    )
+    expect(capturedArgs).not.toBeNull()
+    expect(capturedArgs?.fromAddress).toBe('noreply@cls.cloud')
+    expect(capturedArgs?.toAddress).toBe(testEmail)
+    expect(capturedArgs?.subject).toBe('Your Mini-Auth Verification Code')
 
     // Verify email content contains the OTP
-    assert.ok(capturedArgs?.content.includes(`<strong>${testOtp}</strong>`))
-    assert.ok(capturedArgs?.content.includes('<h1>Verification Code</h1>'))
-    assert.ok(
-      capturedArgs?.content.includes('This code will expire in 15 minutes')
+    expect(capturedArgs?.content.includes(`<strong>${testOtp}</strong>`)).toBe(
+      true
     )
+    expect(capturedArgs?.content.includes('<h1>Verification Code</h1>')).toBe(
+      true
+    )
+    expect(
+      capturedArgs?.content.includes('This code will expire in 15 minutes')
+    ).toBe(true)
   })
 
   it('handles email sending failure', async () => {
@@ -65,13 +69,14 @@ describe('sendOtpToUserViaEmail', () => {
 
     // Call the function with our failing mock
     const result = await sendOtpToUserViaEmail(
+      mockEnv,
       testEmail,
       testOtp,
       mockFailingEmailAgent
     )
 
     // Verify result is an error
-    assert.strictEqual(result.isErr, true)
-    assert.ok(result.error?.message.includes('Email sending failed'))
+    expect(result.isErr).toBe(true)
+    expect(result.error?.message).toContain('Email sending failed')
   })
 })

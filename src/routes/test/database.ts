@@ -23,7 +23,9 @@ import { STANDARD_SECURE_HEADERS } from '../../constants'
  * These endpoints should ONLY be available in development/test environments
  */
 
-const testDatabaseRouter = new Hono<{ Bindings: { PROJECT_DB: D1Database } }>()
+const testDatabaseRouter = new Hono<{
+  Bindings: { LINE_OF_TIME_DB: D1Database }
+}>()
 
 /**
  * Clear all authentication data from the database
@@ -34,7 +36,7 @@ testDatabaseRouter.delete(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       // Delete in order to avoid foreign key constraints
       await db.delete(session)
@@ -84,7 +86,7 @@ testDatabaseRouter.delete(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       // Delete in order to avoid foreign key constraints
       await db.delete(session)
@@ -120,7 +122,7 @@ testDatabaseRouter.post(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       // Insert test users
       const testUsers = [
@@ -235,7 +237,7 @@ testDatabaseRouter.get(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       // Count records in each table
       const userCount = await db.select().from(user)
@@ -280,7 +282,7 @@ testDatabaseRouter.get(
   async (c) => {
     try {
       const code = c.req.param('code')
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       const result = await db
         .select({ code: singleUseCode.code })
@@ -317,7 +319,7 @@ testDatabaseRouter.delete(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
       await db.delete(event)
 
       console.log('Test events cleared successfully')
@@ -351,14 +353,14 @@ testDatabaseRouter.post(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
       const now = new Date().toISOString()
 
       const testEvents = [
         {
           id: 'test-event-1',
-          startDate: '1969-07-20T00:00:00.000Z',
-          endDate: null,
+          startTimestamp: 719163,
+          endTimestamp: null,
           name: 'Moon Landing',
           basicDescription: 'First human on the moon',
           longerDescription:
@@ -372,8 +374,8 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-2',
-          startDate: '1939-09-01T00:00:00.000Z',
-          endDate: '1945-09-02T00:00:00.000Z',
+          startTimestamp: 708249,
+          endTimestamp: 710440,
           name: 'World War II',
           basicDescription: 'Global war from 1939 to 1945',
           longerDescription: null,
@@ -386,8 +388,8 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-3',
-          startDate: '1776-07-04T00:00:00.000Z',
-          endDate: null,
+          startTimestamp: 648856,
+          endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',
           longerDescription:
@@ -437,7 +439,7 @@ testDatabaseRouter.get(
   secureHeaders(STANDARD_SECURE_HEADERS),
   async (c) => {
     try {
-      const db = createDbClient(c.env.PROJECT_DB)
+      const db = createDbClient(c.env.LINE_OF_TIME_DB)
       const events = await db.select().from(event)
 
       return c.json({

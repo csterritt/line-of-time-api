@@ -13,7 +13,7 @@ declare interface Bindings {
   /**
    * D1 database binding
    */
-  PROJECT_DB: D1Database
+  LINE_OF_TIME_DB: D1Database
 }
 
 /**

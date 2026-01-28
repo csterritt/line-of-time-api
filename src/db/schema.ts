@@ -6,7 +6,7 @@
  * Database schema definition using Drizzle ORM
  * Updated to match better-auth requirements
  */
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 /**
  * User table schema definition (better-auth compatible)
@@ -88,18 +88,28 @@ export const interestedEmail = sqliteTable('interestedEmail', {
 /**
  * Event table schema definition for timeline events
  */
-export const event = sqliteTable('event', {
-  id: text('id').primaryKey(),
-  startDate: text('start_date').notNull(),
-  endDate: text('end_date'),
-  name: text('name').notNull(),
-  basicDescription: text('basic_description').notNull(),
-  longerDescription: text('longer_description'),
-  referenceUrls: text('reference_urls').notNull(),
-  relatedEventIds: text('related_event_ids'),
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
-})
+export const event = sqliteTable(
+  'event',
+  {
+    id: text('id').primaryKey(),
+    startTimestamp: integer('start_timestamp').notNull(),
+    endTimestamp: integer('end_timestamp'),
+    name: text('name').notNull(),
+    basicDescription: text('basic_description').notNull(),
+    longerDescription: text('longer_description'),
+    referenceUrls: text('reference_urls').notNull(),
+    relatedEventIds: text('related_event_ids'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('startTimestamp_idx').on(table.startTimestamp),
+    index('endTimestamp_idx').on(table.endTimestamp),
+    index('name_idx').on(table.name),
+    index('basic_description_idx').on(table.basicDescription),
+    index('longer_description_idx').on(table.longerDescription),
+  ]
+)
 
 // Define schema object for export
 export const schema = {

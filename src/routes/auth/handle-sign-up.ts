@@ -90,7 +90,7 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
           return handleSignUpApiError(c, apiError, email, PATHS.AUTH.SIGN_IN)
         }
 
-        const dbClient = createDbClient(c.env.PROJECT_DB)
+        const dbClient = createDbClient(c.env.LINE_OF_TIME_DB)
         await updateAccountTimestampAfterSignUp(dbClient, email)
 
         return redirectToAwaitVerification(c, email)

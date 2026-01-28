@@ -55,6 +55,8 @@ import { testSignUpModeRouter } from './routes/test/sign-up-mode' // PRODUCTION:
 import { testSmtpRouter } from './routes/test/smtp-config' // PRODUCTION:REMOVE
 import { isTestRouteEnabled } from './lib/test-routes'
 import { eventsRouter } from './routes/time-info/events'
+import { eventRouter } from './routes/time-info/event'
+import { newEventRouter } from './routes/time-info/new-event'
 
 /**
  * Validates that all required environment variables are set
@@ -162,7 +164,7 @@ app.use(validateEnvBindings)
 // Initialize db client for each request
 app.use(async (c, next) => {
   // Create DB client for this request
-  const db = createDbClient(c.env.PROJECT_DB)
+  const db = createDbClient(c.env.LINE_OF_TIME_DB)
   c.set('db', db)
 
   await next()
@@ -213,6 +215,8 @@ handleDeleteAccount(app)
 
 // Timeline API routes
 app.route('/time-info/events', eventsRouter)
+app.route('/time-info/event', eventRouter)
+app.route('/time-info/new-event', newEventRouter)
 
 if (isTestRouteEnabledFlag) {
   handleSetClock(app) // PRODUCTION:REMOVE

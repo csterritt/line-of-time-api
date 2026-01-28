@@ -194,7 +194,7 @@ export const handleForgotPassword = (
         }
 
         const email = data!.email as string
-        const db = createDbClient(c.env.PROJECT_DB)
+        const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
         const userWithAccountResult = await getUserWithAccountByEmail(db, email)
 

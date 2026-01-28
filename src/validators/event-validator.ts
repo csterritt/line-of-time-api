@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 export interface EventInput {
-  startDate: string
-  endDate?: string | null
+  startTimestamp: number
+  endTimestamp?: number | null
   name: string
   basicDescription: string
   longerDescription?: string | null
@@ -17,9 +17,8 @@ interface ValidationResult {
   errors: string[]
 }
 
-const isValidIsoDate = (dateStr: string): boolean => {
-  const date = new Date(dateStr)
-  return !isNaN(date.getTime())
+const isValidTimestamp = (value: unknown): boolean => {
+  return typeof value === 'number' && Number.isInteger(value)
 }
 
 const isValidUrl = (urlStr: string): boolean => {
@@ -40,20 +39,13 @@ export const validateEventInput = (input: unknown): ValidationResult => {
 
   const data = input as Record<string, unknown>
 
-  if (typeof data.startDate !== 'string' || data.startDate.trim() === '') {
-    errors.push('startDate is required and must be a non-empty string')
-  } else if (!isValidIsoDate(data.startDate)) {
-    errors.push('startDate must be a valid ISO date string')
+  if (!isValidTimestamp(data.startTimestamp)) {
+    errors.push('startTimestamp is required and must be an integer')
   }
 
-  if (
-    data.endDate !== undefined &&
-    data.endDate !== null &&
-    typeof data.endDate === 'string' &&
-    data.endDate.trim() !== ''
-  ) {
-    if (!isValidIsoDate(data.endDate)) {
-      errors.push('endDate must be a valid ISO date string')
+  if (data.endTimestamp !== undefined && data.endTimestamp !== null) {
+    if (!isValidTimestamp(data.endTimestamp)) {
+      errors.push('endTimestamp must be an integer if provided')
     }
   }
 

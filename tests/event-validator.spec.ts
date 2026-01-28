@@ -3,12 +3,11 @@
 // To run this, cd to this directory and type 'bun test'
 // ====================================
 
-import { describe, it } from 'node:test'
-import assert from 'node:assert'
+import { describe, it, expect } from 'bun:test'
 import { validateEventInput } from '../src/validators/event-validator'
 
 const validEvent = {
-  startDate: '2024-01-15T00:00:00.000Z',
+  startTimestamp: 738534,
   name: 'Moon Landing',
   basicDescription: 'First human on the moon',
   referenceUrls: ['https://en.wikipedia.org/wiki/Moon_landing'],
@@ -18,31 +17,31 @@ describe('validateEventInput', () => {
   describe('valid inputs', () => {
     it('should accept a valid event with required fields only', () => {
       const result = validateEventInput(validEvent)
-      assert.strictEqual(result.valid, true)
-      assert.deepStrictEqual(result.errors, [])
+      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
     })
 
     it('should accept a valid event with all optional fields', () => {
       const fullEvent = {
         ...validEvent,
-        endDate: '2024-01-16T00:00:00.000Z',
+        endTimestamp: 738535,
         longerDescription: 'A longer description of the event',
         relatedEventIds: ['event-1', 'event-2'],
       }
       const result = validateEventInput(fullEvent)
-      assert.strictEqual(result.valid, true)
-      assert.deepStrictEqual(result.errors, [])
+      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
     })
 
     it('should accept null for optional fields', () => {
       const eventWithNulls = {
         ...validEvent,
-        endDate: null,
+        endTimestamp: null,
         longerDescription: null,
         relatedEventIds: null,
       }
       const result = validateEventInput(eventWithNulls)
-      assert.strictEqual(result.valid, true)
+      expect(result.valid).toBe(true)
     })
 
     it('should accept multiple reference URLs', () => {
@@ -55,89 +54,102 @@ describe('validateEventInput', () => {
         ],
       }
       const result = validateEventInput(eventWithMultipleUrls)
-      assert.strictEqual(result.valid, true)
+      expect(result.valid).toBe(true)
     })
   })
 
   describe('invalid inputs', () => {
     it('should reject null input', () => {
       const result = validateEventInput(null)
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.includes('Invalid input: expected an object'))
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContain('Invalid input: expected an object')
     })
 
     it('should reject non-object input', () => {
       const result = validateEventInput('not an object')
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.includes('Invalid input: expected an object'))
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContain('Invalid input: expected an object')
     })
 
-    it('should reject missing startDate', () => {
-      const { startDate, ...eventWithoutStartDate } = validEvent
-      const result = validateEventInput(eventWithoutStartDate)
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('startDate is required')))
+    it('should reject missing startTimestamp', () => {
+      const { startTimestamp, ...eventWithoutStartTimestamp } = validEvent
+      const result = validateEventInput(eventWithoutStartTimestamp)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some((e) => e.includes('startTimestamp is required'))
+      ).toBe(true)
     })
 
-    it('should reject empty startDate', () => {
-      const result = validateEventInput({ ...validEvent, startDate: '' })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('startDate is required')))
-    })
-
-    it('should reject invalid startDate format', () => {
+    it('should reject non-integer startTimestamp', () => {
       const result = validateEventInput({
         ...validEvent,
-        startDate: 'not-a-date',
+        startTimestamp: 'not-a-number',
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('valid ISO date')))
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some((e) => e.includes('startTimestamp is required'))
+      ).toBe(true)
     })
 
-    it('should reject invalid endDate format', () => {
+    it('should reject float startTimestamp', () => {
       const result = validateEventInput({
         ...validEvent,
-        endDate: 'not-a-date',
+        startTimestamp: 123.45,
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('endDate')))
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('startTimestamp'))).toBe(true)
+    })
+
+    it('should reject non-integer endTimestamp', () => {
+      const result = validateEventInput({
+        ...validEvent,
+        endTimestamp: 'not-a-number',
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('endTimestamp'))).toBe(true)
     })
 
     it('should reject missing name', () => {
       const { name, ...eventWithoutName } = validEvent
       const result = validateEventInput(eventWithoutName)
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('name is required')))
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('name is required'))).toBe(
+        true
+      )
     })
 
     it('should reject empty name', () => {
       const result = validateEventInput({ ...validEvent, name: '   ' })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('name is required')))
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('name is required'))).toBe(
+        true
+      )
     })
 
     it('should reject missing basicDescription', () => {
       const { basicDescription, ...eventWithoutDesc } = validEvent
       const result = validateEventInput(eventWithoutDesc)
-      assert.strictEqual(result.valid, false)
-      assert.ok(
+      expect(result.valid).toBe(false)
+      expect(
         result.errors.some((e) => e.includes('basicDescription is required'))
-      )
+      ).toBe(true)
     })
 
     it('should reject missing referenceUrls', () => {
       const { referenceUrls, ...eventWithoutUrls } = validEvent
       const result = validateEventInput(eventWithoutUrls)
-      assert.strictEqual(result.valid, false)
-      assert.ok(
+      expect(result.valid).toBe(false)
+      expect(
         result.errors.some((e) => e.includes('referenceUrls is required'))
-      )
+      ).toBe(true)
     })
 
     it('should reject empty referenceUrls array', () => {
       const result = validateEventInput({ ...validEvent, referenceUrls: [] })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('at least one URL')))
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('at least one URL'))).toBe(
+        true
+      )
     })
 
     it('should reject invalid URLs in referenceUrls', () => {
@@ -145,8 +157,8 @@ describe('validateEventInput', () => {
         ...validEvent,
         referenceUrls: ['not-a-url'],
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.some((e) => e.includes('valid URLs')))
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.includes('valid URLs'))).toBe(true)
     })
 
     it('should reject non-array referenceUrls', () => {
@@ -154,10 +166,10 @@ describe('validateEventInput', () => {
         ...validEvent,
         referenceUrls: 'https://example.com',
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(
+      expect(result.valid).toBe(false)
+      expect(
         result.errors.some((e) => e.includes('referenceUrls is required'))
-      )
+      ).toBe(true)
     })
 
     it('should reject non-array relatedEventIds', () => {
@@ -165,12 +177,12 @@ describe('validateEventInput', () => {
         ...validEvent,
         relatedEventIds: 'event-1',
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(
+      expect(result.valid).toBe(false)
+      expect(
         result.errors.some((e) =>
           e.includes('relatedEventIds must be an array')
         )
-      )
+      ).toBe(true)
     })
 
     it('should reject non-string items in relatedEventIds', () => {
@@ -178,23 +190,23 @@ describe('validateEventInput', () => {
         ...validEvent,
         relatedEventIds: [123, 456],
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(
+      expect(result.valid).toBe(false)
+      expect(
         result.errors.some((e) =>
           e.includes('relatedEventIds must contain only strings')
         )
-      )
+      ).toBe(true)
     })
 
     it('should collect multiple errors', () => {
       const result = validateEventInput({
-        startDate: 'invalid',
+        startTimestamp: 'invalid',
         name: '',
         basicDescription: '',
         referenceUrls: [],
       })
-      assert.strictEqual(result.valid, false)
-      assert.ok(result.errors.length >= 4)
+      expect(result.valid).toBe(false)
+      expect(result.errors.length).toBeGreaterThanOrEqual(4)
     })
   })
 })

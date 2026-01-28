@@ -11,13 +11,13 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 const BASE_URL = 'http://localhost:3000'
 
 const validEvent = {
-  startDate: '2024-01-15T00:00:00.000Z',
+  startTimestamp: 738534,
   name: 'Test Event',
   basicDescription: 'A test event description',
   referenceUrls: ['https://example.com/reference'],
 }
 
-test.describe('POST /time-info/events', () => {
+test.describe('POST /time-info/new-event', () => {
   test.beforeEach(async () => {
     await clearDatabase()
     await seedDatabase()
@@ -30,11 +30,11 @@ test.describe('POST /time-info/events', () => {
   })
 
   test('requires authentication', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: validEvent,
     })
 
-    expect(response.status()).toBe(302)
+    expect(response.url()).toContain('/auth/sign-in')
   })
 
   test('creates event when authenticated', async ({ page, request }) => {
@@ -47,7 +47,7 @@ test.describe('POST /time-info/events', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: validEvent,
       headers: { Cookie: cookieHeader },
     })
@@ -55,6 +55,7 @@ test.describe('POST /time-info/events', () => {
     expect(response.status()).toBe(200)
     const event = await response.json()
     expect(event.name).toBe('Test Event')
+    expect(event.startTimestamp).toBe(738534)
     expect(event.id).toBeDefined()
     expect(event.createdAt).toBeDefined()
 
@@ -74,20 +75,22 @@ test.describe('POST /time-info/events', () => {
 
     const fullEvent = {
       ...validEvent,
-      endDate: '2024-01-16T00:00:00.000Z',
+      endTimestamp: 738535,
       longerDescription: 'A longer description of the test event',
       relatedEventIds: ['related-1', 'related-2'],
     }
 
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: fullEvent,
       headers: { Cookie: cookieHeader },
     })
 
     expect(response.status()).toBe(200)
     const event = await response.json()
-    expect(event.endDate).toBe('2024-01-16T00:00:00.000Z')
-    expect(event.longerDescription).toBe('A longer description of the test event')
+    expect(event.endTimestamp).toBe(738535)
+    expect(event.longerDescription).toBe(
+      'A longer description of the test event'
+    )
     expect(event.relatedEventIds).toEqual(['related-1', 'related-2'])
   })
 
@@ -101,7 +104,7 @@ test.describe('POST /time-info/events', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: { name: 'Incomplete Event' },
       headers: { Cookie: cookieHeader },
     })
@@ -112,7 +115,10 @@ test.describe('POST /time-info/events', () => {
     expect(Array.isArray(body.error)).toBe(true)
   })
 
-  test('returns 400 for invalid URL in referenceUrls', async ({ page, request }) => {
+  test('returns 400 for invalid URL in referenceUrls', async ({
+    page,
+    request,
+  }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
@@ -122,7 +128,7 @@ test.describe('POST /time-info/events', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: { ...validEvent, referenceUrls: ['not-a-valid-url'] },
       headers: { Cookie: cookieHeader },
     })
@@ -130,7 +136,10 @@ test.describe('POST /time-info/events', () => {
     expect(response.status()).toBe(400)
   })
 
-  test('returns 400 for empty referenceUrls array', async ({ page, request }) => {
+  test('returns 400 for empty referenceUrls array', async ({
+    page,
+    request,
+  }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
     await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
@@ -140,7 +149,7 @@ test.describe('POST /time-info/events', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/events`, {
+    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
       data: { ...validEvent, referenceUrls: [] },
       headers: { Cookie: cookieHeader },
     })

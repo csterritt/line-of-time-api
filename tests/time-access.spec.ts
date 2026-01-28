@@ -3,8 +3,7 @@
 // To run this, cd to this directory and type 'bun test'
 // ====================================
 
-import { beforeEach, describe, it } from 'node:test'
-import assert from 'node:assert'
+import { beforeEach, describe, it, expect } from 'bun:test'
 import { setTimeout } from 'timers/promises'
 import {
   getCurrentTime,
@@ -59,86 +58,86 @@ describe('getCurrentTime function', () => {
     c = makeFakeContext()
   })
   it('should return the current no-args time when no time has been set', () => {
-    assert(
+    expect(
       approximatelyEqual(getCurrentTime(c).getTime(), new Date().getTime(), 5)
-    )
+    ).toBe(true)
   })
 
   it('should return the correct no-args time when a time has been set in the past', () => {
     setCurrentDelta(c, -50_000)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c).getTime(),
         new Date().getTime() - 50_000,
         5
       )
-    )
+    ).toBe(true)
   })
 
   it('should return the correct no-args time when a time has been set in the future', () => {
     setCurrentDelta(c, 50_000)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c).getTime(),
         new Date().getTime() + 50_000,
         5
       )
-    )
+    ).toBe(true)
   })
 
   it('should return the correct no-args time with a delay when a time has been set in the past', async () => {
     setCurrentDelta(c, -50_000)
     await setTimeout(100)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c).getTime(),
         new Date().getTime() - 50_000,
         105
       )
-    )
+    ).toBe(true)
   })
 
   it('should return the correct no-args time with a delay when a time has been set in the future', async () => {
     setCurrentDelta(c, 50_000)
     await setTimeout(100)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c).getTime(),
         new Date().getTime() + 50_000,
         105
       )
-    )
+    ).toBe(true)
   })
 
   it('should return the correct with-args time based in the past', () => {
     setCurrentDelta(c, -50_000)
     const futureDate = new Date(new Date().getTime() + 100_000)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c, futureDate).getTime(),
         new Date().getTime() + 50_000,
         5
       )
-    )
+    ).toBe(true)
   })
 
   it('should return the correct with-args time based in the future', () => {
     setCurrentDelta(c, 50_000)
     const futureDate = new Date(new Date().getTime() + 100_000)
-    assert(
+    expect(
       approximatelyEqual(
         getCurrentTime(c, futureDate).getTime(),
         new Date().getTime() + 150_000,
         5
       )
-    )
+    ).toBe(true)
   })
 
   it('should allow resetting the time properly', () => {
     setCurrentDelta(c, -50_000)
     clearCurrentDelta(c)
-    assert(
+    expect(
       approximatelyEqual(getCurrentTime(c).getTime(), new Date().getTime(), 5)
-    )
+    ).toBe(true)
   })
 })

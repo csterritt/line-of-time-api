@@ -3,150 +3,39 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { and, gte, lte } from 'drizzle-orm'
 
 import { event } from '../../db/schema'
 import { AppEnv } from '../../local-types'
-import { signedInAccess } from '../../middleware/signed-in-access'
-import { validateEventInput, EventInput } from '../../validators/event-validator'
+import { parseEvent } from './event-utils'
 
 const eventsRouter = new Hono<AppEnv>()
 
-interface EventResponse {
-  id: string
-  startDate: string
-  endDate: string | null
-  name: string
-  basicDescription: string
-  longerDescription: string | null
-  referenceUrls: string[]
-  relatedEventIds: string[]
-  createdAt: string
-  updatedAt: string
-}
-
-const parseEvent = (dbEvent: typeof event.$inferSelect): EventResponse => ({
-  id: dbEvent.id,
-  startDate: dbEvent.startDate,
-  endDate: dbEvent.endDate,
-  name: dbEvent.name,
-  basicDescription: dbEvent.basicDescription,
-  longerDescription: dbEvent.longerDescription,
-  referenceUrls: JSON.parse(dbEvent.referenceUrls) as string[],
-  relatedEventIds: dbEvent.relatedEventIds
-    ? (JSON.parse(dbEvent.relatedEventIds) as string[])
-    : [],
-  createdAt: dbEvent.createdAt,
-  updatedAt: dbEvent.updatedAt,
-})
-
-eventsRouter.get('/', async (c) => {
+eventsRouter.get('/:start/:end', async (c) => {
   const db = c.get('db')
-  const events = await db.select().from(event).orderBy(event.startDate)
+  const startParam = c.req.param('start')
+  const endParam = c.req.param('end')
+
+  const start = parseInt(startParam, 10)
+  const end = parseInt(endParam, 10)
+
+  if (isNaN(start) || isNaN(end)) {
+    return c.json({ error: 'start and end must be valid integers' }, 400)
+  }
+
+  if (start > end) {
+    return c.json({ error: 'start must be less than or equal to end' }, 400)
+  }
+
+  const events = await db
+    .select()
+    .from(event)
+    .where(
+      and(gte(event.startTimestamp, start), lte(event.startTimestamp, end))
+    )
+    .orderBy(event.startTimestamp)
 
   return c.json(events.map(parseEvent))
-})
-
-eventsRouter.get('/:id', async (c) => {
-  const db = c.get('db')
-  const id = c.req.param('id')
-  const events = await db.select().from(event).where(eq(event.id, id))
-
-  if (events.length === 0) {
-    return c.json({ error: 'Event not found' }, 404)
-  }
-
-  return c.json(parseEvent(events[0]))
-})
-
-eventsRouter.post('/', signedInAccess, async (c) => {
-  const db = c.get('db')
-  const body = await c.req.json<EventInput>()
-  const validation = validateEventInput(body)
-
-  if (!validation.valid) {
-    return c.json({ error: validation.errors }, 400)
-  }
-
-  const now = new Date().toISOString()
-  const id = crypto.randomUUID()
-
-  const newEvent = {
-    id,
-    startDate: body.startDate,
-    endDate: body.endDate ?? null,
-    name: body.name,
-    basicDescription: body.basicDescription,
-    longerDescription: body.longerDescription ?? null,
-    referenceUrls: JSON.stringify(body.referenceUrls),
-    relatedEventIds: body.relatedEventIds
-      ? JSON.stringify(body.relatedEventIds)
-      : null,
-    createdAt: now,
-    updatedAt: now,
-  }
-
-  await db.insert(event).values(newEvent)
-
-  return c.json(parseEvent({ ...newEvent, referenceUrls: newEvent.referenceUrls, relatedEventIds: newEvent.relatedEventIds }), 200)
-})
-
-eventsRouter.put('/:id', signedInAccess, async (c) => {
-  const db = c.get('db')
-  const id = c.req.param('id')
-  const body = await c.req.json<EventInput>()
-  const validation = validateEventInput(body)
-
-  if (!validation.valid) {
-    return c.json({ error: validation.errors }, 400)
-  }
-
-  const existing = await db.select().from(event).where(eq(event.id, id))
-
-  if (existing.length === 0) {
-    return c.json({ error: 'Event not found' }, 404)
-  }
-
-  const now = new Date().toISOString()
-
-  const updatedEvent = {
-    startDate: body.startDate,
-    endDate: body.endDate ?? null,
-    name: body.name,
-    basicDescription: body.basicDescription,
-    longerDescription: body.longerDescription ?? null,
-    referenceUrls: JSON.stringify(body.referenceUrls),
-    relatedEventIds: body.relatedEventIds
-      ? JSON.stringify(body.relatedEventIds)
-      : null,
-    updatedAt: now,
-  }
-
-  await db.update(event).set(updatedEvent).where(eq(event.id, id))
-
-  return c.json(
-    parseEvent({
-      id,
-      ...updatedEvent,
-      createdAt: existing[0].createdAt,
-    }),
-    200
-  )
-})
-
-eventsRouter.delete('/:id', signedInAccess, async (c) => {
-  const db = c.get('db')
-  const id = c.req.param('id')
-
-  const existing = await db.select().from(event).where(eq(event.id, id))
-
-  if (existing.length === 0) {
-    return c.json({ error: 'Event not found' }, 404)
-  }
-
-  await db.delete(event).where(eq(event.id, id))
-
-  return c.json({ success: true }, 200)
 })
 
 export { eventsRouter }

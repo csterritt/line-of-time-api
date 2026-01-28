@@ -11,13 +11,13 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 const BASE_URL = 'http://localhost:3000'
 
 const updatedEvent = {
-  startDate: '1969-07-21T00:00:00.000Z',
+  startTimestamp: 719164,
   name: 'Updated Moon Landing',
   basicDescription: 'Updated description',
   referenceUrls: ['https://example.com/updated'],
 }
 
-test.describe('PUT /time-info/events/:id', () => {
+test.describe('PUT /time-info/event/:id', () => {
   test.beforeEach(async () => {
     await clearDatabase()
     await seedDatabase()
@@ -31,11 +31,14 @@ test.describe('PUT /time-info/events/:id', () => {
   })
 
   test('requires authentication', async ({ request }) => {
-    const response = await request.put(`${BASE_URL}/time-info/events/test-event-1`, {
-      data: updatedEvent,
-    })
+    const response = await request.put(
+      `${BASE_URL}/time-info/event/test-event-1`,
+      {
+        data: updatedEvent,
+      }
+    )
 
-    expect(response.status()).toBe(302)
+    expect(response.url()).toContain('/auth/sign-in')
   })
 
   test('updates event when authenticated', async ({ page, request }) => {
@@ -48,10 +51,13 @@ test.describe('PUT /time-info/events/:id', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.put(`${BASE_URL}/time-info/events/test-event-1`, {
-      data: updatedEvent,
-      headers: { Cookie: cookieHeader },
-    })
+    const response = await request.put(
+      `${BASE_URL}/time-info/event/test-event-1`,
+      {
+        data: updatedEvent,
+        headers: { Cookie: cookieHeader },
+      }
+    )
 
     expect(response.status()).toBe(200)
     const event = await response.json()
@@ -70,13 +76,18 @@ test.describe('PUT /time-info/events/:id', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const getResponse = await request.get(`${BASE_URL}/time-info/events/test-event-1`)
+    const getResponse = await request.get(
+      `${BASE_URL}/time-info/event/test-event-1`
+    )
     const originalEvent = await getResponse.json()
 
-    const updateResponse = await request.put(`${BASE_URL}/time-info/events/test-event-1`, {
-      data: updatedEvent,
-      headers: { Cookie: cookieHeader },
-    })
+    const updateResponse = await request.put(
+      `${BASE_URL}/time-info/event/test-event-1`,
+      {
+        data: updatedEvent,
+        headers: { Cookie: cookieHeader },
+      }
+    )
 
     const updatedEventResult = await updateResponse.json()
     expect(updatedEventResult.createdAt).toBe(originalEvent.createdAt)
@@ -93,10 +104,13 @@ test.describe('PUT /time-info/events/:id', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.put(`${BASE_URL}/time-info/events/non-existent-id`, {
-      data: updatedEvent,
-      headers: { Cookie: cookieHeader },
-    })
+    const response = await request.put(
+      `${BASE_URL}/time-info/event/non-existent-id`,
+      {
+        data: updatedEvent,
+        headers: { Cookie: cookieHeader },
+      }
+    )
 
     expect(response.status()).toBe(404)
     const body = await response.json()
@@ -113,10 +127,13 @@ test.describe('PUT /time-info/events/:id', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.put(`${BASE_URL}/time-info/events/test-event-1`, {
-      data: { name: 'Missing required fields' },
-      headers: { Cookie: cookieHeader },
-    })
+    const response = await request.put(
+      `${BASE_URL}/time-info/event/test-event-1`,
+      {
+        data: { name: 'Missing required fields' },
+        headers: { Cookie: cookieHeader },
+      }
+    )
 
     expect(response.status()).toBe(400)
   })
