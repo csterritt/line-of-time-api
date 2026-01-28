@@ -26,6 +26,8 @@ The API will be a REST API. There will be the following endpoints, initially:
 
 The GET events can be retrieved by any user. The POST, PUT, and DELETE events can only be retrieved by a signed-in user. The daisy-tw-worker-d1-drizzle template provides user authentication via the [better-auth](https://www.better-auth.com) library.
 
+These endpoints will take JSON as input, and return JSON as output. Success will be indicated by a 200 status code, and failure will be indicated by a 400 status code.
+
 ### The UI
 
 The UI will be a single page application, with the following views:
