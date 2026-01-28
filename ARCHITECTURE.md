@@ -14,20 +14,6 @@ The front end will be a web page, built with Vue 3, Pinia, Tailwind CSS, and Dai
 
 The two will communicate via an API, which will send and receive JSON.
 
-### The API
-
-The API will be a REST API. There will be the following endpoints, initially:
-
-- GET /time-info/events
-- GET /time-info/events/:id
-- POST /time-info/events
-- PUT /time-info/events/:id
-- DELETE /time-info/events/:id
-
-The GET events can be retrieved by any user. The POST, PUT, and DELETE events can only be retrieved by a signed-in user. The daisy-tw-worker-d1-drizzle template provides user authentication via the [better-auth](https://www.better-auth.com) library.
-
-These endpoints will take JSON as input, and return JSON as output. Success will be indicated by a 200 status code, and failure will be indicated by a 400 status code.
-
 ### The UI
 
 The UI will be a single page application, with the following views:

@@ -1,99 +1,127 @@
-# API Implementation Plan
+# Timestamp Conversion Functions Plan
 
 ## Assumptions
 
-- The `daisy-tw-worker-d1-drizzle` template provides working auth middleware via better-auth
-- Related events stored as JSON array of IDs (placeholder for now)
-- Reference URLs stored as JSON array of strings
+- `fromTimestamp` returns the full date string; it has a "precision" parameter to control the output level (year only, month+year, full date)
+- Timestamps are integers representing days since the birth of Christ (day 0 = Jan 1, 1 AD)
+- Negative timestamps = BC, positive = AD
+- Proleptic Gregorian calendar used for simplicity (no Julian calendar switch)
+- BC/AD vs BCE/CE formatting is a separate concern (user preference applied at display time)
 
 ---
 
-## Step 1: Define the Event Schema (Drizzle)
+## What is a Timestamp?
 
-Create `src/db/schema/events.ts`:
+A **timestamp** is an integer representing the number of days since January 1, 1 AD:
+
+- `0` = January 1, 1 AD
+- `1` = January 2, 1 AD
+- `-1` = December 31, 1 BC
+- `-365` = approximately January 1, 1 BC
+
+---
+
+## Step 1: Define the Core Interface
+
+Create `src/lib/timestamp.ts`:
 
 ```ts
-export const events = sqliteTable('events', {
-  id: text('id').primaryKey(),
-  startDate: text('start_date').notNull(),
-  endDate: text('end_date'),
-  name: text('name').notNull(),
-  basicDescription: text('basic_description').notNull(),
-  longerDescription: text('longer_description'),
-  referenceUrls: text('reference_urls').notNull(), // JSON array
-  relatedEventIds: text('related_event_ids'), // JSON array (placeholder)
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
-})
+type DatePrecision = 'year' | 'month' | 'day'
+
+interface DateComponents {
+  year: number      // Negative for BC, positive for AD
+  month: number     // 1-12
+  day: number       // 1-31
+}
+
+interface FromTimestampOptions {
+  precision: DatePrecision
+  style: 'BC/AD' | 'BCE/CE'
+}
+
+const fromTimestamp = (timestamp: number, options: FromTimestampOptions): string => { ... }
+const toTimestamp = (dateString: string): number => { ... }
 ```
 
-Run migration to create the table.
+---
+
+## Step 2: Implement `toTimestamp`
+
+Convert a date to days since epoch (Jan 1, 1 AD = day 0).
+
+**Algorithm:**
+
+1. Calculate total days from year 1 AD to the target year
+2. Account for leap years (Gregorian: divisible by 4, except centuries unless divisible by 400)
+3. Add days for months elapsed in the target year
+4. Add the day of month
+5. For BC years: negate and adjust (no year 0 in historical calendar)
 
 ---
 
-## Step 2: Create API Routes
+## Step 3: Implement `fromTimestamp`
 
-Create `src/routes/time-info/events.ts` with Hono router:
+Convert days since epoch to a formatted date string.
 
-| Endpoint                       | Auth Required | Logic                                    |
-| ------------------------------ | ------------- | ---------------------------------------- |
-| `GET /time-info/events`        | No            | Return all events, ordered by start date |
-| `GET /time-info/events/:id`    | No            | Return single event by ID, or 404        |
-| `POST /time-info/events`       | Yes           | Validate input, insert, return created   |
-| `PUT /time-info/events/:id`    | Yes           | Validate input, update, return updated   |
-| `DELETE /time-info/events/:id` | Yes           | Delete by ID, return success             |
+**Parameters:**
 
----
+- `timestamp: number` — days since Jan 1, 1 AD
+- `options.precision: 'year' | 'month' | 'day'` — output detail level
+- `options.style: 'BC/AD' | 'BCE/CE'` — era suffix style
 
-## Step 3: Input Validation
+**Output by precision:**
 
-Create `src/validators/event-validator.ts`:
+- `'year'` → "40,000 BC", "2025 AD"
+- `'month'` → "January 306 BC", "June 2025 AD"
+- `'day'` → "January 1, 306 BC", "June 19, 2025 AD"
 
-**Required fields:**
+**Algorithm:**
 
-- `startDate` — non-empty string (ISO date)
-- `name` — non-empty string
-- `basicDescription` — non-empty string
-- `referenceUrls` — array with at least one non-empty URL
-
-**Optional fields:**
-
-- `endDate` — string or null
-- `longerDescription` — string or null
-- `relatedEventIds` — array of strings or null
-
-Return 400 with error details on validation failure.
+1. Handle sign (negative = BC)
+2. Estimate year from days (days / 365.2425)
+3. Refine by calculating exact days to that year
+4. Subtract year days to get remaining days
+5. Walk through months to find month and day
+6. Format output based on precision parameter
 
 ---
 
-## Step 4: Auth Middleware for Protected Routes
+## Step 4: Implement `toTimestamp`
 
-Use better-auth's session middleware on POST/PUT/DELETE routes:
+Parse a date string back to a timestamp.
 
-```ts
-eventsRouter.post('/', authMiddleware, createEventHandler)
-eventsRouter.put('/:id', authMiddleware, updateEventHandler)
-eventsRouter.delete('/:id', authMiddleware, deleteEventHandler)
-```
+**Accepted formats:**
 
-Return 401 if not authenticated.
+- "40,000 BC" or "40,000 BCE" → year only
+- "January 306 BC" → month + year (assumes day 1)
+- "January 1, 306 BC" → full date
+- "June 19, 2025 AD" or "June 19, 2025 CE"
+
+**Algorithm:**
+
+1. Parse era suffix (BC/AD/BCE/CE) to determine sign
+2. Extract year (handle comma-formatted numbers like "40,000")
+3. Extract month name if present, convert to number
+4. Extract day if present, default to 1
+5. Calculate timestamp using year/month/day conversion
 
 ---
 
-## Step 5: Wire Up Routes
+## Step 5: Write Tests
 
-In `src/index.ts` (or main app file), mount the events router:
+Create `tests/timestamp.spec.ts`:
 
-```ts
-app.route('/time-info', eventsRouter)
-```
+- Known dates: Jan 1, 1 AD = 0, Dec 31, 1 BC = -1
+- Round-trip: `toTimestamp(fromTimestamp(ts, {precision: 'day', style: 'BC/AD'}))` === ts
+- Edge cases: leap years, century boundaries, BC/AD transition
+- Large values: 40,000 BC, 14 billion years ago (if needed)
 
 ---
 
 ## Pitfalls
 
-- **Date format consistency** — Decide on ISO 8601 strings for dates; validate format on input
-- **JSON parsing** — `referenceUrls` and `relatedEventIds` stored as JSON text; parse on read, stringify on write
-- **404 vs 400** — Return 404 for missing resources, 400 for bad input (architecture says 400 for failure, but 404 is more RESTful for "not found")
-- **ID generation** — Use `crypto.randomUUID()` or similar for new event IDs
-- **Migration timing** — Run Drizzle migrations before deploying new code
+- **No year zero** — Historical calendars skip from 1 BC to 1 AD; must handle this offset
+- **Leap year edge cases** — Feb 29 only valid in leap years; validation needed in `toTimestamp`
+- **Proleptic Gregorian assumption** — Real history used Julian calendar before 1582; may cause slight inaccuracies for ancient dates
+- **Large number precision** — 14 billion years = ~5 trillion days; fits in JS number but test for precision loss
+- **Month/day validation** — `toTimestamp` should reject invalid dates like Feb 30
