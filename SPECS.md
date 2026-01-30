@@ -86,10 +86,11 @@ The API will be a REST API. There will be the following endpoints, initially:
 
 - GET /time-info/events/:start/:end
 - GET /time-info/event/:id
+- POST /time-info/search
 - POST /time-info/new-event
 - PUT /time-info/event/:id
 - DELETE /time-info/event/:id
 
-The GET events can be retrieved by any user. For the first, the :start and :end parameters are timestamps. The POST, PUT, and DELETE events can only be retrieved by a signed-in user. The daisy-tw-worker-d1-drizzle template provides user authentication via the [better-auth](https://www.better-auth.com) library.
+The GET events and search can be done by any user. For the first, the :start and :end parameters are timestamps. The create POST, PUT, and DELETE events can only be done by a signed-in user. The daisy-tw-worker-d1-drizzle template provides user authentication via the [better-auth](https://www.better-auth.com) library.
 
 These endpoints will take JSON as input, and return JSON as output. Success will be indicated by a 200 status code, and failure will be indicated by a 400 status code.
