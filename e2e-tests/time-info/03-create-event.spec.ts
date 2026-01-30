@@ -7,8 +7,7 @@ import {
   getEventCount,
 } from '../support/db-helpers'
 import { TEST_USERS, BASE_URLS } from '../support/test-data'
-
-const BASE_URL = 'http://localhost:3000'
+import { submitSignInForm } from '../support/form-helpers'
 
 const validEvent = {
   startTimestamp: 738534,
@@ -30,7 +29,7 @@ test.describe('POST /time-info/new-event', () => {
   })
 
   test('requires authentication', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: validEvent,
     })
 
@@ -39,15 +38,13 @@ test.describe('POST /time-info/new-event', () => {
 
   test('creates event when authenticated', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: validEvent,
       headers: { Cookie: cookieHeader },
     })
@@ -65,9 +62,7 @@ test.describe('POST /time-info/new-event', () => {
 
   test('creates event with all optional fields', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
@@ -80,7 +75,7 @@ test.describe('POST /time-info/new-event', () => {
       relatedEventIds: ['related-1', 'related-2'],
     }
 
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: fullEvent,
       headers: { Cookie: cookieHeader },
     })
@@ -96,15 +91,13 @@ test.describe('POST /time-info/new-event', () => {
 
   test('returns 400 for missing required fields', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: { name: 'Incomplete Event' },
       headers: { Cookie: cookieHeader },
     })
@@ -120,15 +113,13 @@ test.describe('POST /time-info/new-event', () => {
     request,
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: { ...validEvent, referenceUrls: ['not-a-valid-url'] },
       headers: { Cookie: cookieHeader },
     })
@@ -141,15 +132,13 @@ test.describe('POST /time-info/new-event', () => {
     request,
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const response = await request.post(`${BASE_URL}/time-info/new-event`, {
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
       data: { ...validEvent, referenceUrls: [] },
       headers: { Cookie: cookieHeader },
     })

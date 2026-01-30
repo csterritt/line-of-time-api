@@ -1,87 +1,75 @@
-# Schema and API Changes Plan
+# Plan: Implement POST /time-info/search Endpoint
 
 ## Assumptions
 
-- No existing event data needs migration (early development)
-- Timestamps are integers (days since Jan 1, 1 AD) per SPECS.md
-- The `fromTimestamp`/`toTimestamp` functions in `src/lib/timestamp.ts` are ready to use
+- Authentication is **not required** for the search endpoint (public, like GET /events)
+- Search is **case-insensitive**
+- Results ordered by `startTimestamp`
+- Body limit is 4kb in production, so 1000-byte search is fine
+- Whitespace-only queries are rejected
+- SQL injection is prevented via Drizzle ORM parameterized queries
 
 ---
 
 ## The Answer
 
-Change `startDate`/`endDate` from ISO strings to integer timestamps, update API routes to match new paths, and add the `GET /time-info/events/:start/:end` endpoint for filtering events by timestamp range.
-
-**New API paths (per SPECS.md):**
-
-- `GET /time-info/events/:start/:end` — filter by timestamp range
-- `GET /time-info/event/:id` — get single event (was `/events/:id`)
-- `POST /time-info/new-event` — create event (was `/events`)
-- `PUT /time-info/event/:id` — update event (was `/events/:id`)
-- `DELETE /time-info/event/:id` — delete event (was `/events/:id`)
+Create a new POST endpoint at `/time-info/search` that:
+- Accepts JSON body with `search` string (1–1000 bytes, non-whitespace-only)
+- Queries `event` table with case-insensitive `LIKE '%search%'` on `name`, `basicDescription`, `longerDescription`
+- Returns up to 200 results with `id`, `name`, `basicDescription`, ordered by `startTimestamp`
+- Returns empty array `[]` if no matches
 
 ---
 
 ## The Plan
 
-### Step 1: Update Schema
+### Step 1: Add TIME_INFO path constants to `src/constants.ts`
 
-In `src/db/schema.ts`, change:
+Add constants for all `/time-info/*` paths to centralize route definitions.
 
-- `startDate: text('start_date')` → `startTimestamp: integer('start_timestamp')`
-- `endDate: text('end_date')` → `endTimestamp: integer('end_timestamp')`
+### Step 2: Create `src/routes/time-info/search.ts`
 
-### Step 2: Generate Migration
+- New Hono router with POST `/` handler
+- Validate `search` param: string, 1–1000 bytes, not whitespace-only
+- Use Drizzle `like` + `or` + `sql` for case-insensitive search on three fields
+- Limit 200 results, order by `startTimestamp`
+- Return `{ id, name, basicDescription }[]`
 
-Run `npx drizzle-kit generate` to create the migration file.
+### Step 3: Register search route in `src/index.ts`
 
-### Step 3: Update Event Validator
+- Import `searchRouter` from `./routes/time-info/search`
+- Add `app.route('/time-info/search', searchRouter)` (use constant)
+- Update existing route registrations to use constants
 
-In `src/validators/event-validator.ts`:
+### Step 4: Update existing time-info routes to use constants
 
-- Change `startDate`/`endDate` validation from ISO date strings to integers
-- Remove `isValidIsoDate` checks, add integer range checks
+- Update `src/index.ts` route registrations to use `PATHS.TIME_INFO.*`
 
-### Step 4: Restructure Routes
+### Step 5: Update existing e2e-tests/time-info tests
 
-Reorganize `src/routes/time-info/` to match new API paths:
+- Replace hardcoded `BASE_URL` and `/time-info` strings with `BASE_URLS` from test-data
+- Use `testWithDatabase` wrapper where appropriate
+- Use `submitSignInForm` helper instead of manual form filling
 
-- Create `src/routes/time-info/events.ts` — handles `GET /events/:start/:end`
-- Create `src/routes/time-info/event.ts` — handles `GET/PUT/DELETE /event/:id`
-- Create `src/routes/time-info/new-event.ts` — handles `POST /new-event`
+### Step 6: Create `e2e-tests/time-info/06-search-events.spec.ts`
 
-In each file:
-
-- Update interfaces to use `startTimestamp`/`endTimestamp`
-- Update handlers to accept/return integer timestamps
-
-Update `src/index.ts` to mount the new routes:
-
-- `app.route('/time-info/events', eventsRouter)`
-- `app.route('/time-info/event', eventRouter)`
-- `app.route('/time-info/new-event', newEventRouter)`
-
-### Step 5: Update Test Endpoints
-
-In `src/routes/test/database.ts`:
-
-- Update seed data to use integer timestamps instead of ISO dates
-
-### Step 6: Update E2E Tests
-
-In `e2e-tests/time-info/*.spec.ts` and `e2e-tests/support/db-helpers.ts`:
-
-- Update test data to use integer timestamps
-- Add tests for the new `GET /:start/:end` endpoint
-
-### Step 7: Run Tests
-
-Verify all tests pass with `bun test` and `npx playwright test`.
+Test cases:
+- Empty search returns 400
+- Whitespace-only search returns 400
+- Search > 1000 bytes returns 400
+- Valid search returns matching results (case-insensitive)
+- Partial matches work (LIKE behavior)
+- No matches returns empty array
+- Limit of 200 results enforced
+- Results ordered by startTimestamp
+- Does not require authentication
 
 ---
 
 ## Pitfalls
 
-- **Route conflict resolved** — Separating `/events/:start/:end` and `/event/:id` into different base paths avoids ambiguity
-- **Integer vs string params** — Path params come as strings; must parse to integers
-- **Timestamp validation** — Large timestamps (billions of years) are valid; don't reject them
+- **SQL injection** — Drizzle ORM parameterizes queries; `%` wildcards added in code, not concatenated raw
+- **Byte vs character length** — Use `Buffer.byteLength(search)` for UTF-8 multi-byte chars
+- **Case-insensitive LIKE** — SQLite LIKE is case-insensitive for ASCII; use `LOWER()` for full Unicode support
+- **Empty/whitespace strings** — Must explicitly reject `""` and whitespace-only strings
+- **Performance** — LIKE with leading `%` can't use indexes; acceptable for 200-result limit

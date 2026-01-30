@@ -6,8 +6,7 @@ import {
   seedDatabase,
   clearDatabase,
 } from '../support/db-helpers'
-
-const BASE_URL = 'http://localhost:3000'
+import { BASE_URLS } from '../support/test-data'
 
 test.describe('GET /time-info/event/:id', () => {
   test.beforeEach(async () => {
@@ -24,7 +23,7 @@ test.describe('GET /time-info/event/:id', () => {
 
   test('returns event by ID', async ({ request }) => {
     const response = await request.get(
-      `${BASE_URL}/time-info/event/test-event-1`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`
     )
 
     expect(response.status()).toBe(200)
@@ -36,7 +35,7 @@ test.describe('GET /time-info/event/:id', () => {
 
   test('returns 404 for non-existent event', async ({ request }) => {
     const response = await request.get(
-      `${BASE_URL}/time-info/event/non-existent-id`
+      `${BASE_URLS.TIME_INFO_EVENT}/non-existent-id`
     )
 
     expect(response.status()).toBe(404)
@@ -46,7 +45,7 @@ test.describe('GET /time-info/event/:id', () => {
 
   test('returns event with all fields', async ({ request }) => {
     const response = await request.get(
-      `${BASE_URL}/time-info/event/test-event-2`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-2`
     )
 
     expect(response.status()).toBe(200)
@@ -67,7 +66,7 @@ test.describe('GET /time-info/event/:id', () => {
 
   test('does not require authentication', async ({ request }) => {
     const response = await request.get(
-      `${BASE_URL}/time-info/event/test-event-1`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`
     )
 
     expect(response.status()).toBe(200)

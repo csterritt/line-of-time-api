@@ -1993,6 +1993,9 @@
   .text-gray-600 {
     color: var(--color-gray-600);
   }
+  .uppercase {
+    text-transform: uppercase;
+  }
   .italic {
     font-style: italic;
   }

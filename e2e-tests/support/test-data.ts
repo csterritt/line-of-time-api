@@ -130,4 +130,9 @@ export const BASE_URLS = {
   SIGN_OUT: 'http://localhost:3000/auth/sign-out',
   PROFILE: 'http://localhost:3000/profile',
   PROFILE_DELETE_CONFIRM: 'http://localhost:3000/profile/delete-confirm',
+  // Time info API endpoints
+  TIME_INFO_EVENTS: 'http://localhost:3000/time-info/events',
+  TIME_INFO_EVENT: 'http://localhost:3000/time-info/event',
+  TIME_INFO_NEW_EVENT: 'http://localhost:3000/time-info/new-event',
+  TIME_INFO_SEARCH: 'http://localhost:3000/time-info/search',
 } as const

@@ -7,8 +7,7 @@ import {
   clearDatabase,
 } from '../support/db-helpers'
 import { TEST_USERS, BASE_URLS } from '../support/test-data'
-
-const BASE_URL = 'http://localhost:3000'
+import { submitSignInForm } from '../support/form-helpers'
 
 const updatedEvent = {
   startTimestamp: 719164,
@@ -32,7 +31,7 @@ test.describe('PUT /time-info/event/:id', () => {
 
   test('requires authentication', async ({ request }) => {
     const response = await request.put(
-      `${BASE_URL}/time-info/event/test-event-1`,
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
       {
         data: updatedEvent,
       }
@@ -43,16 +42,14 @@ test.describe('PUT /time-info/event/:id', () => {
 
   test('updates event when authenticated', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.put(
-      `${BASE_URL}/time-info/event/test-event-1`,
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
       {
         data: updatedEvent,
         headers: { Cookie: cookieHeader },
@@ -68,21 +65,19 @@ test.describe('PUT /time-info/event/:id', () => {
 
   test('preserves createdAt on update', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const getResponse = await request.get(
-      `${BASE_URL}/time-info/event/test-event-1`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`
     )
     const originalEvent = await getResponse.json()
 
     const updateResponse = await request.put(
-      `${BASE_URL}/time-info/event/test-event-1`,
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
       {
         data: updatedEvent,
         headers: { Cookie: cookieHeader },
@@ -96,16 +91,14 @@ test.describe('PUT /time-info/event/:id', () => {
 
   test('returns 404 for non-existent event', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.put(
-      `${BASE_URL}/time-info/event/non-existent-id`,
+      `${BASE_URLS.TIME_INFO_EVENT}/non-existent-id`,
       {
         data: updatedEvent,
         headers: { Cookie: cookieHeader },
@@ -119,16 +112,14 @@ test.describe('PUT /time-info/event/:id', () => {
 
   test('returns 400 for invalid input', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.put(
-      `${BASE_URL}/time-info/event/test-event-1`,
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
       {
         data: { name: 'Missing required fields' },
         headers: { Cookie: cookieHeader },

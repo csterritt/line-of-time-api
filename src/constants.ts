@@ -70,6 +70,14 @@ export const PATHS = {
   PROFILE: '/profile' as const,
   PROFILE_DELETE_CONFIRM: '/profile/delete-confirm' as const,
   PROFILE_DELETE: '/profile/delete' as const,
+
+  // Time info API paths
+  TIME_INFO: {
+    EVENTS: '/time-info/events',
+    EVENT: '/time-info/event',
+    NEW_EVENT: '/time-info/new-event',
+    SEARCH: '/time-info/search',
+  },
 } as const
 
 // Cookie names

@@ -6,8 +6,7 @@ import {
   seedDatabase,
   clearDatabase,
 } from '../support/db-helpers'
-
-const BASE_URL = 'http://localhost:3000'
+import { BASE_URLS } from '../support/test-data'
 
 test.describe('GET /time-info/events/:start/:end', () => {
   test.beforeEach(async () => {
@@ -24,7 +23,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   test('returns empty array when no events exist in range', async ({
     request,
   }) => {
-    const response = await request.get(`${BASE_URL}/time-info/events/0/100`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/100`)
 
     expect(response.status()).toBe(200)
     const events = await response.json()
@@ -36,7 +35,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   }) => {
     await seedEvents()
 
-    const response = await request.get(`${BASE_URL}/time-info/events/0/800000`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/800000`)
 
     expect(response.status()).toBe(200)
     const events = await response.json()
@@ -50,7 +49,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
     await seedEvents()
 
     const response = await request.get(
-      `${BASE_URL}/time-info/events/700000/720000`
+      `${BASE_URLS.TIME_INFO_EVENTS}/700000/720000`
     )
 
     expect(response.status()).toBe(200)
@@ -63,7 +62,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   test('returns events with correct structure', async ({ request }) => {
     await seedEvents()
 
-    const response = await request.get(`${BASE_URL}/time-info/events/0/800000`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/800000`)
 
     expect(response.status()).toBe(200)
     const events = await response.json()
@@ -90,7 +89,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
 
   test('returns 400 for invalid start parameter', async ({ request }) => {
     const response = await request.get(
-      `${BASE_URL}/time-info/events/invalid/100`
+      `${BASE_URLS.TIME_INFO_EVENTS}/invalid/100`
     )
 
     expect(response.status()).toBe(400)
@@ -99,7 +98,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   })
 
   test('returns 400 when start is greater than end', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/time-info/events/100/50`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/100/50`)
 
     expect(response.status()).toBe(400)
     const body = await response.json()
@@ -107,7 +106,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   })
 
   test('does not require authentication', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/time-info/events/0/100`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/100`)
 
     expect(response.status()).toBe(200)
   })

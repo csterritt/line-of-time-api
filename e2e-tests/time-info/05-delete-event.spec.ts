@@ -8,8 +8,7 @@ import {
   getEventCount,
 } from '../support/db-helpers'
 import { TEST_USERS, BASE_URLS } from '../support/test-data'
-
-const BASE_URL = 'http://localhost:3000'
+import { submitSignInForm } from '../support/form-helpers'
 
 test.describe('DELETE /time-info/event/:id', () => {
   test.beforeEach(async () => {
@@ -26,7 +25,7 @@ test.describe('DELETE /time-info/event/:id', () => {
 
   test('requires authentication', async ({ request }) => {
     const response = await request.delete(
-      `${BASE_URL}/time-info/event/test-event-1`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`
     )
 
     expect(
@@ -37,9 +36,7 @@ test.describe('DELETE /time-info/event/:id', () => {
 
   test('deletes event when authenticated', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const countBefore = await getEventCount()
@@ -55,7 +52,7 @@ test.describe('DELETE /time-info/event/:id', () => {
         status: response.status,
         body: await response.json(),
       }
-    }, `${BASE_URL}/time-info/event/test-event-1`)
+    }, `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`)
 
     expect(result.status).toBe(200)
     expect(result.body.success).toBe(true)
@@ -69,27 +66,23 @@ test.describe('DELETE /time-info/event/:id', () => {
     request,
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     // Use page.evaluate to make the DELETE request with the page's cookies
     await page.evaluate(async (url) => {
       await fetch(url, { method: 'DELETE', credentials: 'include' })
-    }, `${BASE_URL}/time-info/event/test-event-1`)
+    }, `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`)
 
     const getResponse = await request.get(
-      `${BASE_URL}/time-info/event/test-event-1`
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`
     )
     expect(getResponse.status()).toBe(404)
   })
 
   test('returns 404 for non-existent event', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const result = await page.evaluate(async (url) => {
@@ -98,7 +91,7 @@ test.describe('DELETE /time-info/event/:id', () => {
         credentials: 'include',
       })
       return { status: response.status, body: await response.json() }
-    }, `${BASE_URL}/time-info/event/non-existent-id`)
+    }, `${BASE_URLS.TIME_INFO_EVENT}/non-existent-id`)
 
     expect(result.status).toBe(404)
     expect(result.body.error).toBe('Event not found')
@@ -106,9 +99,7 @@ test.describe('DELETE /time-info/event/:id', () => {
 
   test('cannot delete same event twice', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
-    await page.fill('input[name="email"]', TEST_USERS.KNOWN_USER.email)
-    await page.fill('input[name="password"]', TEST_USERS.KNOWN_USER.password)
-    await page.click('button[type="submit"]')
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
     await page.waitForURL(/\/private/)
 
     const firstDelete = await page.evaluate(async (url) => {
@@ -117,7 +108,7 @@ test.describe('DELETE /time-info/event/:id', () => {
         credentials: 'include',
       })
       return response.status
-    }, `${BASE_URL}/time-info/event/test-event-1`)
+    }, `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`)
     expect(firstDelete).toBe(200)
 
     const secondDelete = await page.evaluate(async (url) => {
@@ -126,7 +117,7 @@ test.describe('DELETE /time-info/event/:id', () => {
         credentials: 'include',
       })
       return response.status
-    }, `${BASE_URL}/time-info/event/test-event-1`)
+    }, `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`)
     expect(secondDelete).toBe(404)
   })
 })

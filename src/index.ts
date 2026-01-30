@@ -57,6 +57,8 @@ import { isTestRouteEnabled } from './lib/test-routes'
 import { eventsRouter } from './routes/time-info/events'
 import { eventRouter } from './routes/time-info/event'
 import { newEventRouter } from './routes/time-info/new-event'
+import { searchRouter } from './routes/time-info/search'
+import { PATHS } from './constants'
 
 /**
  * Validates that all required environment variables are set
@@ -214,9 +216,10 @@ handleChangePassword(app)
 handleDeleteAccount(app)
 
 // Timeline API routes
-app.route('/time-info/events', eventsRouter)
-app.route('/time-info/event', eventRouter)
-app.route('/time-info/new-event', newEventRouter)
+app.route(PATHS.TIME_INFO.EVENTS, eventsRouter)
+app.route(PATHS.TIME_INFO.EVENT, eventRouter)
+app.route(PATHS.TIME_INFO.NEW_EVENT, newEventRouter)
+app.route(PATHS.TIME_INFO.SEARCH, searchRouter)
 
 if (isTestRouteEnabledFlag) {
   handleSetClock(app) // PRODUCTION:REMOVE
