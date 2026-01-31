@@ -98,9 +98,9 @@ export const createAuth = (env: Bindings) => {
       'http://localhost:3000', // PRODUCTION:REMOVE
       'http://127.0.0.1:3000', // PRODUCTION:REMOVE
       alternateOrigin, // PRODUCTION:REMOVE
-      // 'https://your-actual-origin.com', 'https://your-url.your-group.workers.dev' // PRODUCTION:UNCOMMENT
+      // 'https://line-of-time.cls.cloud', 'https://line-of-time.cleverfox.workers.dev' // PRODUCTION:UNCOMMENT
     ],
-    // baseURL: 'https://your-actual-origin.com', // PRODUCTION:UNCOMMENT
+    // baseURL: 'https://line-of-time.cls.cloud', // PRODUCTION:UNCOMMENT
     baseURL: 'http://localhost:3000', // PRODUCTION:REMOVE
     redirectTo: '/private', // Redirect to protected page after successful sign-in
     secret: env.BETTER_AUTH_SECRET,
