@@ -149,7 +149,9 @@ const processPasswordReset = async (
     )
   }
 
-  const origin = new URL(c.req.url).origin
+  // Use ALTERNATE_ORIGIN if configured, otherwise use request origin
+  // This prevents host header spoofing in proxied environments
+  const origin = c.env.ALTERNATE_ORIGIN || new URL(c.req.url).origin
   const emailResult = await sendPasswordResetEmail(c.env, email, origin)
 
   if (!emailResult.success && emailResult.isEmailError) {

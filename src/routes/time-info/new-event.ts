@@ -14,7 +14,14 @@ const newEventRouter = new Hono<AppEnv>()
 
 newEventRouter.post('/', signedInAccess, async (c) => {
   const db = c.get('db')
-  const body = await c.req.json<EventInput>()
+  
+  let body: EventInput
+  try {
+    body = await c.req.json<EventInput>()
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+  
   const validation = validateEventInput(body)
 
   if (!validation.valid) {
@@ -47,7 +54,7 @@ newEventRouter.post('/', signedInAccess, async (c) => {
       referenceUrls: newEvent.referenceUrls,
       relatedEventIds: newEvent.relatedEventIds,
     }),
-    200
+    201
   )
 })
 

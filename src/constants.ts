@@ -262,3 +262,11 @@ export const LOG_MESSAGES = {
 export const UI_TEXT = {
   ENTER_YOUR_EMAIL: 'Enter your email',
 } as const
+
+/**
+ * Search configuration constants
+ */
+export const SEARCH = {
+  MAX_BYTES: 50,
+  RESULTS_LIMIT: 200,
+} as const

@@ -38,9 +38,10 @@ test.describe('Security Headers', () => {
         TEST_USERS.KNOWN_USER.password
       )
 
-      // Try to POST to the increment endpoint with an invalid Origin header
+      // Try to POST to the new-event endpoint with an invalid Origin header
+      // This endpoint requires authentication, so we'll get 303 redirect to sign-in
       const invalidOriginResponse = await request.post(
-        'http://localhost:3000/increment',
+        'http://localhost:3000/time-info/new-event',
         {
           headers: {
             Origin: 'https://malicious-site.com', // Invalid origin
@@ -54,7 +55,7 @@ test.describe('Security Headers', () => {
 
       // Try to POST without any Origin header
       const noOriginResponse = await request.post(
-        'http://localhost:3000/increment',
+        'http://localhost:3000/time-info/new-event',
         {
           headers: {
             // No Origin header
@@ -68,7 +69,7 @@ test.describe('Security Headers', () => {
 
       // Try with a valid Origin to confirm the CSRF protection is working correctly
       const validOriginResponse = await request.post(
-        'http://localhost:3000/increment',
+        'http://localhost:3000/time-info/new-event',
         {
           headers: {
             Origin: 'http://localhost:3000', // Valid origin
@@ -77,7 +78,7 @@ test.describe('Security Headers', () => {
         }
       )
 
-      // This should succeed (not be rejected due to CSRF)
+      // This should not be rejected due to CSRF (will redirect to sign-in with 303 since not authenticated)
       expect(validOriginResponse.status()).not.toBe(403)
 
       // Sign out to clean up the authenticated session

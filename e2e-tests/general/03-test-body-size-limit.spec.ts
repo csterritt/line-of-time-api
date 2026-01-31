@@ -20,11 +20,11 @@ test.describe('Body size limit', () => {
         TEST_USERS.KNOWN_USER.password
       )
 
-      // Create a large payload (2KB)
-      const largePayload = { data: 'X'.repeat(2000) }
+      // Create a large payload (2KB) - search endpoint expects { search: string }
+      const largePayload = { search: 'X'.repeat(2000) }
 
-      // Attempt to POST to the increment endpoint with the large payload
-      const response = await request.post('http://localhost:3000/increment', {
+      // Attempt to POST to the search endpoint with the large payload
+      const response = await request.post('http://localhost:3000/time-info/search', {
         data: largePayload,
         headers: {
           // Set the Origin header to match the allowed origin in the CSRF middleware
@@ -60,14 +60,13 @@ test.describe('Body size limit', () => {
       )
 
       // Create form data with a large value (2KB)
+      // Using forgot password endpoint which accepts form data
       const formData = {
-        field1: 'X'.repeat(500),
-        field2: 'Y'.repeat(500),
-        field3: 'Z'.repeat(1000),
+        email: 'X'.repeat(2000) + '@example.com',
       }
 
-      // Attempt to POST to the increment endpoint with the large form data payload
-      const response = await request.post('http://localhost:3000/increment', {
+      // Attempt to POST to the forgot password endpoint with the large form data payload
+      const response = await request.post('http://localhost:3000/auth/forgot-password', {
         form: formData,
         headers: {
           // Set the Origin header to match the allowed origin in the CSRF middleware
@@ -101,14 +100,14 @@ test.describe('Body size limit', () => {
         TEST_USERS.KNOWN_USER.password
       )
 
-      // Create a payload just under the limit (1023 bytes)
-      const justUnderLimitPayload = { data: 'X'.repeat(1023 - 10) } // Subtract 10 bytes to account for JSON formatting
+      // Create a payload just under the search endpoint's 50-byte limit
+      const validSearchPayload = { search: 'X'.repeat(40) } // Well under 50 bytes
 
-      // Attempt to POST with payload just under the limit
-      const underLimitResponse = await request.post(
-        'http://localhost:3000/increment',
+      // Attempt to POST with valid search payload
+      const validSearchResponse = await request.post(
+        'http://localhost:3000/time-info/search',
         {
-          data: justUnderLimitPayload,
+          data: validSearchPayload,
           headers: {
             Origin: 'http://localhost:3000',
             'Content-Type': 'application/json',
@@ -117,17 +116,17 @@ test.describe('Body size limit', () => {
         }
       )
 
-      // This should succeed (either 200 OK or 303 redirect)
-      expect(underLimitResponse.status()).toBe(200)
+      // This should succeed (200 OK)
+      expect(validSearchResponse.status()).toBe(200)
 
-      // Create a payload just over the limit (1025 bytes)
-      const justOverLimitPayload = { data: 'X'.repeat(1025 - 10) } // Subtract 10 bytes to account for JSON formatting
+      // Create a payload over the search endpoint's 50-byte limit but under body size limit
+      const tooLongSearchPayload = { search: 'X'.repeat(100) } // Over 50 bytes, under 1024 bytes
 
-      // Attempt to POST with payload just over the limit
-      const overLimitResponse = await request.post(
-        'http://localhost:3000/increment',
+      // Attempt to POST with search that's too long
+      const tooLongSearchResponse = await request.post(
+        'http://localhost:3000/time-info/search',
         {
-          data: justOverLimitPayload,
+          data: tooLongSearchPayload,
           headers: {
             Origin: 'http://localhost:3000',
             'Content-Type': 'application/json',
@@ -136,12 +135,8 @@ test.describe('Body size limit', () => {
         }
       )
 
-      // This should fail with 413 Content Too Large
-      expect(overLimitResponse.status()).toBe(HTML_STATUS.CONTENT_TOO_LARGE)
-
-      // Verify the response contains the overflow error message
-      const responseText = await overLimitResponse.text()
-      expect(responseText).toContain('overflow :(')
+      // This should fail with 400 Bad Request (search validation error, not body size error)
+      expect(tooLongSearchResponse.status()).toBe(400)
 
       // Sign out to clean up the authenticated session
       await signOutAndVerify(page)

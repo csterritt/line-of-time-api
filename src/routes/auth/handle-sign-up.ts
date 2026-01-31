@@ -41,7 +41,7 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
         if (!ok) {
           return redirectWithError(
             c,
-            PATHS.AUTH.SIGN_IN,
+            PATHS.AUTH.SIGN_UP,
             err || MESSAGES.INVALID_INPUT
           )
         }

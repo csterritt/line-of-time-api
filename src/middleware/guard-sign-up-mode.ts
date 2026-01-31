@@ -17,6 +17,7 @@ const INTERNAL_SERVER_ERROR = 500
 const REQUIRED_BINDINGS: (keyof Bindings)[] = [
   'BETTER_AUTH_SECRET',
   'SIGN_UP_MODE',
+  'LINE_OF_TIME_DB',
 ]
 
 /**

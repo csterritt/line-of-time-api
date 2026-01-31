@@ -28,7 +28,14 @@ eventRouter.get('/:id', async (c) => {
 eventRouter.put('/:id', signedInAccess, async (c) => {
   const db = c.get('db')
   const id = c.req.param('id')
-  const body = await c.req.json<EventInput>()
+  
+  let body: EventInput
+  try {
+    body = await c.req.json<EventInput>()
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+  
   const validation = validateEventInput(body)
 
   if (!validation.valid) {

@@ -17,17 +17,35 @@ export interface EventResponse {
   updatedAt: string
 }
 
-export const parseEvent = (dbEvent: typeof event.$inferSelect): EventResponse => ({
-  id: dbEvent.id,
-  startTimestamp: dbEvent.startTimestamp,
-  endTimestamp: dbEvent.endTimestamp,
-  name: dbEvent.name,
-  basicDescription: dbEvent.basicDescription,
-  longerDescription: dbEvent.longerDescription,
-  referenceUrls: JSON.parse(dbEvent.referenceUrls) as string[],
-  relatedEventIds: dbEvent.relatedEventIds
-    ? (JSON.parse(dbEvent.relatedEventIds) as string[])
-    : [],
-  createdAt: dbEvent.createdAt,
-  updatedAt: dbEvent.updatedAt,
-})
+export const parseEvent = (dbEvent: typeof event.$inferSelect): EventResponse => {
+  let referenceUrls: string[] = []
+  try {
+    referenceUrls = JSON.parse(dbEvent.referenceUrls) as string[]
+  } catch {
+    console.error('Failed to parse referenceUrls for event:', dbEvent.id)
+    referenceUrls = []
+  }
+
+  let relatedEventIds: string[] = []
+  if (dbEvent.relatedEventIds) {
+    try {
+      relatedEventIds = JSON.parse(dbEvent.relatedEventIds) as string[]
+    } catch {
+      console.error('Failed to parse relatedEventIds for event:', dbEvent.id)
+      relatedEventIds = []
+    }
+  }
+
+  return {
+    id: dbEvent.id,
+    startTimestamp: dbEvent.startTimestamp,
+    endTimestamp: dbEvent.endTimestamp,
+    name: dbEvent.name,
+    basicDescription: dbEvent.basicDescription,
+    longerDescription: dbEvent.longerDescription,
+    referenceUrls,
+    relatedEventIds,
+    createdAt: dbEvent.createdAt,
+    updatedAt: dbEvent.updatedAt,
+  }
+}

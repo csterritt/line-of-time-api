@@ -16,7 +16,7 @@ import { setupNoCacheHeaders } from '../lib/setup-no-cache-headers'
  * Updated for better-auth integration.
  */
 export const signedInAccess = createMiddleware<{ Bindings: Bindings }>(
-  async (c: Context, next) => {
+  async (c: Context, next): Promise<Response | void> => {
     // Check if user is authenticated using better-auth session context
     const user = c.get('user')
     const session = c.get('session')

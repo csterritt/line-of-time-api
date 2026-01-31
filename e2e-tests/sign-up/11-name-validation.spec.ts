@@ -35,8 +35,8 @@ test.describe('Sign-Up Name Validation', () => {
         password: 'securepassword123',
       })
 
-      // Should redirect to sign-in page with error message
-      await verifyOnSignInPage(page)
+      // Should redirect back to sign-up page with error message
+      await verifyOnSignUpPage(page)
       await verifyAlert(page, ERROR_MESSAGES.INVALID_NAME_CHARACTERS)
     })
   )
@@ -53,7 +53,7 @@ test.describe('Sign-Up Name Validation', () => {
         password: 'securepassword123',
       })
 
-      await verifyOnSignInPage(page)
+      await verifyOnSignUpPage(page)
       await verifyAlert(page, ERROR_MESSAGES.INVALID_NAME_CHARACTERS)
     })
   )
@@ -70,7 +70,7 @@ test.describe('Sign-Up Name Validation', () => {
         password: 'securepassword123',
       })
 
-      await verifyOnSignInPage(page)
+      await verifyOnSignUpPage(page)
       await verifyAlert(page, ERROR_MESSAGES.INVALID_NAME_CHARACTERS)
     })
   )

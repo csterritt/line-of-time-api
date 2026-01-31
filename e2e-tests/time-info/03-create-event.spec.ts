@@ -49,7 +49,7 @@ test.describe('POST /time-info/new-event', () => {
       headers: { Cookie: cookieHeader },
     })
 
-    expect(response.status()).toBe(200)
+    expect(response.status()).toBe(201)
     const event = await response.json()
     expect(event.name).toBe('Test Event')
     expect(event.startTimestamp).toBe(738534)
@@ -80,7 +80,7 @@ test.describe('POST /time-info/new-event', () => {
       headers: { Cookie: cookieHeader },
     })
 
-    expect(response.status()).toBe(200)
+    expect(response.status()).toBe(201)
     const event = await response.json()
     expect(event.endTimestamp).toBe(738535)
     expect(event.longerDescription).toBe(

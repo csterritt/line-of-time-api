@@ -24,6 +24,19 @@ const escapeHtml = (str: string): string =>
     .replace(/"/g, '&quot;')
 
 /**
+ * Escape URL for safe insertion into HTML attributes
+ * Validates URL format and escapes special characters
+ */
+const escapeUrl = (url: string): string => {
+  try {
+    new URL(url)
+    return url.replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+  } catch {
+    return ''
+  }
+}
+
+/**
  * Configuration for email service
  */
 interface EmailConfig {
@@ -108,7 +121,7 @@ const createTransporter = (env: Bindings): EmailTransporter => {
         throw new Error('EMAIL_SEND_URL is not configured')
       }
 
-      return fetch(env.EMAIL_SEND_URL, {
+      const response = await fetch(env.EMAIL_SEND_URL, {
         body: JSON.stringify({
           email_to: mailOptions.to,
           subject: mailOptions.subject,
@@ -122,6 +135,13 @@ const createTransporter = (env: Bindings): EmailTransporter => {
           'content-type': 'application/json;charset=UTF-8',
         },
       })
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error')
+        throw new Error(`Email send failed with status ${response.status}: ${errorText}`)
+      }
+
+      return response
     },
   }
 }
@@ -132,16 +152,13 @@ const createTransporter = (env: Bindings): EmailTransporter => {
  * @param email - User's email address
  * @param name - User's name
  * @param confirmationUrl - URL for email confirmation
- * @param token - Confirmation token
  */
 export const sendConfirmationEmail = async (
   env: Bindings,
   email: string,
   name: string,
-  confirmationUrl: string,
-  token: string
+  confirmationUrl: string
 ): Promise<void> => {
-  void token
   try {
     const transporter = createTransporter(env)
 
@@ -153,7 +170,7 @@ export const sendConfirmationEmail = async (
           <h1 style="color: #333;">Welcome ${escapeHtml(name)}!</h1>
           <p>Thank you for signing up. Please confirm your email address by clicking the link below:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${confirmationUrl}" 
+            <a href="${escapeUrl(confirmationUrl)}" 
                style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
               Confirm Email Address
             </a>
@@ -162,7 +179,7 @@ export const sendConfirmationEmail = async (
             If the button doesn't work, you can also copy and paste this link into your browser:
           </p>
           <p style="word-break: break-all; color: #666; font-size: 14px;">
-            ${confirmationUrl}
+            ${escapeHtml(confirmationUrl)}
           </p>
           <p style="color: #666; font-size: 12px; margin-top: 30px;">
             This confirmation link will expire in 24 hours.
@@ -194,16 +211,13 @@ export const sendConfirmationEmail = async (
  * @param email - User's email address
  * @param name - User's name
  * @param resetUrl - Password reset URL with token
- * @param token - Reset token
  */
 export const sendPasswordResetEmail = async (
   env: Bindings,
   email: string,
   name: string,
-  resetUrl: string,
-  token: string
+  resetUrl: string
 ): Promise<void> => {
-  void token
   try {
     const transporter = createTransporter(env)
 
@@ -216,7 +230,7 @@ export const sendPasswordResetEmail = async (
           <p>Hi ${escapeHtml(name)},</p>
           <p>You requested to reset your password. Please click the button below to set a new password:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
+            <a href="${escapeUrl(resetUrl)}" 
                style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
               Reset Your Password
             </a>
@@ -225,7 +239,7 @@ export const sendPasswordResetEmail = async (
             If the button doesn't work, you can also copy and paste this link into your browser:
           </p>
           <p style="word-break: break-all; color: #666; font-size: 14px;">
-            ${resetUrl}
+            ${escapeHtml(resetUrl)}
           </p>
           <p style="color: #666; font-size: 12px; margin-top: 30px;">
             This password reset link will expire in 24 hours.

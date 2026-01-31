@@ -7,9 +7,7 @@ import { or, sql } from 'drizzle-orm'
 
 import { event } from '../../db/schema'
 import { AppEnv } from '../../local-types'
-
-const SEARCH_MAX_BYTES = 50
-const SEARCH_RESULTS_LIMIT = 200
+import { SEARCH } from '../../constants'
 
 interface SearchInput {
   search: string
@@ -46,17 +44,19 @@ searchRouter.post('/', async (c) => {
   }
 
   // Validate search length in bytes (for UTF-8 multi-byte chars)
-  const searchBytes = Buffer.byteLength(search, 'utf8')
-  if (searchBytes > SEARCH_MAX_BYTES) {
+  const searchBytes = new TextEncoder().encode(search).length
+  if (searchBytes > SEARCH.MAX_BYTES) {
     return c.json(
-      { error: `search must not exceed ${SEARCH_MAX_BYTES} bytes` },
+      { error: `search must not exceed ${SEARCH.MAX_BYTES} bytes` },
       400
     )
   }
 
   // Build the search pattern with wildcards
   // The search term is parameterized by Drizzle, preventing SQL injection
-  const searchPattern = `%${search}%`
+  // Escape LIKE special characters (% and _) to prevent unintended wildcard matching
+  const escapedSearch = search.replace(/[%_]/g, '\\$&')
+  const searchPattern = `%${escapedSearch}%`
 
   // Query with case-insensitive LIKE using LOWER() for full Unicode support
   // Using parameterized sql template to prevent SQL injection
@@ -76,7 +76,7 @@ searchRouter.post('/', async (c) => {
       )
     )
     .orderBy(event.startTimestamp)
-    .limit(SEARCH_RESULTS_LIMIT)
+    .limit(SEARCH.RESULTS_LIMIT)
 
   return c.json(results as SearchResult[])
 })
