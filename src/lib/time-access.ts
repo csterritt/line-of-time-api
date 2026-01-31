@@ -28,29 +28,10 @@ export const getCurrentTime = (
     return new Date(...args)
   }
 
-  // if (args.length === 0) { // PRODUCTION:UNCOMMENT
-  //   return new Date() // PRODUCTION:UNCOMMENT
-  // } // PRODUCTION:UNCOMMENT
+   if (args.length === 0) { 
+     return new Date() 
+   } 
 
-  // // @ts-ignore // PRODUCTION:UNCOMMENT
-  // return new Date(...args) // PRODUCTION:UNCOMMENT
-  // } // PRODUCTION:UNCOMMENT
-  // PRODUCTION:STOP
-
-  const ds = retrieveCookie(c, 'delta')
-  const delta = parseInt(ds == null || ds.toString().trim() === '' ? '0' : ds)
-  if (args.length === 0) {
-    return new Date(new Date().getTime() + delta)
-  }
-
-  // @ts-ignore
-  return new Date(new Date(...args).getTime() + delta)
-}
-
-export const setCurrentDelta = (c: Context, delta: number): void => {
-  addCookie(c, 'delta', String(delta))
-}
-
-export const clearCurrentDelta = (c: Context): void => {
-  removeCookie(c, 'delta')
-}
+   // @ts-ignore 
+   return new Date(...args) 
+   } 

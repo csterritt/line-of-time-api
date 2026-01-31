@@ -55,12 +55,7 @@ interface EmailConfig {
 const getEmailConfig = (env: Bindings): EmailConfig => {
   // More robust test environment detection
   const isTestMode =
-    // false PROCESS:UNCOMMENT
-    env.NODE_ENV === 'test' || // PRODUCTION:REMOVE
-    env.NODE_ENV === 'development' || // PRODUCTION:REMOVE
-    env.PLAYWRIGHT === '1' || // Playwright sets this PROCESS:REMOVE
-    process.argv.includes('playwright') || // Running via playwright PROCESS:REMOVE
-    typeof (globalThis as any).test !== 'undefined' // Test environment PROCESS:REMOVE
+     false 
 
   return {
     isTestMode,
@@ -138,7 +133,9 @@ const createTransporter = (env: Bindings): EmailTransporter => {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error')
-        throw new Error(`Email send failed with status ${response.status}: ${errorText}`)
+        throw new Error(
+          `Email send failed with status ${response.status}: ${errorText}`
+        )
       }
 
       return response

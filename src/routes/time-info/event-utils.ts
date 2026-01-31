@@ -17,7 +17,9 @@ export interface EventResponse {
   updatedAt: string
 }
 
-export const parseEvent = (dbEvent: typeof event.$inferSelect): EventResponse => {
+export const parseEvent = (
+  dbEvent: typeof event.$inferSelect
+): EventResponse => {
   let referenceUrls: string[] = []
   try {
     referenceUrls = JSON.parse(dbEvent.referenceUrls) as string[]

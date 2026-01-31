@@ -23,11 +23,6 @@ export const createAuth = (env: Bindings) => {
   const db: D1Database = env.LINE_OF_TIME_DB
   const dbClient = createDbClient(db)
 
-  let alternateOrigin = 'http://localhost:3000/' // PRODUCTION:REMOVE
-  // PRODUCTION:REMOVE-NEXT-LINE
-  if (env.ALTERNATE_ORIGIN) {
-    alternateOrigin = env.ALTERNATE_ORIGIN.replace(/\$/, '') // PRODUCTION:REMOVE
-  } // PRODUCTION:REMOVE
 
   return betterAuth({
     database: drizzleAdapter(dbClient, {
@@ -95,13 +90,9 @@ export const createAuth = (env: Bindings) => {
     //   },
     // },
     trustedOrigins: [
-      'http://localhost:3000', // PRODUCTION:REMOVE
-      'http://127.0.0.1:3000', // PRODUCTION:REMOVE
-      alternateOrigin, // PRODUCTION:REMOVE
-      // 'https://your-actual-origin.com', 'https://your-url.your-group.workers.dev' // PRODUCTION:UNCOMMENT
+       'https://line-of-time.cls.cloud', 'https://line-of-time.cleverfox.workers.dev' 
     ],
-    // baseURL: 'https://your-actual-origin.com', // PRODUCTION:UNCOMMENT
-    baseURL: 'http://localhost:3000', // PRODUCTION:REMOVE
+     baseURL: 'https://line-of-time.cls.cloud', 
     redirectTo: '/private', // Redirect to protected page after successful sign-in
     secret: env.BETTER_AUTH_SECRET,
   })

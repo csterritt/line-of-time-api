@@ -43,7 +43,9 @@ describe('sendOtpToUserViaEmail', () => {
     expect(capturedArgs).not.toBeNull()
     expect(capturedArgs?.fromAddress).toBe('noreply@cls.cloud')
     expect(capturedArgs?.toAddress).toBe(testEmail)
-    expect(capturedArgs?.subject).toBe('Your Mini-Auth Verification Code')
+    expect(capturedArgs?.subject).toBe(
+      'Your Line-of-Time project Verification Code'
+    )
 
     // Verify email content contains the OTP
     expect(capturedArgs?.content.includes(`<strong>${testOtp}</strong>`)).toBe(

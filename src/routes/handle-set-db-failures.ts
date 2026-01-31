@@ -21,29 +21,4 @@ import { addCookie } from '../lib/cookie-support'
 export const handleSetDbFailures = (
   app: Hono<{ Bindings: Bindings }>
 ): void => {
-  // } // PRODUCTION:UNCOMMENT
-  // PRODUCTION:STOP
-  const allowedCookieNames = new Set<string>([
-    COOKIES.DB_FAIL_COUNT,
-    COOKIES.DB_FAIL_INCR,
-  ])
-  app.get(
-    `${PATHS.AUTH.SET_DB_FAILURES}/:name/:times`,
-    secureHeaders(STANDARD_SECURE_HEADERS),
-    async (c) => {
-      const name = c.req.param('name')
-      if (!name || name.trim() === '' || !allowedCookieNames.has(name)) {
-        return redirectWithError(c, PATHS.ROOT, 'Invalid name parameter')
-      }
-
-      const times = c.req.param('times')
-      if (!times || isNaN(Number(times))) {
-        return redirectWithError(c, PATHS.ROOT, 'Invalid times parameter')
-      }
-
-      addCookie(c, name, times)
-
-      return redirectWithMessage(c, PATHS.ROOT, ``)
-    }
-  )
-}
+   } 
