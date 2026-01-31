@@ -134,8 +134,8 @@ app.use(async (c, next) => {
   // Apply CSRF protection to all other routes
   const csrfMiddleware = csrf({
     origin: (origin: string) => {
-      // return /https:\/\/mini-auth.example.com$/.test(origin) || // PRODUCTION:UNCOMMENT
-      //  /https:\/\/mini-auth.example.workers.dev$/.test(origin)  // PRODUCTION:UNCOMMENT
+      // return /https:\/\/line-of-time.cls.cloud$/.test(origin) || // PRODUCTION:UNCOMMENT
+      //  /https:\/\/line-of-time.cleverfox.workers.dev$/.test(origin)  // PRODUCTION:UNCOMMENT
       // PRODUCTION:REMOVE-NEXT-LINE
       return (
         /http:\/\/localhost(:\d+)?$/.test(origin) || // PRODUCTION:REMOVE

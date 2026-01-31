@@ -56,7 +56,9 @@ export const validateEventInput = (input: unknown): ValidationResult => {
       isValidTimestamp(data.startTimestamp) &&
       (data.endTimestamp as number) < (data.startTimestamp as number)
     ) {
-      errors.push('endTimestamp must be greater than or equal to startTimestamp')
+      errors.push(
+        'endTimestamp must be greater than or equal to startTimestamp'
+      )
     }
   }
 

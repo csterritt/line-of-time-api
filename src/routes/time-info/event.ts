@@ -8,7 +8,10 @@ import { eq } from 'drizzle-orm'
 import { event } from '../../db/schema'
 import { AppEnv } from '../../local-types'
 import { signedInAccess } from '../../middleware/signed-in-access'
-import { validateEventInput, EventInput } from '../../validators/event-validator'
+import {
+  validateEventInput,
+  EventInput,
+} from '../../validators/event-validator'
 import { parseEvent } from './event-utils'
 
 const eventRouter = new Hono<AppEnv>()
@@ -28,14 +31,14 @@ eventRouter.get('/:id', async (c) => {
 eventRouter.put('/:id', signedInAccess, async (c) => {
   const db = c.get('db')
   const id = c.req.param('id')
-  
+
   let body: EventInput
   try {
     body = await c.req.json<EventInput>()
   } catch {
     return c.json({ error: 'Invalid JSON body' }, 400)
   }
-  
+
   const validation = validateEventInput(body)
 
   if (!validation.valid) {

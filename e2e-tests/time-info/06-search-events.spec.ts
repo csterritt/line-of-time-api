@@ -200,7 +200,9 @@ test.describe('POST /time-info/search', () => {
 
     expect(response.status()).toBe(200)
     const results = await response.json()
-    expect(results.some((r: { name: string }) => r.name === 'Moon Landing')).toBe(true)
+    expect(
+      results.some((r: { name: string }) => r.name === 'Moon Landing')
+    ).toBe(true)
   })
 
   test('returns 400 for invalid JSON body', async ({ request }) => {

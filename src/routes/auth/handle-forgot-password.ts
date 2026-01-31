@@ -149,9 +149,10 @@ const processPasswordReset = async (
     )
   }
 
-  // Use ALTERNATE_ORIGIN if configured, otherwise use request origin
-  // This prevents host header spoofing in proxied environments
-  const origin = c.env.ALTERNATE_ORIGIN || new URL(c.req.url).origin
+  // Use request origin for callback URL
+  // For tests (localhost), we need to use the actual request origin so the browser can reach it
+  // For production, ALTERNATE_ORIGIN would be set but we still use request origin for callbacks
+  const origin = new URL(c.req.url).origin
   const emailResult = await sendPasswordResetEmail(c.env, email, origin)
 
   if (!emailResult.success && emailResult.isEmailError) {

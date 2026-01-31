@@ -24,15 +24,18 @@ test.describe('Body size limit', () => {
       const largePayload = { search: 'X'.repeat(2000) }
 
       // Attempt to POST to the search endpoint with the large payload
-      const response = await request.post('http://localhost:3000/time-info/search', {
-        data: largePayload,
-        headers: {
-          // Set the Origin header to match the allowed origin in the CSRF middleware
-          Origin: 'http://localhost:3000',
-          'Content-Type': 'application/json',
-        },
-        failOnStatusCode: false, // Don't fail the test on non-2xx status codes
-      })
+      const response = await request.post(
+        'http://localhost:3000/time-info/search',
+        {
+          data: largePayload,
+          headers: {
+            // Set the Origin header to match the allowed origin in the CSRF middleware
+            Origin: 'http://localhost:3000',
+            'Content-Type': 'application/json',
+          },
+          failOnStatusCode: false, // Don't fail the test on non-2xx status codes
+        }
+      )
 
       // Verify the response status is 413 Content Too Large
       expect(response.status()).toBe(HTML_STATUS.CONTENT_TOO_LARGE)
@@ -66,14 +69,17 @@ test.describe('Body size limit', () => {
       }
 
       // Attempt to POST to the forgot password endpoint with the large form data payload
-      const response = await request.post('http://localhost:3000/auth/forgot-password', {
-        form: formData,
-        headers: {
-          // Set the Origin header to match the allowed origin in the CSRF middleware
-          Origin: 'http://localhost:3000',
-        },
-        failOnStatusCode: false, // Don't fail the test on non-2xx status codes
-      })
+      const response = await request.post(
+        'http://localhost:3000/auth/forgot-password',
+        {
+          form: formData,
+          headers: {
+            // Set the Origin header to match the allowed origin in the CSRF middleware
+            Origin: 'http://localhost:3000',
+          },
+          failOnStatusCode: false, // Don't fail the test on non-2xx status codes
+        }
+      )
 
       // Verify the response status is 413 Content Too Large
       expect(response.status()).toBe(HTML_STATUS.CONTENT_TOO_LARGE)

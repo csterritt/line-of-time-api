@@ -7,21 +7,24 @@ import { Hono } from 'hono'
 import { event } from '../../db/schema'
 import { AppEnv } from '../../local-types'
 import { signedInAccess } from '../../middleware/signed-in-access'
-import { validateEventInput, EventInput } from '../../validators/event-validator'
+import {
+  validateEventInput,
+  EventInput,
+} from '../../validators/event-validator'
 import { parseEvent } from './event-utils'
 
 const newEventRouter = new Hono<AppEnv>()
 
 newEventRouter.post('/', signedInAccess, async (c) => {
   const db = c.get('db')
-  
+
   let body: EventInput
   try {
     body = await c.req.json<EventInput>()
   } catch {
     return c.json({ error: 'Invalid JSON body' }, 400)
   }
-  
+
   const validation = validateEventInput(body)
 
   if (!validation.valid) {
