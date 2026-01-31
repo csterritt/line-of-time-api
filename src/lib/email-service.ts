@@ -55,7 +55,7 @@ interface EmailConfig {
 const getEmailConfig = (env: Bindings): EmailConfig => {
   // More robust test environment detection
   const isTestMode =
-    // false PRODUCTION:UNCOMMENT
+    // false // PRODUCTION:UNCOMMENT
     env.NODE_ENV === 'test' || // PRODUCTION:REMOVE
     env.NODE_ENV === 'development' || // PRODUCTION:REMOVE
     env.PLAYWRIGHT === '1' || // Playwright sets this PRODUCTION:REMOVE
