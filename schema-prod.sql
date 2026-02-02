@@ -15,6 +15,24 @@ CREATE TABLE IF NOT EXISTS `account` (
 	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `event` (
+	`id` text PRIMARY KEY NOT NULL,
+	`start_timestamp` integer NOT NULL,
+	`end_timestamp` integer,
+	`name` text NOT NULL,
+	`basic_description` text NOT NULL,
+	`longer_description` text,
+	`reference_urls` text NOT NULL,
+	`related_event_ids` text,
+	`created_at` text NOT NULL,
+	`updated_at` text NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `startTimestamp_idx` ON `event` (`start_timestamp`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `endTimestamp_idx` ON `event` (`end_timestamp`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `name_idx` ON `event` (`name`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `basic_description_idx` ON `event` (`basic_description`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `longer_description_idx` ON `event` (`longer_description`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `interestedEmail` (
 	`email` text PRIMARY KEY NOT NULL
 );
@@ -34,7 +52,8 @@ CREATE TABLE IF NOT EXISTS `session` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS `session_token_unique` ON `session` (`token`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `singleUseCode` (
-	`code` text PRIMARY KEY NOT NULL
+	`code` text PRIMARY KEY NOT NULL,
+	`email` text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `user` (

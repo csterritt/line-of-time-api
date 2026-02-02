@@ -93,7 +93,7 @@ export const COOKIES = {
     httpOnly: true,
     sameSite: 'Strict',
      secure: true, 
-     domain: 'line-of-time.cls.cloud', 
+     domain: 'line-of-time-api.cls.cloud', 
   },
 } as const
 
@@ -190,12 +190,12 @@ interface SecureHeadersConfig {
 export const STANDARD_SECURE_HEADERS: SecureHeadersConfig = {
   referrerPolicy: 'strict-origin-when-cross-origin',
   contentSecurityPolicy: {
-     defaultSrc: ["'self'", 'https://line-of-time.cls.cloud', 'https://line-of-time.cleverfox.workers.dev'], 
+     defaultSrc: ["'self'", 'https://line-of-time-api.cls.cloud', 'https://line-of-time-api.cleverfox.workers.dev'], 
     baseUri: ["'self'"],
     childSrc: ["'self'"],
     connectSrc: ["'self'"],
     fontSrc: ["'self'", 'data:'],
-     formAction: ["'self'", 'https://line-of-time.cls.cloud', 'line-of-time.cleverfox.workers.dev'], 
+     formAction: ["'self'", 'https://line-of-time-api.cls.cloud', 'line-of-time-api.cleverfox.workers.dev'], 
     frameAncestors: ["'self'"],
     frameSrc: ["'self'"],
     imgSrc: ["'self'", 'data:'],

@@ -90,9 +90,9 @@ export const createAuth = (env: Bindings) => {
     //   },
     // },
     trustedOrigins: [
-       'https://line-of-time.cls.cloud', 'https://line-of-time.cleverfox.workers.dev' 
+       'https://line-of-time-api.cls.cloud', 'https://line-of-time-api.cleverfox.workers.dev' 
     ],
-     baseURL: 'https://line-of-time.cls.cloud', 
+     baseURL: 'https://line-of-time-api.cls.cloud', 
     redirectTo: '/private', // Redirect to protected page after successful sign-in
     secret: env.BETTER_AUTH_SECRET,
   })
