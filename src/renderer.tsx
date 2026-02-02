@@ -16,7 +16,7 @@ export const renderer = jsxRenderer(
           />
           <link
             rel='stylesheet'
-            href='/style-20260131175132.css'
+            href='/style-20260202110149.css'
             type='text/css'
           />
           <title>Line of Time</title>

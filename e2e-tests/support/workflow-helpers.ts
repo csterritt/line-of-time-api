@@ -123,9 +123,14 @@ export const testDuplicateGatedSignUpFlow = async (
   // First sign-up with first code
   await completeGatedSignUpFlow(page, firstCode, user)
 
-  // Attempt duplicate sign-up with different code
+  // Attempt duplicate sign-up with different code and different name
   await navigateToGatedSignUp(page)
-  await submitGatedSignUpForm(page, { code: secondCode, ...user })
+  await submitGatedSignUpForm(page, {
+    code: secondCode,
+    email: user.email,
+    password: user.password,
+    name: user.name + ' 2',
+  })
   await verifyOnAwaitVerificationPage(page)
   await verifyAlert(page, ERROR_MESSAGES.DUPLICATE_EMAIL)
 }

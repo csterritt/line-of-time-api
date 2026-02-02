@@ -1,75 +1,68 @@
-# Plan: Implement POST /time-info/search Endpoint
+# Plan: Enforce Unique User Names on Sign-Up
 
 ## Assumptions
 
-- Authentication is **not required** for the search endpoint (public, like GET /events)
-- Search is **case-insensitive**
-- Results ordered by `startTimestamp`
-- Body limit is 4kb in production, so 1000-byte search is fine
-- Whitespace-only queries are rejected
-- SQL injection is prevented via Drizzle ORM parameterized queries
+- The database already has a unique constraint on `user.name` (confirmed in `src/db/schema.ts:16`)
+- The goal is to **surface a user-friendly error** when a duplicate name is submitted, rather than showing a generic error
+- Case-sensitivity: SQLite unique constraints are case-sensitive by default; assuming we want **case-insensitive** uniqueness (e.g., "Fred" and "fred" should conflict)
+- The fix applies to all sign-up modes (open, gated, interest) that accept a name field
+
+---
+
+## Questions
+
+1. **Case sensitivity**: Should "Fred" and "fred" be considered the same name? (I'm assuming yes)
+2. **Error message**: Should we reveal that the name is taken, or use a vague message like email does for security? (I'm assuming we can reveal it since names aren't sensitive like emails)
+3. **Gated sign-up**: Does gated sign-up also need this check, or just open sign-up?
 
 ---
 
 ## The Answer
 
-Create a new POST endpoint at `/time-info/search` that:
-- Accepts JSON body with `search` string (1–1000 bytes, non-whitespace-only)
-- Queries `event` table with case-insensitive `LIKE '%search%'` on `name`, `basicDescription`, `longerDescription`
-- Returns up to 200 results with `id`, `name`, `basicDescription`, ordered by `startTimestamp`
-- Returns empty array `[]` if no matches
+Add duplicate name detection to the sign-up error handling flow:
+
+1. Add `isDuplicateNameError()` helper alongside existing `isDuplicateEmailError()`
+2. Update `handleSignUpResponseError()` and `handleSignUpApiError()` to detect and handle duplicate name errors
+3. Add a user-friendly error message constant for duplicate names
+4. Add e2e tests for the duplicate name scenario
 
 ---
 
 ## The Plan
 
-### Step 1: Add TIME_INFO path constants to `src/constants.ts`
+### Step 1: Add error message constant to `src/constants.ts`
 
-Add constants for all `/time-info/*` paths to centralize route definitions.
+Add `NAME_ALREADY_EXISTS` message to `MESSAGES` object.
 
-### Step 2: Create `src/routes/time-info/search.ts`
+### Step 2: Add `isDuplicateNameError()` to `src/lib/sign-up-utils.ts`
 
-- New Hono router with POST `/` handler
-- Validate `search` param: string, 1–1000 bytes, not whitespace-only
-- Use Drizzle `like` + `or` + `sql` for case-insensitive search on three fields
-- Limit 200 results, order by `startTimestamp`
-- Return `{ id, name, basicDescription }[]`
+Create a helper function similar to `isDuplicateEmailError()` that detects name constraint violations.
 
-### Step 3: Register search route in `src/index.ts`
+### Step 3: Update error handlers in `src/lib/sign-up-utils.ts`
 
-- Import `searchRouter` from `./routes/time-info/search`
-- Add `app.route('/time-info/search', searchRouter)` (use constant)
-- Update existing route registrations to use constants
+Modify `handleSignUpResponseError()` and `handleSignUpApiError()` to:
 
-### Step 4: Update existing time-info routes to use constants
+- Check for duplicate name errors
+- Return appropriate error redirect with the new message
 
-- Update `src/index.ts` route registrations to use `PATHS.TIME_INFO.*`
+### Step 4: (Optional) Add case-insensitive name check
 
-### Step 5: Update existing e2e-tests/time-info tests
+If case-insensitive uniqueness is needed, add a pre-check query before calling better-auth sign-up API.
 
-- Replace hardcoded `BASE_URL` and `/time-info` strings with `BASE_URLS` from test-data
-- Use `testWithDatabase` wrapper where appropriate
-- Use `submitSignInForm` helper instead of manual form filling
-
-### Step 6: Create `e2e-tests/time-info/06-search-events.spec.ts`
+### Step 5: Create `e2e-tests/sign-up/02-duplicate-name-rejected.spec.ts`
 
 Test cases:
-- Empty search returns 400
-- Whitespace-only search returns 400
-- Search > 1000 bytes returns 400
-- Valid search returns matching results (case-insensitive)
-- Partial matches work (LIKE behavior)
-- No matches returns empty array
-- Limit of 200 results enforced
-- Results ordered by startTimestamp
-- Does not require authentication
+
+- Sign up with a name that already exists → shows duplicate name error
+- Sign up with same name different case (if case-insensitive) → shows duplicate name error
+- Can still sign up with unique name after seeing error
 
 ---
 
 ## Pitfalls
 
-- **SQL injection** — Drizzle ORM parameterizes queries; `%` wildcards added in code, not concatenated raw
-- **Byte vs character length** — Use `Buffer.byteLength(search)` for UTF-8 multi-byte chars
-- **Case-insensitive LIKE** — SQLite LIKE is case-insensitive for ASCII; use `LOWER()` for full Unicode support
-- **Empty/whitespace strings** — Must explicitly reject `""` and whitespace-only strings
-- **Performance** — LIKE with leading `%` can't use indexes; acceptable for 200-result limit
+- **Constraint error detection**: SQLite constraint errors may not explicitly mention "name" — need to check actual error message format from better-auth
+- **Case sensitivity**: Database constraint is case-sensitive; need explicit LOWER() check if case-insensitive uniqueness is required
+- **Race conditions**: Two users signing up with same name simultaneously — database constraint handles this, but error message detection must be robust
+- **Gated sign-up**: May have different code paths that also need updating
+- **Error message ambiguity**: Constraint errors from better-auth may not distinguish between email and name uniqueness violations

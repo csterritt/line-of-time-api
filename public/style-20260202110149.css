@@ -2000,7 +2000,7 @@
     font-style: italic;
   }
   .prose {
-    & :where(.btn-link):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+    & :where(:not(.btn-link)):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
       text-decoration-line: none;
     }
   }

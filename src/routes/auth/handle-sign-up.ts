@@ -18,6 +18,7 @@ import {
   updateAccountTimestampAfterSignUp,
   redirectToAwaitVerification,
 } from '../../lib/sign-up-utils'
+import { checkNameExists } from '../../lib/db-access'
 
 interface SignUpData {
   name: string
@@ -47,6 +48,30 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
         }
 
         const { name, email, password } = data as SignUpData
+        const dbClient = createDbClient(c.env.LINE_OF_TIME_DB)
+
+        // Check if name already exists (case-insensitive)
+        const nameExistsResult = await checkNameExists(dbClient, name)
+        if (nameExistsResult.isErr) {
+          console.error(
+            'Error checking name existence:',
+            nameExistsResult.error
+          )
+          return redirectWithError(
+            c,
+            PATHS.AUTH.SIGN_UP,
+            MESSAGES.GENERIC_ERROR_TRY_AGAIN
+          )
+        }
+
+        if (nameExistsResult.value) {
+          return redirectWithError(
+            c,
+            PATHS.AUTH.SIGN_UP,
+            MESSAGES.NAME_ALREADY_TAKEN
+          )
+        }
+
         const auth = createAuth(c.env)
 
         try {
@@ -90,7 +115,6 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
           return handleSignUpApiError(c, apiError, email, PATHS.AUTH.SIGN_IN)
         }
 
-        const dbClient = createDbClient(c.env.LINE_OF_TIME_DB)
         await updateAccountTimestampAfterSignUp(dbClient, email)
 
         return redirectToAwaitVerification(c, email)

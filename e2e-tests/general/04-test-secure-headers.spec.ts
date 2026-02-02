@@ -91,7 +91,7 @@ test.describe('Security Headers', () => {
   }) => {
     // Test multiple endpoints to ensure headers are consistent
     const endpoints = [
-      '/', // Home page
+      '/auth/sign-up', // Sign-up page
       '/auth/sign-in', // Sign-in page
     ]
 

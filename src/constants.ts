@@ -57,6 +57,9 @@ export const PATHS = {
 
     // Sign out
     SIGN_OUT: '/auth/sign-out',
+
+    // User signed in status check
+    USER_SIGNED_IN: '/auth/user-signed-in',
   },
 
   // Profile paths
@@ -138,6 +141,8 @@ export const MESSAGES = {
     'An account with this email already exists. Please check your email for a verification link or sign in if you have already verified your account.',
   NEW_VERIFICATION_EMAIL:
     'A new verification email has been sent. Please check your inbox.',
+  NAME_ALREADY_TAKEN:
+    'This name is already taken. Please choose a different name.',
 } as const
 
 export const MESSAGE_BUILDERS = {

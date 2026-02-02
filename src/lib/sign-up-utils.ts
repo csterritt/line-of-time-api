@@ -14,6 +14,7 @@ import {
   getUserIdByEmail,
   updateAccountTimestamp,
   claimSingleUseCode,
+  checkNameExists,
 } from './db-access'
 import { createAuth } from './auth'
 import { createDbClient } from '../db/client'
@@ -97,7 +98,28 @@ export const isDuplicateEmailError = (errorMessage: string): boolean => {
   const hasEmailExists =
     lowerMessage.includes('email') && lowerMessage.includes('exists')
 
-  return hasDuplicatePattern || hasEmailExists
+  const hasUserExists =
+    lowerMessage.includes('user') && lowerMessage.includes('exists')
+
+  return hasDuplicatePattern || hasEmailExists || hasUserExists
+}
+
+/**
+ * Check if an error message indicates a duplicate name
+ * @param errorMessage - Error message to check
+ * @returns True if the error indicates a duplicate name
+ */
+export const isDuplicateNameError = (errorMessage: string): boolean => {
+  const lowerMessage = errorMessage.toLowerCase()
+
+  const hasNameExists =
+    lowerMessage.includes('name') && lowerMessage.includes('exists')
+
+  const hasNameConstraint =
+    lowerMessage.includes('name') &&
+    (lowerMessage.includes('unique') || lowerMessage.includes('constraint'))
+
+  return hasNameExists || hasNameConstraint
 }
 
 /**
@@ -120,6 +142,17 @@ export const isConstraintError = (errorMessage: string): boolean => {
 export const extractErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'body' in error &&
+    typeof (error as { body?: { message?: string } }).body === 'object' &&
+    (error as { body?: { message?: string } }).body !== null &&
+    'message' in (error as { body: { message?: string } }).body
+  ) {
+    return (error as { body: { message: string } }).body.message
   }
 
   return String(error)
@@ -145,6 +178,10 @@ export const handleSignUpResponseError = (
 
   const errorMessage = response.error?.message || 'Registration failed'
   console.error('Sign-up response error:', errorMessage)
+
+  if (isDuplicateNameError(errorMessage)) {
+    return redirectWithError(c, PATHS.AUTH.SIGN_UP, MESSAGES.NAME_ALREADY_TAKEN)
+  }
 
   if (isDuplicateEmailError(errorMessage)) {
     addCookie(c, COOKIES.EMAIL_ENTERED, email)
@@ -175,6 +212,10 @@ export const handleSignUpApiError = (
   console.error('Better-auth sign-up API error:', error)
 
   const errorMessage = extractErrorMessage(error)
+
+  if (isDuplicateNameError(errorMessage)) {
+    return redirectWithError(c, PATHS.AUTH.SIGN_UP, MESSAGES.NAME_ALREADY_TAKEN)
+  }
 
   if (isDuplicateEmailError(errorMessage) || isConstraintError(errorMessage)) {
     addCookie(c, COOKIES.EMAIL_ENTERED, email)
@@ -243,6 +284,21 @@ export const processGatedSignUp = async (
   const { code, name, email, password } = data
   const trimmedCode = code.trim()
   const dbClient = createDbClient(c.env.LINE_OF_TIME_DB)
+
+  // Check if name already exists (case-insensitive)
+  const nameExistsResult = await checkNameExists(dbClient, name)
+  if (nameExistsResult.isErr) {
+    console.error('Error checking name existence:', nameExistsResult.error)
+    return redirectWithError(
+      c,
+      PATHS.AUTH.SIGN_UP,
+      MESSAGES.GENERIC_ERROR_TRY_AGAIN
+    )
+  }
+
+  if (nameExistsResult.value) {
+    return redirectWithError(c, PATHS.AUTH.SIGN_UP, MESSAGES.NAME_ALREADY_TAKEN)
+  }
 
   // Atomically claim the sign-up code before creating account
   const claimResult = await claimSingleUseCode(dbClient, trimmedCode, email)
