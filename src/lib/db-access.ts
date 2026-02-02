@@ -8,7 +8,7 @@
  */
 import retry from 'async-retry'
 import Result from 'true-myth/result'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, sql } from 'drizzle-orm'
 
 import { user, account, singleUseCode, interestedEmail } from '../db/schema'
 import { STANDARD_RETRY_OPTIONS } from '../constants'
@@ -118,6 +118,34 @@ const getUserIdByEmailActual = (
   toResult(() =>
     db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1)
   )
+
+/**
+ * Check if a name already exists (case-insensitive)
+ * @param db - Database instance
+ * @param name - User name to check
+ * @returns Promise<Result<boolean, Error>> - true if name exists, false otherwise
+ */
+export const checkNameExists = (
+  db: DrizzleClient,
+  name: string
+): Promise<Result<boolean, Error>> =>
+  withRetry('checkNameExists', () => checkNameExistsActual(db, name))
+
+const checkNameExistsActual = async (
+  db: DrizzleClient,
+  name: string
+): Promise<Result<boolean, Error>> => {
+  try {
+    const result = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(sql`LOWER(${user.name}) = LOWER(${name})`)
+      .limit(1)
+    return Result.ok(result.length > 0)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
 
 /**
  * Update account timestamp for rate limiting
