@@ -8,7 +8,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 /**
  * Test the /auth/user-signed-in endpoint
  * Tests three scenarios:
- * 1. User is signed in - returns {"user-signed-in": true}
+ * 1. User is signed in - returns {"user-signed-in": true, name: "..."}
  * 2. User is not signed in - returns {"user-signed-in": false}
  * 3. Error handling (if auth system fails)
  */
@@ -20,7 +20,9 @@ test(
     await navigateToHome(page)
 
     // Call the endpoint
-    const response = await page.request.get(`${BASE_URLS.HOME}/auth/user-signed-in`)
+    const response = await page.request.get(
+      `${BASE_URLS.HOME}/auth/user-signed-in`
+    )
 
     // Verify response
     expect(response.ok()).toBe(true)
@@ -43,14 +45,19 @@ test(
 
     // Call the endpoint with the authenticated context
     // The session cookies should be automatically included
-    const response = await page.request.get(`${BASE_URLS.HOME}/auth/user-signed-in`)
+    const response = await page.request.get(
+      `${BASE_URLS.HOME}/auth/user-signed-in`
+    )
 
     // Verify response
     expect(response.ok()).toBe(true)
     expect(response.status()).toBe(200)
 
     const json = await response.json()
-    expect(json).toEqual({ 'user-signed-in': true })
+    expect(json).toEqual({
+      'user-signed-in': true,
+      name: TEST_USERS.KNOWN_USER.name,
+    })
 
     // Verify Content-Type header
     const contentType = response.headers()['content-type']
@@ -65,9 +72,14 @@ test(
     await completeSignInFlow(page, TEST_USERS.KNOWN_USER)
 
     // Verify signed in
-    let response = await page.request.get(`${BASE_URLS.HOME}/auth/user-signed-in`)
+    let response = await page.request.get(
+      `${BASE_URLS.HOME}/auth/user-signed-in`
+    )
     let json = await response.json()
-    expect(json).toEqual({ 'user-signed-in': true })
+    expect(json).toEqual({
+      'user-signed-in': true,
+      name: TEST_USERS.KNOWN_USER.name,
+    })
 
     // Sign out by navigating to sign-out page and clicking sign-out
     await page.goto(`${BASE_URLS.SIGN_OUT}`)

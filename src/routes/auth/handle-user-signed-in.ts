@@ -9,7 +9,7 @@
 import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
-import { STANDARD_SECURE_HEADERS } from '../../constants'
+import { PATHS, STANDARD_SECURE_HEADERS } from '../../constants'
 import type { Bindings } from '../../local-types'
 
 /**
@@ -19,21 +19,25 @@ import type { Bindings } from '../../local-types'
  */
 export const handleUserSignedIn = (app: Hono<{ Bindings: Bindings }>): void => {
   app.get(
-    '/auth/user-signed-in',
+    PATHS.AUTH.USER_SIGNED_IN,
     secureHeaders(STANDARD_SECURE_HEADERS),
     async (c) => {
       try {
         const user = c.get('user')
-        
+
+        if (user !== null) {
+          return c.json({
+            'user-signed-in': true,
+            name: user.name,
+          })
+        }
+
         return c.json({
-          'user-signed-in': user !== null,
+          'user-signed-in': false,
         })
       } catch (error) {
         console.error('User-signed-in endpoint error:', error)
-        return c.json(
-          { error: 'Internal server error' },
-          { status: 500 }
-        )
+        return c.json({ error: 'Internal server error' }, { status: 500 })
       }
     }
   )

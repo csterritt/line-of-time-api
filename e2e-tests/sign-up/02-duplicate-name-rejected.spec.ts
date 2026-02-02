@@ -5,7 +5,10 @@ import { skipIfNotMode } from '../support/mode-helpers'
 import { navigateToSignUp } from '../support/navigation-helpers'
 import { submitSignUpForm } from '../support/form-helpers'
 import { verifyAlert } from '../support/finders'
-import { verifyOnSignUpPage, verifyOnAwaitVerificationPage } from '../support/page-verifiers'
+import {
+  verifyOnSignUpPage,
+  verifyOnAwaitVerificationPage,
+} from '../support/page-verifiers'
 import { TEST_USERS } from '../support/test-data'
 
 test(
@@ -28,7 +31,10 @@ test(
 
     // Should stay on sign-up page with error message
     await verifyOnSignUpPage(page)
-    await verifyAlert(page, 'This name is already taken. Please choose a different name.')
+    await verifyAlert(
+      page,
+      'This name is already taken. Please choose a different name.'
+    )
   })
 )
 
@@ -52,7 +58,10 @@ test(
 
     // Should stay on sign-up page with error message
     await verifyOnSignUpPage(page)
-    await verifyAlert(page, 'This name is already taken. Please choose a different name.')
+    await verifyAlert(
+      page,
+      'This name is already taken. Please choose a different name.'
+    )
   })
 )
 
@@ -74,7 +83,10 @@ test(
       password: 'password123',
     })
     await verifyOnSignUpPage(page)
-    await verifyAlert(page, 'This name is already taken. Please choose a different name.')
+    await verifyAlert(
+      page,
+      'This name is already taken. Please choose a different name.'
+    )
 
     // Second user tries again with unique name
     await submitSignUpForm(page, {

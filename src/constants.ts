@@ -64,6 +64,9 @@ export const PATHS = {
 
     // Sign out
     SIGN_OUT: '/auth/sign-out',
+
+    // User signed in status check
+    USER_SIGNED_IN: '/auth/user-signed-in',
   },
 
   // Profile paths
