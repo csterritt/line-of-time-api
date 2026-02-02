@@ -34,3 +34,5 @@ test-results
 tmp/
 schema.sql
 .dev.vars.all
+public/assets
+public/ui
