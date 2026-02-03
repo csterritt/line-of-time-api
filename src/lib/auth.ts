@@ -44,7 +44,6 @@ export const createAuth = (env: Bindings) => {
       sendResetPassword: async ({
         user,
         url,
-        token,
       }: {
         user: { email: string; name: string }
         url: string
@@ -52,7 +51,7 @@ export const createAuth = (env: Bindings) => {
       }) => {
         try {
           // Send password reset email using our email service
-          await sendPasswordResetEmail(env, user.email, user.name, url, token)
+          await sendPasswordResetEmail(env, user.email, user.name, url)
           console.log('✅ Password reset email sent successfully')
         } catch (error) {
           console.error('❌ Error in sendResetPassword:', error)
@@ -64,7 +63,6 @@ export const createAuth = (env: Bindings) => {
       sendVerificationEmail: async ({
         user,
         url,
-        token,
       }: {
         user: { email: string; name: string }
         url: string
@@ -72,7 +70,7 @@ export const createAuth = (env: Bindings) => {
       }) => {
         try {
           // Send confirmation email using our email service
-          await sendConfirmationEmail(env, user.email, user.name, url, token)
+          await sendConfirmationEmail(env, user.email, user.name, url)
           console.log('✅ Email sent successfully via sendConfirmationEmail')
         } catch (error) {
           console.error('❌ Error in sendVerificationEmail:', error)

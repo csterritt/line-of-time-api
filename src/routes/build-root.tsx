@@ -26,11 +26,11 @@ const renderRoot = () => {
           </h3>
           <div className='card-actions'>
             <a
-              href={PATHS.PRIVATE}
+              href={PATHS.PUBLIC}
               className='btn btn-primary'
               data-testid='visit-private-action'
             >
-              Protected Content
+              See the timeline
             </a>
           </div>
         </div>
