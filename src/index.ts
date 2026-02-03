@@ -234,6 +234,29 @@ if (isTestRouteEnabledFlag) {
   app.route('/test', testSmtpRouter) // PRODUCTION:REMOVE
 }
 
+// SPA assets: map /ui/assets/* to /assets/*
+app.get('/ui/assets/*', async (c) => {
+  const assetPath = c.req.path.replace('/ui/assets/', '/assets/')
+  const asset = await c.env.ASSETS.fetch(
+    new Request(`https://dummy${assetPath}`)
+  )
+  return new Response(asset.body, {
+    status: asset.status,
+    headers: asset.headers,
+  })
+})
+
+// SPA catch-all: serve /ui/index.html for all /ui/* routes
+app.get('/ui', (c) => c.redirect('/ui/'))
+app.get('/ui/*', async (c) => {
+  const asset = await c.env.ASSETS.fetch(
+    new Request('https://dummy/ui/index.html')
+  )
+  return new Response(asset.body, {
+    headers: { 'Content-Type': 'text/html', url: c.req.path },
+  })
+})
+
 // this MUST be the last route declared!
 build404(app)
 showRoutes(app) // PRODUCTION:REMOVE
