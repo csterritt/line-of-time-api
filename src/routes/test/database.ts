@@ -363,8 +363,6 @@ testDatabaseRouter.post(
           endTimestamp: null,
           name: 'Moon Landing',
           basicDescription: 'First human on the moon',
-          longerDescription:
-            'Apollo 11 was the American spaceflight that first landed humans on the Moon.',
           referenceUrls: JSON.stringify([
             'https://en.wikipedia.org/wiki/Apollo_11',
           ]),
@@ -378,7 +376,6 @@ testDatabaseRouter.post(
           endTimestamp: 710440,
           name: 'World War II',
           basicDescription: 'Global war from 1939 to 1945',
-          longerDescription: null,
           referenceUrls: JSON.stringify([
             'https://en.wikipedia.org/wiki/World_War_II',
           ]),
@@ -392,8 +389,6 @@ testDatabaseRouter.post(
           endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',
-          longerDescription:
-            'The Continental Congress declared the thirteen American colonies free and independent states.',
           referenceUrls: JSON.stringify([
             'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
           ]),

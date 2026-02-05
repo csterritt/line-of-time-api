@@ -45,17 +45,6 @@ test.describe('POST /time-info/search', () => {
     expect(results[0].name).toBe('World War II')
   })
 
-  test('returns matching events by longerDescription', async ({ request }) => {
-    const response = await request.post(BASE_URLS.TIME_INFO_SEARCH, {
-      data: { search: 'Apollo 11' },
-    })
-
-    expect(response.status()).toBe(200)
-    const results = await response.json()
-    expect(results).toHaveLength(1)
-    expect(results[0].name).toBe('Moon Landing')
-  })
-
   test('search is case-insensitive', async ({ request }) => {
     const response = await request.post(BASE_URLS.TIME_INFO_SEARCH, {
       data: { search: 'moon landing' },

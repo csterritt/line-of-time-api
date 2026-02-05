@@ -25,7 +25,6 @@ describe('validateEventInput', () => {
       const fullEvent = {
         ...validEvent,
         endTimestamp: 738535,
-        longerDescription: 'A longer description of the event',
         relatedEventIds: ['event-1', 'event-2'],
       }
       const result = validateEventInput(fullEvent)
@@ -37,7 +36,6 @@ describe('validateEventInput', () => {
       const eventWithNulls = {
         ...validEvent,
         endTimestamp: null,
-        longerDescription: null,
         relatedEventIds: null,
       }
       const result = validateEventInput(eventWithNulls)

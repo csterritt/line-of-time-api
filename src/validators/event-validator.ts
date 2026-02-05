@@ -7,7 +7,6 @@ export interface EventInput {
   endTimestamp?: number | null
   name: string
   basicDescription: string
-  longerDescription?: string | null
   referenceUrls: string[]
   relatedEventIds?: string[] | null
 }
@@ -32,7 +31,6 @@ const isValidUrl = (urlStr: string): boolean => {
 
 const MAX_NAME_LENGTH = 500
 const MAX_BASIC_DESCRIPTION_LENGTH = 1000
-const MAX_LONGER_DESCRIPTION_LENGTH = 10000
 const MAX_REFERENCE_URLS = 100
 const MAX_RELATED_EVENT_IDS = 100
 
@@ -76,17 +74,6 @@ export const validateEventInput = (input: unknown): ValidationResult => {
   } else if (data.basicDescription.length > MAX_BASIC_DESCRIPTION_LENGTH) {
     errors.push(
       `basicDescription must not exceed ${MAX_BASIC_DESCRIPTION_LENGTH} characters`
-    )
-  }
-
-  if (
-    data.longerDescription !== undefined &&
-    data.longerDescription !== null &&
-    typeof data.longerDescription === 'string' &&
-    data.longerDescription.length > MAX_LONGER_DESCRIPTION_LENGTH
-  ) {
-    errors.push(
-      `longerDescription must not exceed ${MAX_LONGER_DESCRIPTION_LENGTH} characters`
     )
   }
 

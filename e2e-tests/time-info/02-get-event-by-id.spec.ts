@@ -57,7 +57,6 @@ test.describe('GET /time-info/event/:id', () => {
       endTimestamp: 710440,
       name: 'World War II',
       basicDescription: 'Global war from 1939 to 1945',
-      longerDescription: null,
     })
     expect(event.referenceUrls).toEqual([
       'https://en.wikipedia.org/wiki/World_War_II',

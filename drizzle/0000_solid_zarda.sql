@@ -21,7 +21,6 @@ CREATE TABLE `event` (
 	`end_timestamp` integer,
 	`name` text NOT NULL,
 	`basic_description` text NOT NULL,
-	`longer_description` text,
 	`reference_urls` text NOT NULL,
 	`related_event_ids` text,
 	`created_at` text NOT NULL,
@@ -32,7 +31,6 @@ CREATE INDEX `startTimestamp_idx` ON `event` (`start_timestamp`);--> statement-b
 CREATE INDEX `endTimestamp_idx` ON `event` (`end_timestamp`);--> statement-breakpoint
 CREATE INDEX `name_idx` ON `event` (`name`);--> statement-breakpoint
 CREATE INDEX `basic_description_idx` ON `event` (`basic_description`);--> statement-breakpoint
-CREATE INDEX `longer_description_idx` ON `event` (`longer_description`);--> statement-breakpoint
 CREATE TABLE `interestedEmail` (
 	`email` text PRIMARY KEY NOT NULL
 );

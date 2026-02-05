@@ -76,8 +76,6 @@ test.describe('GET /time-info/events/:start/:end', () => {
       endTimestamp: null,
       name: 'Moon Landing',
       basicDescription: 'First human on the moon',
-      longerDescription:
-        'Apollo 11 was the American spaceflight that first landed humans on the Moon.',
     })
     expect(event.referenceUrls).toEqual([
       'https://en.wikipedia.org/wiki/Apollo_11',

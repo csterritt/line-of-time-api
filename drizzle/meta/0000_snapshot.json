@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2ab448fd-93b1-4d92-85d7-e0588ee17825",
+  "id": "9819dd1f-7aa6-4977-824e-190b43235782",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -157,13 +157,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "longer_description": {
-          "name": "longer_description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "reference_urls": {
           "name": "reference_urls",
           "type": "text",
@@ -219,13 +212,6 @@
           "name": "basic_description_idx",
           "columns": [
             "basic_description"
-          ],
-          "isUnique": false
-        },
-        "longer_description_idx": {
-          "name": "longer_description_idx",
-          "columns": [
-            "longer_description"
           ],
           "isUnique": false
         }

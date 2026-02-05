@@ -1,82 +1,61 @@
-# SPA Route Setup for /ui/*
+# Remove longerDescription Column from event table
 
 ## Goal
-Serve all routes under `/ui/*` with `./public/ui/index.html` (SPA), while keeping all other routes as server-rendered HTML.
+Remove all code references to the `longerDescription` column from the event table. The schema has already been updated.
 
 ## Assumptions
-- `./public/ui/index.html` exists
-- Cloudflare Workers asset binding (`ASSETS`) is already configured in wrangler.jsonc
-- Existing HTML routes (sign-in, sign-up, profile, etc.) remain unchanged
+- Database schema already updated (column removed from schema.ts)
+- Database migrations already applied
+- No data preservation needed
 
----
+## Files to Modify (21 references across 11 files)
 
-## The Answer
-Add a `/ui/*` catch-all route in the Hono app that intercepts all SPA paths and serves `index.html` via the `ASSETS` binding. Static assets within `/ui/` (JS, CSS, images) will still be served by Cloudflare's asset handling since `run_worker_first: false`.
+1. `src/validators/event-validator.ts` (6 matches) - Remove from validation schema and validation logic
+2. `src/routes/time-info/event-utils.ts` (2 matches) - Remove from EventResponse interface and parseEvent function
+3. `src/routes/time-info/event.ts` (1 match) - Remove from update payload
+4. `src/routes/time-info/new-event.ts` (1 match) - Remove from insert payload
+5. `src/routes/time-info/search.ts` (1 match) - Remove from search query
+6. `src/routes/test/database.ts` (3 matches) - Remove from test event seed data
+7. `tests/event-validator.test.ts` (2 matches) - Remove from unit tests
+8. `e2e-tests/time-info/03-create-event.spec.ts` (2 matches) - Remove from create event test
+9. `e2e-tests/time-info/06-search-events.spec.ts` (1 match) - Remove longerDescription search test
+10. `e2e-tests/time-info/01-get-events.spec.ts` (1 match) - Remove from expected response
+11. `e2e-tests/time-info/02-get-event-by-id.spec.ts` (1 match) - Remove from expected response
 
----
+## Implementation Steps
 
-## The Plan
+1. **Update validator** (`src/validators/event-validator.ts`)
+   - Remove `longerDescription?: string | null` from `EventInput` interface
+   - Remove `MAX_LONGER_DESCRIPTION_LENGTH` constant
+   - Remove validation logic for longerDescription
 
-### Option B (Preferred - Minimal Change)
+2. **Update event utils** (`src/routes/time-info/event-utils.ts`)
+   - Remove `longerDescription: string | null` from `EventResponse` interface
+   - Remove `longerDescription: dbEvent.longerDescription` from `parseEvent` return
 
-1. **Add `/ui/*` catch-all route** in `src/index.ts` before the 404 handler:
-   ```ts
-   // SPA catch-all: serve /ui/index.html for all /ui/* routes
-   app.get('/ui/*', async (c) => {
-     const asset = await c.env.ASSETS.fetch(new Request('https://dummy/ui/index.html'))
-     return new Response(asset.body, {
-       headers: { 'Content-Type': 'text/html' },
-     })
-   })
-   ```
+3. **Update route handlers**
+   - `src/routes/time-info/event.ts`: Remove `longerDescription: body.longerDescription ?? null` from updatedEvent
+   - `src/routes/time-info/new-event.ts`: Remove `longerDescription: body.longerDescription ?? null` from newEvent
+   - `src/routes/time-info/search.ts`: Remove `sql`LOWER(${event.longerDescription}) LIKE ${lowerPattern}`` from search query
 
-2. **Verify `ASSETS` binding** in `src/local-types.ts` includes the binding type (should already exist).
+4. **Update test data** (`src/routes/test/database.ts`)
+   - Remove `longerDescription` field from all test event objects
 
-3. **Test**:
-   - Visit `/ui` → should serve SPA
-   - Visit `/ui/timeline` → should serve SPA (same index.html)
-   - Visit `/ui/settings/profile` → should serve SPA
-   - Visit `/sign-in` → should serve existing server-rendered page
-   - Static assets like `/ui/app.js` → should be served directly by Cloudflare assets
+5. **Update unit tests** (`tests/event-validator.test.ts`)
+   - Remove `longerDescription` from test cases
 
-### Option A (Fallback - If Option B Fails)
+6. **Update e2e tests**
+   - `03-create-event.spec.ts`: Remove longerDescription from test
+   - `06-search-events.spec.ts`: Remove longerDescription search test
+   - `01-get-events.spec.ts`: Remove from expected response
+   - `02-get-event-by-id.spec.ts`: Remove from expected response
 
-If static assets under `/ui/` aren't being served correctly:
-
-1. Change `wrangler.jsonc`:
-   ```jsonc
-   "assets": {
-     "binding": "ASSETS",
-     "directory": "./public",
-     "run_worker_first": true,  // Changed from false
-   }
-   ```
-
-2. Add explicit static asset serving for non-SPA paths or use `serveStatic` middleware from Hono.
-
----
+7. **Verify**
+   - Start server: `npm run dev-open-sign-up`
+   - Run tests: `npx playwright test -x`
 
 ## Pitfalls
 
-1. **Route order matters** — The `/ui/*` catch-all must come *before* the 404 handler but *after* any specific `/ui/...` API routes if you add them later.
-
-2. **Static asset conflicts** — If SPA has assets like `/ui/app.js`, ensure they're served as files, not caught by the wildcard. With `run_worker_first: false`, Cloudflare serves existing files first, so this should work. If not, switch to Option A.
-
-3. **Trailing slash** — `/ui` vs `/ui/` may behave differently. Consider adding a redirect or handling both:
-   ```ts
-   app.get('/ui', (c) => c.redirect('/ui/'))
-   ```
-
-4. **ASSETS.fetch URL** — The URL passed to `ASSETS.fetch` must be a valid URL. Using a dummy host (`https://dummy/...`) works because only the path matters.
-
-5. **Content-Type header** — Explicitly set `Content-Type: text/html` to ensure browsers render it correctly.
-
----
-
-## Implementation Order
-
-- [ ] Add `/ui/*` route to `src/index.ts`
-- [ ] Verify `ASSETS` binding type in `local-types.ts`
-- [ ] Test SPA routes manually
-- [ ] Test that existing HTML routes still work
-- [ ] Test that static assets under `/ui/` are served correctly
+1. **Type errors** - If longerDescription is still referenced in type definitions
+2. **Test failures** - If test data expects longerDescription in responses
+3. **Database constraint errors** - If migrations not applied (user said they're done)

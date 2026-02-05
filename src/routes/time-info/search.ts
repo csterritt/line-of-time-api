@@ -71,8 +71,7 @@ searchRouter.post('/', async (c) => {
     .where(
       or(
         sql`LOWER(${event.name}) LIKE ${lowerPattern}`,
-        sql`LOWER(${event.basicDescription}) LIKE ${lowerPattern}`,
-        sql`LOWER(${event.longerDescription}) LIKE ${lowerPattern}`
+        sql`LOWER(${event.basicDescription}) LIKE ${lowerPattern}`
       )
     )
     .orderBy(event.startTimestamp)

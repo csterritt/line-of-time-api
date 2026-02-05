@@ -96,7 +96,6 @@ export const event = sqliteTable(
     endTimestamp: integer('end_timestamp'),
     name: text('name').notNull(),
     basicDescription: text('basic_description').notNull(),
-    longerDescription: text('longer_description'),
     referenceUrls: text('reference_urls').notNull(),
     relatedEventIds: text('related_event_ids'),
     createdAt: text('created_at').notNull(),
@@ -107,7 +106,6 @@ export const event = sqliteTable(
     index('endTimestamp_idx').on(table.endTimestamp),
     index('name_idx').on(table.name),
     index('basic_description_idx').on(table.basicDescription),
-    index('longer_description_idx').on(table.longerDescription),
   ]
 )
 

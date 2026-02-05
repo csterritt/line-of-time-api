@@ -10,7 +10,6 @@ export interface EventResponse {
   endTimestamp: number | null
   name: string
   basicDescription: string
-  longerDescription: string | null
   referenceUrls: string[]
   relatedEventIds: string[]
   createdAt: string
@@ -44,7 +43,6 @@ export const parseEvent = (
     endTimestamp: dbEvent.endTimestamp,
     name: dbEvent.name,
     basicDescription: dbEvent.basicDescription,
-    longerDescription: dbEvent.longerDescription,
     referenceUrls,
     relatedEventIds,
     createdAt: dbEvent.createdAt,

@@ -71,7 +71,6 @@ test.describe('POST /time-info/new-event', () => {
     const fullEvent = {
       ...validEvent,
       endTimestamp: 738535,
-      longerDescription: 'A longer description of the test event',
       relatedEventIds: ['related-1', 'related-2'],
     }
 
@@ -83,9 +82,6 @@ test.describe('POST /time-info/new-event', () => {
     expect(response.status()).toBe(201)
     const event = await response.json()
     expect(event.endTimestamp).toBe(738535)
-    expect(event.longerDescription).toBe(
-      'A longer description of the test event'
-    )
     expect(event.relatedEventIds).toEqual(['related-1', 'related-2'])
   })
 
