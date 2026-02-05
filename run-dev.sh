@@ -35,7 +35,8 @@ cat .dev.vars.all >> .dev.vars
 echo "SIGN_UP_MODE=${SIGN_UP_MODE}" >> .dev.vars
 
 concurrently -c auto \
-  -n mailpit,tailwind,wrangler \
+  -n mailpit,tailwind,wrangler,fe-build \
   "mailpit" \
   "npx @tailwindcss/cli -i ./src/style.css -o ${styleFile} --watch" \
-  "wrangler dev"
+  "wrangler dev" \
+  "cd line-of-time-fe && npm run build:watch"

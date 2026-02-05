@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:watch": "vite build --watch --emptyOutDir",
     "clean-assets": "rm -rf ../line-of-time-api/public/assets && mkdir -p ../line-of-time-api/public/assets && cp -r dist/assets ../line-of-time-api/public",
     "clean-ui": "rm -rf ../line-of-time-api/public/ui && mkdir -p ../line-of-time-api/public/ui && cp dist/index.html ../line-of-time-api/public/ui",
     "deploy": "npm run build && npm run clean-assets && npm run clean-ui",
