@@ -5,6 +5,7 @@ trigger: always_on
 ## Miscellany
 
 - When asked to write a plan, make a file named "plan.md" and put it in the top level directory. go ahead and write the plan to the file, even before and questions or concerns are addressed.
+- Unless asked not to, when you finish a task, run '/home/sprite/notify-app Task Finished' as long as '/home/sprite/notify-app' exists.
 
 ## Typescript
 
@@ -31,8 +32,12 @@ trigger: always_on
 
 ## server and test running
 
-- this project creates code that runs in the public directory of /home/sprite/line-of-time-api so to build this project when code changes, run the 'npm run build' command for this project, and then if there is no server running on port 3000, run the './go o' command-line script in the /home/sprite/line-of-time-api directory.
-- all URLs for this project will be mounted under '/ui' when the line-of-time-api server is running
+- run the server with one of the following commands, you cannot just run 'npm run dev':
+  - npm run dev-open-sign-up
+  - npm run dev-no-sign-up
+  - npm run dev-gated-sign-up
+  - npm run dev-interest-sign-up
+- by default, run the server with open sign-up
 - run the tests with the following command:
   - npx playwright test
   - you can add specific tests by naming them after the 'npx playwright test' command
