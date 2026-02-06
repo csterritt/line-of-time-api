@@ -1,61 +1,63 @@
-# Remove longerDescription Column from event table
+# Update HomeView to Show User Welcome / Sign-In Message
 
 ## Goal
-Remove all code references to the `longerDescription` column from the event table. The schema has already been updated.
+Replace the counter-based mock content in `HomeView.vue` with a dynamic welcome message based on the `user-info` Pinia store. Remove the counter store entirely.
 
 ## Assumptions
-- Database schema already updated (column removed from schema.ts)
-- Database migrations already applied
-- No data preservation needed
+- The `user-info` store (`line-of-time-fe/src/stores/user-info.ts`) already exists and works
+- The Vue app is served at `/ui/` by the Hono backend
+- E2e tests use Playwright and run against `http://localhost:3000`
+- The `KNOWN_USER` test user (name: `FredF`) can be signed in via the existing `submitSignInForm` helper
+- The `/ui/` page needs `fetchUserInfo` called on mount to populate the store
 
-## Files to Modify (21 references across 11 files)
+## Files to Modify
 
-1. `src/validators/event-validator.ts` (6 matches) - Remove from validation schema and validation logic
-2. `src/routes/time-info/event-utils.ts` (2 matches) - Remove from EventResponse interface and parseEvent function
-3. `src/routes/time-info/event.ts` (1 match) - Remove from update payload
-4. `src/routes/time-info/new-event.ts` (1 match) - Remove from insert payload
-5. `src/routes/time-info/search.ts` (1 match) - Remove from search query
-6. `src/routes/test/database.ts` (3 matches) - Remove from test event seed data
-7. `tests/event-validator.test.ts` (2 matches) - Remove from unit tests
-8. `e2e-tests/time-info/03-create-event.spec.ts` (2 matches) - Remove from create event test
-9. `e2e-tests/time-info/06-search-events.spec.ts` (1 match) - Remove longerDescription search test
-10. `e2e-tests/time-info/01-get-events.spec.ts` (1 match) - Remove from expected response
-11. `e2e-tests/time-info/02-get-event-by-id.spec.ts` (1 match) - Remove from expected response
+1. **`line-of-time-fe/src/components/HomeView.vue`** — Replace counter content with user-info-based welcome/sign-in message
+2. **`line-of-time-fe/src/stores/counter.ts`** — Delete this file
+
+## Files to Create
+
+1. **`e2e-tests/general/02-home-view.spec.ts`** — E2e tests for the `/ui/` home page
 
 ## Implementation Steps
 
-1. **Update validator** (`src/validators/event-validator.ts`)
-   - Remove `longerDescription?: string | null` from `EventInput` interface
-   - Remove `MAX_LONGER_DESCRIPTION_LENGTH` constant
-   - Remove validation logic for longerDescription
+### 1. Update `HomeView.vue`
 
-2. **Update event utils** (`src/routes/time-info/event-utils.ts`)
-   - Remove `longerDescription: string | null` from `EventResponse` interface
-   - Remove `longerDescription: dbEvent.longerDescription` from `parseEvent` return
+- Remove `useCounterStore` import and usage
+- Import `useUserInfoStore` and call `fetchUserInfo` via `onMounted`
+- Show `"Welcome <name>"` (with `data-testid="welcome-message"`) when `isSignedIn` is true
+- Show `"Sign in for more options"` (with `data-testid="sign-in-prompt"`) when `isSignedIn` is false
+- Remove the count display, double count display, and increment button
 
-3. **Update route handlers**
-   - `src/routes/time-info/event.ts`: Remove `longerDescription: body.longerDescription ?? null` from updatedEvent
-   - `src/routes/time-info/new-event.ts`: Remove `longerDescription: body.longerDescription ?? null` from newEvent
-   - `src/routes/time-info/search.ts`: Remove `sql`LOWER(${event.longerDescription}) LIKE ${lowerPattern}`` from search query
+### 2. Delete `counter.ts`
 
-4. **Update test data** (`src/routes/test/database.ts`)
-   - Remove `longerDescription` field from all test event objects
+- Remove `line-of-time-fe/src/stores/counter.ts`
 
-5. **Update unit tests** (`tests/event-validator.test.ts`)
-   - Remove `longerDescription` from test cases
+### 3. Create e2e tests (`e2e-tests/general/02-home-view.spec.ts`)
 
-6. **Update e2e tests**
-   - `03-create-event.spec.ts`: Remove longerDescription from test
-   - `06-search-events.spec.ts`: Remove longerDescription search test
-   - `01-get-events.spec.ts`: Remove from expected response
-   - `02-get-event-by-id.spec.ts`: Remove from expected response
+Tests should use the existing support helpers (`clearDatabase`, `seedDatabase`, `submitSignInForm`, etc.) and the `BASE_URLS`/`TEST_USERS` test data.
 
-7. **Verify**
-   - Start server: `npm run dev-open-sign-up`
-   - Run tests: `npx playwright test -x`
+**Test 1: shows sign-in prompt when not signed in**
+- Clear and seed database
+- Navigate to `http://localhost:3000/ui/`
+- Verify `data-testid="sign-in-prompt"` is visible with text "Sign in for more options"
+- Verify `data-testid="welcome-message"` is NOT visible
+
+**Test 2: shows welcome message when signed in**
+- Clear and seed database
+- Navigate to sign-in page, sign in as `KNOWN_USER`
+- Navigate to `http://localhost:3000/ui/`
+- Verify `data-testid="welcome-message"` is visible with text "Welcome FredF"
+- Verify `data-testid="sign-in-prompt"` is NOT visible
+
+### 4. Verify
+- Run unit tests: `cd line-of-time-fe && npx vitest run`
+- Start server: `npm run dev-open-sign-up`
+- Run e2e tests: `npx playwright test e2e-tests/general/02-home-view.spec.ts`
 
 ## Pitfalls
 
-1. **Type errors** - If longerDescription is still referenced in type definitions
-2. **Test failures** - If test data expects longerDescription in responses
-3. **Database constraint errors** - If migrations not applied (user said they're done)
+1. **`fetchUserInfo` timing** — Must call `fetchUserInfo` in `onMounted` so the store is populated before rendering; use `v-if`/`v-else` on `isSignedIn` to handle the reactive update
+2. **Cookie forwarding** — `fetch('/auth/user-signed-in')` from the Vue app must include credentials (same-origin cookies) so the backend sees the session; `fetch` defaults to `same-origin` credentials which should work since the Vue app is served from the same origin
+3. **Counter store references** — Must ensure no other file imports `counter.ts` after deletion
+4. **Test isolation** — E2e tests must clear/seed the database in `beforeEach` to avoid cross-test pollution

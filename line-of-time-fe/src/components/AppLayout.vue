@@ -61,7 +61,7 @@ defineProps<{
 
     <footer class="footer footer-center p-4 bg-base-300 text-base-content">
       <div>
-        <p>Copyright &copy; 2025</p>
+        <p>Copyright &copy; 2026</p>
       </div>
     </footer>
   </div>
