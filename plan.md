@@ -1,76 +1,74 @@
-# Replace About Button with Sign In / Sign Out in AppLayout Navbar
+# Event List on Home Page + Redirect After Event Creation
 
 ## Goal
-Remove the "About" button from the Vue app navbar and replace it with a conditional "Sign In" / "Sign Out" button matching the behavior in `build-layout.tsx`. The button should link to `/auth/sign-in` when not signed in, and POST to `/auth/sign-out` when signed in.
+1. When signed in, `/ui/` shows a list of the first 20 events (ordered by `startTimestamp`).
+2. After successfully creating an event, redirect back to `/ui/` instead of staying on the add page.
 
 ## Assumptions
-- The `user-info` store already provides `isSignedIn`, `name`, and `fetchUserInfo`
-- Sign-in is at `/auth/sign-in` (from `PATHS.AUTH.SIGN_IN`)
-- Sign-out is at `/auth/sign-out` via POST (from `build-layout.tsx`)
-- After sign-out, the user should be redirected (the server handles the redirect on POST to `/auth/sign-out`)
-- The About page and route can remain — we're only removing the navbar link to it
-- `AppLayout.vue` needs access to the `user-info` store, so `fetchUserInfo` should be called there (on mount) rather than in `HomeView.vue`, to avoid duplicate calls
+- "First 20 events" = earliest 20 by `startTimestamp`. The API (`GET /time-info/events/:start/:end`) orders by `startTimestamp`. Use a wide range (0 to far-future) and slice to 20 client-side.
+- Event list only shown when signed in.
+- After redirect, the success message from event creation is still visible on the home page (stored in event-store).
+- Each event in the list shows `name` and `basicDescription`.
 
 ## Files to Modify
 
-1. **`line-of-time-fe/src/components/AppLayout.vue`** — Remove About link, add Sign In / Sign Out button using user-info store
-2. **`line-of-time-fe/src/components/HomeView.vue`** — Remove `onMounted` / `fetchUserInfo` call (moved to AppLayout)
-3. **`e2e-tests/general/02-home-view.spec.ts`** — Expand with tests for Sign In / Sign Out button behavior
+1. **`line-of-time-fe/src/stores/event-store.ts`** — Add `events` state, `fetchEvents` action, and `EventResponse` type
+2. **`line-of-time-fe/src/components/HomeView.vue`** — Display event list when signed in, show event-store success message
+3. **`line-of-time-fe/src/components/NewEventView.vue`** — Navigate to `/` on successful creation instead of clearing form
+4. **`e2e-tests/general/03-new-event.spec.ts`** — Update test for redirect after creation; add test for event list
 
 ## Implementation Steps
 
-### 1. Update `AppLayout.vue`
+### 1. Update `event-store.ts`
 
-- Import `onMounted` from `vue` and `useUserInfoStore` from `@/stores/user-info`
-- Call `fetchUserInfo` in `onMounted`
-- Remove the About `RouterLink` from `navbar-end`
-- When `userInfo.isSignedIn` is false: show `<a href="/auth/sign-in">` with `class="btn btn-primary"` and `data-testid="sign-in-action"`, text "Sign in"
-- When `userInfo.isSignedIn` is true: show a `<form method="post" action="/auth/sign-out">` with a `<button>` with `class="btn btn-outline btn-sm"` and `data-testid="sign-out-action"`, text "Sign out"
+- Add type `EventResponse` with fields: `id`, `name`, `basicDescription`, `startTimestamp`, `endTimestamp`, `referenceUrls`, `relatedEventIds`, `createdAt`, `updatedAt`
+- Add state: `events` (ref, `EventResponse[]`, default `[]`)
+- Add action: `fetchEvents()` — GETs `/time-info/events/0/99999999999`, slices result to first 20, stores in `events`
+- Keep existing `createNewEvent`, `successMessage`, `errorMessage`, `clearMessages`
 
-### 2. Update `HomeView.vue`
+### 2. Update `NewEventView.vue`
 
-- Remove `import { onMounted } from 'vue'`
-- Remove the `onMounted(() => { userInfo.fetchUserInfo() })` block
-- Keep the `useUserInfoStore` import and usage for the welcome/sign-in-prompt display (the store is now populated by AppLayout)
+- Import `useRouter` from `vue-router`
+- On successful `createNewEvent`, call `router.push('/')` instead of clearing form fields
+- Remove the success alert display (success message will show on HomeView)
+- Keep the error alert display for failed submissions
 
-### 3. Update e2e tests (`e2e-tests/general/02-home-view.spec.ts`)
+### 3. Update `HomeView.vue`
 
-Add/modify tests:
+- Import `useEventStore` and call `eventStore.fetchEvents()` via `onMounted` (only when signed in)
+- Display `eventStore.successMessage` as a success alert with `data-testid="success-message"` (for post-creation feedback)
+- Display event list in a table or card list below the welcome message and "Add a new event" button:
+  - Each event row: `name`, `basicDescription`
+  - Container: `data-testid="event-list"`
+  - Each event item: `data-testid="event-item"`
+- If no events, show "No events yet" with `data-testid="no-events-message"`
+- Use `watch` on `userInfo.isSignedIn` to fetch events when sign-in state changes (since `fetchUserInfo` is async in AppLayout)
 
-**Test 1 (existing, update): shows sign-in prompt and Sign In button when not signed in**
-- Navigate to `/ui/`
-- Verify `sign-in-prompt` text visible
-- Verify `sign-in-action` button visible
-- Verify `sign-out-action` NOT visible
+### 4. Update e2e tests (`e2e-tests/general/03-new-event.spec.ts`)
 
-**Test 2 (existing, update): shows welcome message and Sign Out button when signed in**
-- Sign in as KNOWN_USER via `/auth/sign-in`
-- Navigate to `/ui/`
-- Verify `welcome-message` visible with "Welcome FredF"
-- Verify `sign-out-action` button visible
-- Verify `sign-in-action` NOT visible
+**Update Test 4 (successful creation):**
+- After creating event, verify redirect to `/ui/` (not staying on form page)
+- Verify `success-message` is visible on the home page
+- Verify the newly created event appears in the event list
 
-**Test 3 (new): clicking Sign In navigates to sign-in page**
-- Navigate to `/ui/`
-- Click `sign-in-action`
-- Verify on sign-in page (use `verifyOnSignInPage`)
+**Add Test: event list shows events when signed in**
+- Sign in, seed events, navigate to `/ui/`
+- Verify `event-list` is visible with event items
 
-**Test 4 (new): full sign-in flow from /ui/ shows welcome and Sign Out**
-- Navigate to `/ui/`
-- Click `sign-in-action` to go to sign-in page
-- Sign in as KNOWN_USER
-- Navigate back to `/ui/`
-- Verify `welcome-message` contains "Welcome FredF"
-- Verify `sign-out-action` visible
+**Add Test: event list not shown when not signed in**
+- Navigate to `/ui/` without signing in
+- Verify `event-list` is NOT visible
 
-### 4. Verify
+### 5. Verify
 - Run unit tests: `cd line-of-time-fe && npx vitest run`
 - Start server: `npm run dev-open-sign-up`
-- Run e2e tests: `npx playwright test e2e-tests/general/02-home-view.spec.ts -x`
+- Run e2e tests: `npx playwright test e2e-tests/general/03-new-event.spec.ts -x`
+- Run full suite: `npx playwright test -x`
 
 ## Pitfalls
 
-1. **Sign-out mechanism** — `build-layout.tsx` uses `<form method="post" action="/auth/sign-out">`. The Vue app should do the same — a real form POST, not a fetch call — so the server can handle the redirect properly.
-2. **fetchUserInfo location** — Moving `fetchUserInfo` from `HomeView` to `AppLayout` ensures it runs on every page, not just the home page. This is needed so the navbar always reflects sign-in state.
-3. **About route** — We're only removing the navbar link; the `/about` route and `AboutView.vue` component remain in place.
-4. **data-testid consistency** — Must use `sign-in-action` and `sign-out-action` to match the existing `build-layout.tsx` test IDs.
+1. **Timestamp range** — Using `0` to `99999999999` covers all reasonable events. The API requires both start and end as integers.
+2. **Async timing** — `fetchUserInfo` in AppLayout is async. HomeView needs to `watch` for `isSignedIn` to become true before fetching events, not just check on mount.
+3. **Success message persistence** — The event-store's `successMessage` persists across navigation since Pinia stores are global. Must clear it after displaying (e.g., on next `fetchEvents` or after a timeout).
+4. **Redirect vs. form reset** — `router.push('/')` navigates within the Vue SPA, so the Pinia store state (including `successMessage`) is preserved.
+5. **Event seeding for tests** — Use `seedEvents` from db-helpers if available, or create events via the API in the test setup.
