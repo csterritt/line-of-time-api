@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useUserInfoStore } from '@/stores/user-info'
+
 defineProps<{
   message?: string
   error?: string
 }>()
+
+const userInfo = useUserInfoStore()
+
+onMounted(() => {
+  userInfo.fetchUserInfo()
+})
 </script>
 
 <template>
@@ -15,9 +24,14 @@ defineProps<{
       </div>
 
       <div class="navbar-end flex items-center">
-        <RouterLink to="/about" class="btn btn-outline btn-sm" data-testid="about-action">
-          About
-        </RouterLink>
+        <a v-if="!userInfo.isSignedIn" href="/auth/sign-in" class="btn btn-primary" data-testid="sign-in-action">
+          Sign in
+        </a>
+        <form v-else method="post" action="/auth/sign-out">
+          <button type="submit" class="btn btn-outline btn-sm" data-testid="sign-out-action">
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
 

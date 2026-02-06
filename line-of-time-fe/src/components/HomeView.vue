@@ -1,12 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useUserInfoStore } from '@/stores/user-info'
 
 const userInfo = useUserInfoStore()
-
-onMounted(() => {
-  userInfo.fetchUserInfo()
-})
 </script>
 
 <template>
