@@ -20,8 +20,8 @@ test.describe('Body size limit', () => {
         TEST_USERS.KNOWN_USER.password
       )
 
-      // Create a large payload (2KB) - search endpoint expects { search: string }
-      const largePayload = { search: 'X'.repeat(2000) }
+      // Create a large payload (5KB) - exceeds the 4KB body limit
+      const largePayload = { search: 'X'.repeat(5000) }
 
       // Attempt to POST to the search endpoint with the large payload
       const response = await request.post(
@@ -62,10 +62,10 @@ test.describe('Body size limit', () => {
         TEST_USERS.KNOWN_USER.password
       )
 
-      // Create form data with a large value (2KB)
+      // Create form data with a large value (5KB) - exceeds the 4KB body limit
       // Using forgot password endpoint which accepts form data
       const formData = {
-        email: 'X'.repeat(2000) + '@example.com',
+        email: 'X'.repeat(5000) + '@example.com',
       }
 
       // Attempt to POST to the forgot password endpoint with the large form data payload

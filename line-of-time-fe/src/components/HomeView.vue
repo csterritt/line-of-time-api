@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { useUserInfoStore } from '@/stores/user-info'
 import { useEventStore } from '@/stores/event-store'
 
 const userInfo = useUserInfoStore()
 const eventStore = useEventStore()
 
-onMounted(() => {
-  eventStore.fetchEvents()
-})
+watch(
+  () => userInfo.isSignedIn,
+  (signedIn) => {
+    if (signedIn) {
+      eventStore.fetchEvents()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -46,7 +52,7 @@ onMounted(() => {
         </RouterLink>
       </div>
 
-      <div class="mt-6">
+      <div v-if="userInfo.isSignedIn" class="mt-6">
         <h3 class="text-lg font-semibold mb-3">Events</h3>
         <div v-if="eventStore.events.length > 0" data-testid="event-list">
           <div

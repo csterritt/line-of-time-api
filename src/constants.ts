@@ -81,6 +81,7 @@ export const PATHS = {
     EVENT: '/time-info/event',
     NEW_EVENT: '/time-info/new-event',
     SEARCH: '/time-info/search',
+    INITIAL_SEARCH: '/time-info/initial-search',
   },
 } as const
 

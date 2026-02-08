@@ -59,6 +59,7 @@ import { eventsRouter } from './routes/time-info/events'
 import { eventRouter } from './routes/time-info/event'
 import { newEventRouter } from './routes/time-info/new-event'
 import { searchRouter } from './routes/time-info/search'
+import { initialSearchRouter } from './routes/time-info/initial-search'
 import { PATHS } from './constants'
 
 /**
@@ -150,7 +151,7 @@ app.use(async (c, next) => {
 app.use(
   bodyLimit({
     // maxSize: 4 * 1024, // 4kb // PRODUCTION:UNCOMMENT
-    maxSize: 1024, // 1kb // PRODUCTION:REMOVE
+    maxSize: 4 * 1024, // 4kb // PRODUCTION:REMOVE
     onError: (c) => {
       console.log('Body limit exceeded')
       return c.text('overflow :(', HTML_STATUS.CONTENT_TOO_LARGE)
@@ -222,6 +223,7 @@ app.route(PATHS.TIME_INFO.EVENTS, eventsRouter)
 app.route(PATHS.TIME_INFO.EVENT, eventRouter)
 app.route(PATHS.TIME_INFO.NEW_EVENT, newEventRouter)
 app.route(PATHS.TIME_INFO.SEARCH, searchRouter)
+app.route(PATHS.TIME_INFO.INITIAL_SEARCH, initialSearchRouter)
 
 if (isTestRouteEnabledFlag) {
   handleSetClock(app) // PRODUCTION:REMOVE

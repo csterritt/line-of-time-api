@@ -9,6 +9,13 @@ export type EventInput = {
   referenceUrls: string[]
 }
 
+export type WikiInfo = {
+  name: string
+  extract: string
+  text: string
+  links: string[]
+}
+
 export type EventResponse = {
   id: string
   name: string
@@ -59,6 +66,37 @@ export const useEventStore = defineStore('event-store', () => {
     }
   }
 
+  const wikiInfo = ref<WikiInfo | null>(null)
+  const wikiLoading = ref(false)
+
+  const getInfo = async (name: string): Promise<WikiInfo | null> => {
+    clearMessages()
+    wikiInfo.value = null
+    wikiLoading.value = true
+    try {
+      const response = await fetch('/time-info/initial-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        errorMessage.value = typeof data.error === 'string' ? data.error : 'Search failed.'
+        return null
+      }
+
+      const data = (await response.json()) as WikiInfo
+      wikiInfo.value = data
+      return data
+    } catch {
+      errorMessage.value = 'Network error. Please try again.'
+      return null
+    } finally {
+      wikiLoading.value = false
+    }
+  }
+
   const events = ref<EventResponse[]>([])
 
   const fetchEvents = async () => {
@@ -75,5 +113,5 @@ export const useEventStore = defineStore('event-store', () => {
     }
   }
 
-  return { successMessage, errorMessage, clearMessages, createNewEvent, events, fetchEvents }
+  return { successMessage, errorMessage, clearMessages, createNewEvent, wikiInfo, wikiLoading, getInfo, events, fetchEvents }
 })
