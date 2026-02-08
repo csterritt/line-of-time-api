@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 import type { EventInput } from '@/stores/event-store'
-
-// const nameMax = 500 // PRODUCTION:UNCOMMENT
-const nameMax = 502
 
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
 const basicDescriptionMax = 1002
@@ -15,14 +12,23 @@ const textPreviewWordLimit = 500
 const router = useRouter()
 const eventStore = useEventStore()
 
-const name = ref('')
-const basicDescription = ref('')
+onMounted(() => {
+  if (!eventStore.wikiInfo) {
+    router.replace('/search')
+  }
+})
+
+const name = computed(() => eventStore.wikiInfo?.name ?? '')
+const referenceUrl = computed(
+  () =>
+    eventStore.wikiInfo
+      ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
+      : ''
+)
+
+const basicDescription = ref(eventStore.wikiInfo?.extract ?? '')
 const startTimestamp = ref('')
 const endTimestamp = ref('')
-const referenceUrl = ref('')
-const infoLoaded = ref(false)
-
-const nameIsValid = computed(() => name.value.trim().length > 0)
 
 const firstNWords = (text: string, n: number): string => {
   const words = text.split(/\s+/).filter((w) => w.length > 0)
@@ -36,17 +42,10 @@ const textPreview = computed(() => {
   return firstNWords(eventStore.wikiInfo.text, textPreviewWordLimit)
 })
 
-const handleSearch = async () => {
+const handleSearchAgain = () => {
+  eventStore.wikiInfo = null
   eventStore.clearMessages()
-  infoLoaded.value = false
-
-  const result = await eventStore.getInfo(name.value)
-  if (result) {
-    name.value = result.name
-    basicDescription.value = result.extract
-    referenceUrl.value = `https://en.wikipedia.org/wiki/${encodeURIComponent(result.name)}`
-    infoLoaded.value = true
-  }
+  router.push('/search')
 }
 
 const handleSubmit = async () => {
@@ -65,13 +64,14 @@ const handleSubmit = async () => {
 
   const success = await eventStore.createNewEvent(eventData)
   if (success) {
+    eventStore.wikiInfo = null
     router.push('/')
   }
 }
 </script>
 
 <template>
-  <div class="card bg-base-100 shadow-xl">
+  <div v-if="eventStore.wikiInfo" class="card bg-base-100 shadow-xl">
     <div class="card-body">
       <h2 class="card-title text-2xl">Add a New Event</h2>
 
@@ -98,29 +98,15 @@ const handleSubmit = async () => {
         </label>
         <input
           id="name-input"
-          v-model="name"
           type="text"
           class="input input-bordered w-full"
-          required
-          :maxlength="nameMax"
+          :value="name"
+          readonly
           data-testid="name-input"
         />
       </div>
 
-      <div v-if="!infoLoaded" class="form-control mt-4">
-        <button
-          type="button"
-          class="btn btn-primary"
-          :disabled="!nameIsValid || eventStore.wikiLoading"
-          data-testid="search-wikipedia-action"
-          @click="handleSearch"
-        >
-          <span v-if="eventStore.wikiLoading" class="loading loading-spinner loading-sm"></span>
-          {{ eventStore.wikiLoading ? 'Searching...' : 'Search Wikipedia' }}
-        </button>
-      </div>
-
-      <form v-if="infoLoaded" @submit.prevent="handleSubmit" class="space-y-4 mt-4">
+      <form @submit.prevent="handleSubmit" class="space-y-4 mt-4">
         <div class="form-control">
           <label class="label" for="basic-description-input">
             <span class="label-text">Basic Description</span>
@@ -168,10 +154,10 @@ const handleSubmit = async () => {
           </label>
           <input
             id="reference-url-input"
-            v-model="referenceUrl"
             type="url"
             class="input input-bordered w-full"
-            required
+            :value="referenceUrl"
+            readonly
             data-testid="reference-url-input"
           />
         </div>
@@ -183,25 +169,23 @@ const handleSubmit = async () => {
           <button
             type="button"
             class="btn btn-secondary"
-            :disabled="!nameIsValid || eventStore.wikiLoading"
-            data-testid="search-wikipedia-action"
-            @click="handleSearch"
+            data-testid="search-again-action"
+            @click="handleSearchAgain"
           >
-            <span v-if="eventStore.wikiLoading" class="loading loading-spinner loading-sm"></span>
-            {{ eventStore.wikiLoading ? 'Searching...' : 'Search Wikipedia' }}
+            Search again
           </button>
         </div>
       </form>
 
-      <div v-if="infoLoaded && eventStore.wikiInfo" class="mt-6 space-y-4">
-        <div class="border border-base-300 rounded-lg p-4" data-testid="wiki-text-preview">
+      <div class="mt-6 space-y-4">
+        <div class="border border-base-300 rounded-lg p-4 h-[25vh] overflow-y-auto" data-testid="wiki-text-preview">
           <h3 class="font-bold text-lg mb-2">Wikipedia Text Preview</h3>
           <p class="whitespace-pre-line">{{ textPreview }}</p>
         </div>
 
-        <div data-testid="wiki-links-list">
+        <div class="h-[25vh] overflow-y-auto" data-testid="wiki-links-list">
           <h3 class="font-bold text-lg mb-2">Related Links</h3>
-          <ul class="list-disc list-inside max-h-64 overflow-y-auto">
+          <ul class="list-disc list-inside">
             <li v-for="(link, index) in eventStore.wikiInfo.links" :key="index">
               {{ link }}
             </li>

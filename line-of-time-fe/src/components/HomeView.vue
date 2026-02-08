@@ -47,7 +47,7 @@ watch(
       <p v-else data-testid="sign-in-prompt">Sign in for more options</p>
 
       <div v-if="userInfo.isSignedIn" class="mt-4">
-        <RouterLink to="/new-event" class="btn btn-primary" data-testid="add-event-action">
+        <RouterLink to="/search" class="btn btn-primary" data-testid="add-event-action">
           Add a new event
         </RouterLink>
       </div>

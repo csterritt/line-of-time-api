@@ -812,23 +812,6 @@
       }
     }
   }
-  .indicator {
-    @layer daisyui.l1.l2.l3 {
-      position: relative;
-      display: inline-flex;
-      width: max-content;
-      :where(.indicator-item) {
-        z-index: 1;
-        position: absolute;
-        white-space: nowrap;
-        top: var(--indicator-t, 0);
-        bottom: var(--indicator-b, auto);
-        left: var(--indicator-s, auto);
-        right: var(--indicator-e, 0);
-        translate: var(--indicator-x, 50%) var(--indicator-y, -50%);
-      }
-    }
-  }
   .table {
     @layer daisyui.l1.l2.l3 {
       font-size: 0.875rem;
@@ -1887,8 +1870,11 @@
   .h-6 {
     height: calc(var(--spacing) * 6);
   }
-  .max-h-64 {
-    max-height: calc(var(--spacing) * 64);
+  .h-\[25vh\] {
+    height: 25vh;
+  }
+  .max-h-\[25vh\] {
+    max-height: 25vh;
   }
   .min-h-screen {
     min-height: 100vh;
