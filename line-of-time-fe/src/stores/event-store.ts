@@ -101,9 +101,9 @@ export const useEventStore = defineStore('event-store', () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/time-info/events/0/99999999999')
+      const response = await fetch('/time-info/events/-99999999999/99999999999')
       if (response.ok) {
-        const data = await response.json() as EventResponse[]
+        const data = (await response.json()) as EventResponse[]
         events.value = data.slice(0, 20)
       } else {
         events.value = []
@@ -113,5 +113,15 @@ export const useEventStore = defineStore('event-store', () => {
     }
   }
 
-  return { successMessage, errorMessage, clearMessages, createNewEvent, wikiInfo, wikiLoading, getInfo, events, fetchEvents }
+  return {
+    successMessage,
+    errorMessage,
+    clearMessages,
+    createNewEvent,
+    wikiInfo,
+    wikiLoading,
+    getInfo,
+    events,
+    fetchEvents,
+  }
 })

@@ -14,7 +14,9 @@ test.afterEach(async () => {
   await clearDatabase()
 })
 
-test('shows sign-in prompt and Sign In button when not signed in', async ({ page }) => {
+test('shows sign-in prompt and Sign In button when not signed in', async ({
+  page,
+}) => {
   await page.goto(`${BASE_URLS.HOME}/ui/`)
 
   await page.waitForSelector('[data-testid="sign-in-prompt"]')
@@ -26,7 +28,9 @@ test('shows sign-in prompt and Sign In button when not signed in', async ({ page
   expect(await isElementVisible(page, 'sign-out-action')).toBe(false)
 })
 
-test('shows welcome message and Sign Out button when signed in', async ({ page }) => {
+test('shows welcome message and Sign Out button when signed in', async ({
+  page,
+}) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
@@ -49,7 +53,9 @@ test('clicking Sign In navigates to sign-in page', async ({ page }) => {
   await verifyOnSignInPage(page)
 })
 
-test('full sign-in flow from /ui/ shows welcome and Sign Out', async ({ page }) => {
+test('full sign-in flow from /ui/ shows welcome and Sign Out', async ({
+  page,
+}) => {
   await page.goto(`${BASE_URLS.HOME}/ui/`)
 
   await page.waitForSelector('[data-testid="sign-in-action"]')

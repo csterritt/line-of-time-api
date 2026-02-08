@@ -19,11 +19,10 @@ onMounted(() => {
 })
 
 const name = computed(() => eventStore.wikiInfo?.name ?? '')
-const referenceUrl = computed(
-  () =>
-    eventStore.wikiInfo
-      ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
-      : ''
+const referenceUrl = computed(() =>
+  eventStore.wikiInfo
+    ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
+    : ''
 )
 
 const basicDescription = ref(eventStore.wikiInfo?.extract ?? '')
@@ -178,7 +177,10 @@ const handleSubmit = async () => {
       </form>
 
       <div class="mt-6 space-y-4">
-        <div class="border border-base-300 rounded-lg p-4 h-[25vh] overflow-y-auto" data-testid="wiki-text-preview">
+        <div
+          class="border border-base-300 rounded-lg p-4 h-[25vh] overflow-y-auto"
+          data-testid="wiki-text-preview"
+        >
           <h3 class="font-bold text-lg mb-2">Wikipedia Text Preview</h3>
           <p class="whitespace-pre-line">{{ textPreview }}</p>
         </div>

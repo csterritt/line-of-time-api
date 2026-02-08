@@ -24,7 +24,12 @@ onMounted(() => {
       </div>
 
       <div class="navbar-end flex items-center">
-        <a v-if="!userInfo.isSignedIn" href="/auth/sign-in" class="btn btn-primary" data-testid="sign-in-action">
+        <a
+          v-if="!userInfo.isSignedIn"
+          href="/auth/sign-in"
+          class="btn btn-primary"
+          data-testid="sign-in-action"
+        >
           Sign in
         </a>
         <form v-else method="post" action="/auth/sign-out">
