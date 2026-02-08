@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 export interface EventInput {
-  startTimestamp: number
-  endTimestamp?: number | null
+  startTimestamp: string
+  endTimestamp?: string | null
   name: string
   basicDescription: string
   referenceUrls: string[]
@@ -17,7 +17,7 @@ interface ValidationResult {
 }
 
 const isValidTimestamp = (value: unknown): boolean => {
-  return typeof value === 'number' && Number.isInteger(value)
+  return typeof value === 'string'
 }
 
 const isValidUrl = (urlStr: string): boolean => {

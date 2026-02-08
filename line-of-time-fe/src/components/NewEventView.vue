@@ -53,12 +53,12 @@ const handleSubmit = async () => {
   const eventData: EventInput = {
     name: name.value,
     basicDescription: basicDescription.value,
-    startTimestamp: Math.floor(new Date(startTimestamp.value).getTime() / 1000),
+    startTimestamp: startTimestamp.value,
     referenceUrls: [referenceUrl.value],
   }
 
   if (endTimestamp.value) {
-    eventData.endTimestamp = Math.floor(new Date(endTimestamp.value).getTime() / 1000)
+    eventData.endTimestamp = endTimestamp.value
   }
 
   const success = await eventStore.createNewEvent(eventData)

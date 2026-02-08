@@ -12,6 +12,7 @@ import {
   EventInput,
 } from '../../validators/event-validator'
 import { parseEvent } from './event-utils'
+import { dateComponentsToTimestamp } from '../../lib/timestamp'
 
 const newEventRouter = new Hono<AppEnv>()
 
@@ -34,10 +35,29 @@ newEventRouter.post('/', signedInAccess, async (c) => {
   const now = new Date().toISOString()
   const id = crypto.randomUUID()
 
+  const startTime = new Date(body.startTimestamp)
+  const startTimestamp = dateComponentsToTimestamp({
+    year: startTime.getFullYear(),
+    month: startTime.getMonth() + 1,
+    day: startTime.getDate(),
+  })
+
+  const endTimestamp = body.endTimestamp
+    ? (() => {
+        const endTime = new Date(body.endTimestamp)
+        const endComponents = {
+          year: endTime.getFullYear(),
+          month: endTime.getMonth() + 1,
+          day: endTime.getDate(),
+        }
+        return dateComponentsToTimestamp(endComponents)
+      })()
+    : null
+
   const newEvent = {
     id,
-    startTimestamp: body.startTimestamp,
-    endTimestamp: body.endTimestamp ?? null,
+    startTimestamp: startTimestamp,
+    endTimestamp,
     name: body.name,
     basicDescription: body.basicDescription,
     referenceUrls: JSON.stringify(body.referenceUrls),

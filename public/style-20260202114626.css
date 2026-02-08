@@ -1873,9 +1873,6 @@
   .h-\[25vh\] {
     height: 25vh;
   }
-  .max-h-\[25vh\] {
-    max-height: 25vh;
-  }
   .min-h-screen {
     min-height: 100vh;
   }
