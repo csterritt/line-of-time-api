@@ -127,7 +127,7 @@ const handleSubmit = async () => {
           <input
             id="start-timestamp-input"
             v-model="startTimestamp"
-            type="datetime-local"
+            type="date"
             class="input input-bordered w-full"
             required
             data-testid="start-timestamp-input"
@@ -141,7 +141,7 @@ const handleSubmit = async () => {
           <input
             id="end-timestamp-input"
             v-model="endTimestamp"
-            type="datetime-local"
+            type="date"
             class="input input-bordered w-full"
             data-testid="end-timestamp-input"
           />
