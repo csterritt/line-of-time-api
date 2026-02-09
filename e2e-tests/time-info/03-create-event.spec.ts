@@ -10,7 +10,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 import { submitSignInForm } from '../support/form-helpers'
 
 const validEvent = {
-  startTimestamp: 738534,
+  startTimestamp: '2023-01-15',
   name: 'Test Event',
   basicDescription: 'A test event description',
   referenceUrls: ['https://example.com/reference'],
@@ -53,6 +53,7 @@ test.describe('POST /time-info/new-event', () => {
     const event = await response.json()
     expect(event.name).toBe('Test Event')
     expect(event.startTimestamp).toBe(738534)
+    expect(event.endTimestamp).toBeNull()
     expect(event.id).toBeDefined()
     expect(event.createdAt).toBeDefined()
 
@@ -70,7 +71,7 @@ test.describe('POST /time-info/new-event', () => {
 
     const fullEvent = {
       ...validEvent,
-      endTimestamp: 738535,
+      endTimestamp: '2023-01-16',
       relatedEventIds: ['related-1', 'related-2'],
     }
 

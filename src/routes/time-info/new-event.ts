@@ -37,18 +37,18 @@ newEventRouter.post('/', signedInAccess, async (c) => {
 
   const startTime = new Date(body.startTimestamp)
   const startTimestamp = dateComponentsToTimestamp({
-    year: startTime.getFullYear(),
-    month: startTime.getMonth() + 1,
-    day: startTime.getDate(),
+    year: startTime.getUTCFullYear(),
+    month: startTime.getUTCMonth() + 1,
+    day: startTime.getUTCDate(),
   })
 
   const endTimestamp = body.endTimestamp
     ? (() => {
         const endTime = new Date(body.endTimestamp)
         const endComponents = {
-          year: endTime.getFullYear(),
-          month: endTime.getMonth() + 1,
-          day: endTime.getDate(),
+          year: endTime.getUTCFullYear(),
+          month: endTime.getUTCMonth() + 1,
+          day: endTime.getUTCDate(),
         }
         return dateComponentsToTimestamp(endComponents)
       })()

@@ -10,7 +10,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 import { submitSignInForm } from '../support/form-helpers'
 
 const updatedEvent = {
-  startTimestamp: 719164,
+  startTimestamp: '1970-01-03',
   name: 'Updated Moon Landing',
   basicDescription: 'Updated description',
   referenceUrls: ['https://example.com/updated'],
