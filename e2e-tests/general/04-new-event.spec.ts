@@ -235,7 +235,7 @@ test('successfully creating an event redirects to home with success message and 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
     timeout: 15000,
   })
-  await fillInput(page, 'start-timestamp-input', '2026-06-15T10:00')
+  await fillInput(page, 'start-timestamp-input', '2026-06-15')
 
   await clickLink(page, 'create-event-action')
 
@@ -258,7 +258,7 @@ test('creating event without signing in shows error', async ({ page }) => {
   await page.waitForSelector('[data-testid="basic-description-input"]', {
     timeout: 15000,
   })
-  await fillInput(page, 'start-timestamp-input', '2026-06-15T10:00')
+  await fillInput(page, 'start-timestamp-input', '2026-06-15')
 
   await clickLink(page, 'create-event-action')
 

@@ -1,43 +1,67 @@
-# Plan: Fix timezone bug in ISO-to-timestamp conversion
-
-## Problem
-
-`new Date('2023-01-15')` parses as UTC midnight. But `getFullYear()`, `getMonth()`, `getDate()` return **local** time components. On a UTC box (Sprite) this gives Jan 15; on an EST box (Mac) it gives Jan 14 — off by one day.
+# Plan: Redesign HomeView event list to row-based layout with date column
 
 ## Assumptions
 
-- The intent is that the date string represents a calendar date, and timezone should not shift it
-- No tests need to change — the server code is what's wrong
+- `startTimestamp` is a day-number (days from year 1 AD), not a Unix timestamp — same system as `src/lib/timestamp.ts`
+- The frontend needs its own `timestampToYmd` utility since no frontend timestamp formatting exists yet
+- Seeded test events have known timestamps: Moon Landing (719163 → 1969-07-20), WWII (708249 → 1939-09-01), US Declaration (648856 → 1776-07-04)
+- The existing `event-item` data-testid stays, but inner structure changes
+
+## Files to Create
+
+| File | Purpose |
+| --- | --- |
+| `line-of-time-fe/src/utils/timestamp.ts` | `timestampToYmd(timestamp: number): string` — converts day-number to `yyyy-mm-dd` |
 
 ## Files to Modify
 
 | File | Change |
 | --- | --- |
-| `src/routes/time-info/new-event.ts` | `getFullYear` → `getUTCFullYear`, `getMonth` → `getUTCMonth`, `getDate` → `getUTCDate` |
-| `src/routes/time-info/event.ts` | Same changes in the PUT handler |
+| `line-of-time-fe/src/components/HomeView.vue` | Replace card-based event list with row layout: date | vertical line | bold name + truncated description |
+| `e2e-tests/general/04-new-event.spec.ts` | Update tests that check event list content to match new layout (date column, name, truncated description) |
 
 ## Implementation Steps
 
-### Step 1: Fix `new-event.ts`
+### Step 1: Create frontend timestamp utility
 
-- Line 40: `getFullYear()` → `getUTCFullYear()`
-- Line 41: `getMonth()` → `getUTCMonth()`
-- Line 42: `getDate()` → `getUTCDate()`
-- Lines 49–51: same three changes for `endTimestamp`
+- Port the `timestampToComponents` logic from `src/lib/timestamp.ts` to `line-of-time-fe/src/utils/timestamp.ts`
+- Export `timestampToYmd(timestamp: number): string` returning `yyyy-mm-dd`
 
-### Step 2: Fix `event.ts`
+### Step 2: Update HomeView.vue
 
-- Lines 59–61: same three changes for `startTimestamp`
-- Lines 68–70: same three changes for `endTimestamp`
+- Import `timestampToYmd`
+- Replace the `v-for` card layout with a row layout:
+  - Each row: `[date] | [bold name] [truncated description]`
+  - Date formatted as `yyyy-mm-dd`
+  - Vertical divider between date and name/description
+  - Description in a `div` with class `truncate` and `title` attribute set to full text
+- Keep existing `data-testid="event-item"` on each row
+- Add `data-testid="event-date"` on the date element
+- Add `data-testid="event-name"` on the name element
+- Add `data-testid="event-description"` on the description div
 
-### Step 3: Run tests
+### Step 3: Update existing tests
+
+- Test "event list shows seeded events when signed in" — add checks for date, name, and truncated description elements
+- Test "successfully creating an event redirects to home with success message and event in list" — verify new layout structure
+
+### Step 4: Add new tests
+
+- Verify date column shows `yyyy-mm-dd` format for seeded events
+- Verify name is bold
+- Verify description has `truncate` class
+- Verify description `title` attribute contains full text
+- Verify vertical divider exists between date and name/description
+
+### Step 5: Run tests
 
 - Start server: `npm run dev-open-sign-up`
-- Run: `npx playwright test e2e-tests/time-info/ -x`
-- Verify all pass
+- Run: `npx playwright test e2e-tests/general/ -x`
+- Fix failures one at a time
 
 ## Pitfalls
 
-1. **Only affects date-only ISO strings** — `new Date('2023-01-15T10:00')` is parsed as local time, so the UI's `datetime-local` input already works. But date-only strings like `'2023-01-15'` are parsed as UTC per the spec, causing the mismatch.
-2. **Both routes need the fix** — `event.ts` (PUT) has the same pattern as `new-event.ts` (POST).
-3. **Don't change the tests** — the tests are correct; the server must produce consistent results regardless of timezone.
+1. **Timestamp is day-number, not Unix** — must use the same leap-year-aware algorithm from `src/lib/timestamp.ts`, not `new Date()`
+2. **Truncation depends on container width** — `truncate` class needs a constrained-width parent; ensure the flex layout constrains the description column
+3. **Existing tests reference `event-list` text content** — the text now includes dates, so `toContain('Mercury')` should still work but verify
+4. **Year formatting** — for years < 1000, need zero-padding to 4 digits for `yyyy-mm-dd` format

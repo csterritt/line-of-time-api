@@ -2,6 +2,7 @@
 import { watch } from 'vue'
 import { useUserInfoStore } from '@/stores/user-info'
 import { useEventStore } from '@/stores/event-store'
+import { timestampToYmd } from '@/utils/timestamp'
 
 const userInfo = useUserInfoStore()
 const eventStore = useEventStore()
@@ -58,12 +59,21 @@ watch(
           <div
             v-for="evt in eventStore.events"
             :key="evt.id"
-            class="card bg-base-200 mb-2"
+            class="flex items-center gap-0 mb-2"
             data-testid="event-item"
           >
-            <div class="card-body p-4">
-              <h4 class="font-bold">{{ evt.name }}</h4>
-              <p class="text-sm">{{ evt.basicDescription }}</p>
+            <div class="shrink-0 font-mono text-sm" data-testid="event-date">
+              <div data-testid="event-start-date">{{ timestampToYmd(evt.startTimestamp) }}{{ evt.endTimestamp != null ? ' -' : '' }}</div>
+              <div v-if="evt.endTimestamp != null" class="ml-2" data-testid="event-end-date">{{ timestampToYmd(evt.endTimestamp) }}</div>
+            </div>
+            <div class="divider divider-horizontal mx-2"></div>
+            <div class="min-w-0 flex-1">
+              <span class="font-bold" data-testid="event-name">{{ evt.name }}</span>
+              <div
+                class="truncate text-sm"
+                :title="evt.basicDescription"
+                data-testid="event-description"
+              >{{ evt.basicDescription }}</div>
             </div>
           </div>
         </div>
