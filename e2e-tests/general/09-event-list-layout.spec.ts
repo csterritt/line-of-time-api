@@ -159,13 +159,11 @@ test('vertical divider exists between date and name/description', async ({
   await page.waitForSelector('[data-testid="event-list"]')
 
   const items = page.locator('[data-testid="event-item"]')
-  const count = await items.count()
-  expect(count).toBeGreaterThan(0)
+  const itemCount = await items.count()
+  expect(itemCount).toBeGreaterThan(0)
 
-  for (let i = 0; i < count; i++) {
-    const divider = items.nth(i).locator('.divider-horizontal')
-    expect(await divider.count()).toBe(1)
-  }
+  const dividers = page.getByTestId('event-list').locator('.divider-horizontal')
+  expect(await dividers.count()).toBe(itemCount)
 })
 
 test('WWII event shows correct end date', async ({ page }) => {

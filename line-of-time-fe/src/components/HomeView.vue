@@ -55,19 +55,19 @@ watch(
 
       <div v-if="userInfo.isSignedIn" class="mt-6">
         <h3 class="text-lg font-semibold mb-3">Events</h3>
-        <div v-if="eventStore.events.length > 0" data-testid="event-list">
-          <div
+        <div v-if="eventStore.events.length > 0" class="grid grid-cols-[auto_auto_1fr] gap-y-2" data-testid="event-list">
+          <template
             v-for="evt in eventStore.events"
             :key="evt.id"
-            class="flex items-center gap-0 mb-2"
-            data-testid="event-item"
           >
-            <div class="shrink-0 font-mono text-sm" data-testid="event-date">
-              <div data-testid="event-start-date">{{ timestampToYmd(evt.startTimestamp) }}{{ evt.endTimestamp != null ? ' -' : '' }}</div>
-              <div v-if="evt.endTimestamp != null" class="ml-2" data-testid="event-end-date">{{ timestampToYmd(evt.endTimestamp) }}</div>
+            <div class="font-mono text-sm self-center" data-testid="event-item" :data-event-id="evt.id">
+              <div class="font-mono text-sm" data-testid="event-date">
+                <div data-testid="event-start-date">{{ timestampToYmd(evt.startTimestamp) }}{{ evt.endTimestamp != null ? ' -' : '' }}</div>
+                <div v-if="evt.endTimestamp != null" class="ml-2" data-testid="event-end-date">{{ timestampToYmd(evt.endTimestamp) }}</div>
+              </div>
             </div>
             <div class="divider divider-horizontal mx-2"></div>
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 self-center">
               <span class="font-bold" data-testid="event-name">{{ evt.name }}</span>
               <div
                 class="truncate text-sm"
@@ -75,7 +75,7 @@ watch(
                 data-testid="event-description"
               >{{ evt.basicDescription }}</div>
             </div>
-          </div>
+          </template>
         </div>
         <p v-else data-testid="no-events-message">No events yet</p>
       </div>

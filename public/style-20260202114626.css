@@ -2428,6 +2428,9 @@
   .flex {
     display: flex;
   }
+  .grid {
+    display: grid;
+  }
   .hidden {
     display: none;
   }
@@ -2554,6 +2557,9 @@
   .list-disc {
     list-style-type: disc;
   }
+  .grid-cols-\[auto_auto_1fr\] {
+    grid-template-columns: auto auto 1fr;
+  }
   .flex-col {
     flex-direction: column;
   }
@@ -2607,6 +2613,12 @@
       margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
       margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
     }
+  }
+  .gap-y-2 {
+    row-gap: calc(var(--spacing) * 2);
+  }
+  .self-center {
+    align-self: center;
   }
   .truncate {
     overflow: hidden;
