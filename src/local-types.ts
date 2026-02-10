@@ -20,6 +20,7 @@ export type SignInSession = {
 export interface Bindings {
   LINE_OF_TIME_DB: D1Database
   ASSETS: Fetcher
+  AI: Ai
   Session: Maybe<SignInSession>
   db?: string
   signUpType?: string

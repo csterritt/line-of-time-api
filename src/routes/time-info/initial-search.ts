@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { convert } from 'html-to-text'
 
 import { AppEnv } from '../../local-types'
+import { aiCategorizationAndSearch } from '../../lib/ai-search'
 
 const MAX_BASIC_DESCRIPTION_LENGTH = 1000
 
@@ -143,6 +144,8 @@ initialSearchRouter.post('/', async (c) => {
   const parsed = (parseData as WikiParseResponse).parse
   const rawText = parsed.text['*']
   const rawLinks = parsed.links.map((link) => link['*'])
+
+  await aiCategorizationAndSearch(c.env, rawText)
 
   // Convert HTML to text
   const convertedName = convert(rawTitle) as string

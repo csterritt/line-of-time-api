@@ -24,6 +24,9 @@
     "db": "",
     "signUpType": "",
   },
+  "ai": {
+    "binding": "AI",
+  },
   "d1_databases": [
     {
       "binding": "LINE_OF_TIME_DB",
