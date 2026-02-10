@@ -189,7 +189,13 @@ const handleSubmit = async () => {
           <h3 class="font-bold text-lg mb-2">Related Links</h3>
           <ul class="list-disc list-inside">
             <li v-for="(link, index) in eventStore.wikiInfo.links" :key="index">
-              {{ link }}
+              <router-link
+                :to="'/search?name=' + encodeURIComponent(link)"
+                class="link link-primary"
+                data-testid="related-link"
+              >
+                {{ link }}
+              </router-link>
             </li>
           </ul>
         </div>

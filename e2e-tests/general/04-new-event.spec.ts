@@ -220,6 +220,59 @@ test('"Search again" button text says "Search again" not "Search Wikipedia"', as
   expect(buttonText).toContain('Search again')
 })
 
+test('related links in new-event page are clickable anchor tags', async ({
+  page,
+}) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="wiki-links-list"]', {
+    timeout: 15000,
+  })
+
+  const relatedLinks = page.getByTestId('related-link')
+  const count = await relatedLinks.count()
+  expect(count).toBeGreaterThan(0)
+
+  const firstLinkTag = await relatedLinks.first().evaluate((el) => el.tagName.toLowerCase())
+  expect(firstLinkTag).toBe('a')
+})
+
+test('clicking a related link navigates to search page with name pre-filled', async ({
+  page,
+}) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="wiki-links-list"]', {
+    timeout: 15000,
+  })
+
+  const firstLink = page.getByTestId('related-link').first()
+  const linkText = (await firstLink.textContent())?.trim() ?? ''
+  expect(linkText.length).toBeGreaterThan(0)
+
+  await firstLink.click()
+
+  await page.waitForSelector('[data-testid="name-input"]')
+  expect(page.url()).toContain('/ui/search')
+
+  const nameValue = await page.getByTestId('name-input').inputValue()
+  expect(nameValue).toBe(linkText)
+})
+
 test('successfully creating an event redirects to home with success message and event in list', async ({
   page,
 }) => {

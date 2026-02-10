@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 
 // const nameMax = 500 // PRODUCTION:UNCOMMENT
 const nameMax = 502
 
 const router = useRouter()
+const route = useRoute()
 const eventStore = useEventStore()
 
-const name = ref('')
+eventStore.wikiInfo = null
+eventStore.clearMessages()
+
+const queryName = typeof route.query.name === 'string' ? route.query.name : ''
+const name = ref(queryName)
 
 const nameIsValid = computed(() => name.value.trim().length > 0)
 
