@@ -82,7 +82,7 @@ test('searching Wikipedia for a known term redirects to new-event page with pre-
   expect(await isElementVisible(page, 'start-timestamp-input')).toBe(true)
   expect(await isElementVisible(page, 'reference-url-input')).toBe(true)
   expect(await isElementVisible(page, 'create-event-action')).toBe(true)
-  expect(await isElementVisible(page, 'wiki-text-preview')).toBe(true)
+  expect(await isElementVisible(page, 'wiki-page')).toBe(true)
   expect(await isElementVisible(page, 'wiki-links-list')).toBe(true)
 
   const descriptionValue = await page
@@ -174,7 +174,7 @@ test('"Search again" button navigates back to search page with empty fields', as
   expect(nameValue).toBe('')
 })
 
-test('Wikipedia Text Preview and Related Links sections are scrollable', async ({
+test('Related Links section is scrollable and Wikipedia Page has no height restriction', async ({
   page,
 }) => {
   await page.goto(BASE_URLS.SIGN_IN)
@@ -186,19 +186,19 @@ test('Wikipedia Text Preview and Related Links sections are scrollable', async (
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="wiki-text-preview"]', {
+  await page.waitForSelector('[data-testid="wiki-page"]', {
     timeout: 15000,
   })
-
-  const textPreviewOverflow = await page
-    .getByTestId('wiki-text-preview')
-    .evaluate((el) => getComputedStyle(el).overflowY)
-  expect(textPreviewOverflow).toBe('auto')
 
   const linksOverflow = await page
     .getByTestId('wiki-links-list')
     .evaluate((el) => getComputedStyle(el).overflowY)
   expect(linksOverflow).toBe('auto')
+
+  const wikiPageMaxHeight = await page
+    .getByTestId('wiki-page')
+    .evaluate((el) => getComputedStyle(el).maxHeight)
+  expect(wikiPageMaxHeight).toBe('none')
 })
 
 test('"Search again" button text says "Search again" not "Search Wikipedia"', async ({
@@ -244,7 +244,7 @@ test('related links in new-event page are clickable anchor tags', async ({
   expect(firstLinkTag).toBe('a')
 })
 
-test('clicking a related link navigates to search page with name pre-filled', async ({
+test('clicking a related link searches and navigates to new-event page', async ({
   page,
 }) => {
   await page.goto(BASE_URLS.SIGN_IN)
@@ -266,11 +266,58 @@ test('clicking a related link navigates to search page with name pre-filled', as
 
   await firstLink.click()
 
-  await page.waitForSelector('[data-testid="name-input"]')
-  expect(page.url()).toContain('/ui/search')
+  await page.waitForSelector('[data-testid="basic-description-input"]', {
+    timeout: 15000,
+  })
+  expect(page.url()).toContain('/ui/new-event')
 
   const nameValue = await page.getByTestId('name-input').inputValue()
-  expect(nameValue).toBe(linkText)
+  expect(nameValue.length).toBeGreaterThan(0)
+})
+
+test('Wikipedia Page section contains HTML content', async ({ page }) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="wiki-page"]', {
+    timeout: 15000,
+  })
+
+  const wikiContent = page.getByTestId('wiki-page').locator('.wiki-content')
+  const innerHTML = await wikiContent.innerHTML()
+  expect(innerHTML.length).toBeGreaterThan(0)
+  expect(innerHTML).toContain('<')
+})
+
+test('Related Links section appears before Wikipedia Page section', async ({
+  page,
+}) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="wiki-page"]', {
+    timeout: 15000,
+  })
+
+  const linksTop = await page
+    .getByTestId('wiki-links-list')
+    .evaluate((el) => el.getBoundingClientRect().top)
+  const wikiPageTop = await page
+    .getByTestId('wiki-page')
+    .evaluate((el) => el.getBoundingClientRect().top)
+  expect(linksTop).toBeLessThan(wikiPageTop)
 })
 
 test('successfully creating an event redirects to home with success message and event in list', async ({

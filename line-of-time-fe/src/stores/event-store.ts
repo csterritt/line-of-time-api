@@ -13,6 +13,7 @@ export type WikiInfo = {
   name: string
   extract: string
   text: string
+  htmlText: string
   links: string[]
 }
 

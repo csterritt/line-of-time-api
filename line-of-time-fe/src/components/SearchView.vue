@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 
@@ -26,6 +26,12 @@ const handleSearch = async () => {
     router.push('/new-event')
   }
 }
+
+onMounted(() => {
+  if (queryName) {
+    handleSearch()
+  }
+})
 
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && nameIsValid.value && !eventStore.wikiLoading) {

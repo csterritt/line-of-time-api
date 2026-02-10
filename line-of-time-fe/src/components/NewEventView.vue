@@ -7,8 +7,6 @@ import type { EventInput } from '@/stores/event-store'
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
 const basicDescriptionMax = 1002
 
-const textPreviewWordLimit = 500
-
 const router = useRouter()
 const eventStore = useEventStore()
 
@@ -28,18 +26,6 @@ const referenceUrl = computed(() =>
 const basicDescription = ref(eventStore.wikiInfo?.extract ?? '')
 const startTimestamp = ref('')
 const endTimestamp = ref('')
-
-const firstNWords = (text: string, n: number): string => {
-  const words = text.split(/\s+/).filter((w) => w.length > 0)
-  return words.slice(0, n).join(' ')
-}
-
-const textPreview = computed(() => {
-  if (!eventStore.wikiInfo) {
-    return ''
-  }
-  return firstNWords(eventStore.wikiInfo.text, textPreviewWordLimit)
-})
 
 const handleSearchAgain = () => {
   eventStore.wikiInfo = null
@@ -177,14 +163,6 @@ const handleSubmit = async () => {
       </form>
 
       <div class="mt-6 space-y-4">
-        <div
-          class="border border-base-300 rounded-lg p-4 h-[25vh] overflow-y-auto"
-          data-testid="wiki-text-preview"
-        >
-          <h3 class="font-bold text-lg mb-2">Wikipedia Text Preview</h3>
-          <p class="whitespace-pre-line">{{ textPreview }}</p>
-        </div>
-
         <div class="h-[25vh] overflow-y-auto" data-testid="wiki-links-list">
           <h3 class="font-bold text-lg mb-2">Related Links</h3>
           <ul class="list-disc list-inside">
@@ -198,6 +176,14 @@ const handleSubmit = async () => {
               </router-link>
             </li>
           </ul>
+        </div>
+
+        <div
+          class="border border-base-300 rounded-lg p-4"
+          data-testid="wiki-page"
+        >
+          <h3 class="font-bold text-lg mb-2">Wikipedia Page</h3>
+          <div class="wiki-content" v-html="eventStore.wikiInfo.htmlText"></div>
         </div>
       </div>
     </div>

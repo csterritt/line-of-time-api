@@ -160,6 +160,7 @@ initialSearchRouter.post('/', async (c) => {
     name: convertedName,
     extract: trimmedExtract,
     text: convertedText,
+    htmlText: rawText,
     links: convertedLinks,
   })
 })

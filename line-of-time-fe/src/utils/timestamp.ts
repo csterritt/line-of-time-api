@@ -17,7 +17,7 @@ const getDaysInMonth = (year: number, month: number): number => {
     return 29
   }
 
-  return DAYS_IN_MONTH[month - 1]
+  return DAYS_IN_MONTH[month - 1]!
 }
 
 const getDaysInYear = (year: number): number => {
