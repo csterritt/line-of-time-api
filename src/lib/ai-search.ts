@@ -184,26 +184,11 @@ interface ModelEntry {
 }
 
 const MODELS: readonly ModelEntry[] = [
-  // {
-  //   fullName: '@cf/openai/gpt-oss-120b',
-  //   maxInputSize: 126000,
-  //   apiStyle: 'responses',
-  // },
   {
     fullName: '@cf/qwen/qwen3-30b-a3b-fp8',
     maxInputSize: 30000,
     apiStyle: 'messages',
   },
-  // {
-  //   fullName: '@cf/mistralai/mistral-small-3.1-24b-instruct',
-  //   maxInputSize: 126000,
-  //   apiStyle: 'messages',
-  // },
-  // {
-  //   fullName: '@cf/google/gemma-3-12b-it',
-  //   maxInputSize: 78000,
-  //   apiStyle: 'messages',
-  // },
 ]
 
 const OTHER_FALLBACK: OtherResult = { type: 'other' }
@@ -212,13 +197,13 @@ export const aiCategorizationAndSearch = async (
   env: Bindings,
   rawText: string
 ): Promise<CategorizationResult> => {
-  // PRODUCTION:REMOVE-START
-  const mockResult = getAiMockResult()
+  // PRODUCTION:REMOVE-NEXT-LINE
+  const mockResult = getAiMockResult() // PRODUCTION:REMOVE
+  // PRODUCTION:REMOVE-NEXT-LINE
   if (mockResult) {
-    console.log('Using AI mock result:', JSON.stringify(mockResult))
-    return mockResult
-  }
-  // PRODUCTION:REMOVE-END
+    console.log('Using AI mock result:', JSON.stringify(mockResult)) // PRODUCTION:REMOVE
+    return mockResult // PRODUCTION:REMOVE
+  } // PRODUCTION:REMOVE
 
   for (const model of MODELS) {
     const rawTextPart = rawText.slice(0, model.maxInputSize)
