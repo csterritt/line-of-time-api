@@ -145,7 +145,7 @@ initialSearchRouter.post('/', async (c) => {
   const rawText = parsed.text['*']
   const rawLinks = parsed.links.map((link) => link['*'])
 
-  await aiCategorizationAndSearch(c.env, rawText)
+  const categorization = await aiCategorizationAndSearch(c.env, rawText)
 
   // Convert HTML to text
   const convertedName = convert(rawTitle) as string
@@ -165,6 +165,7 @@ initialSearchRouter.post('/', async (c) => {
     text: convertedText,
     htmlText: rawText,
     links: convertedLinks,
+    categorization,
   })
 })
 

@@ -9,12 +9,20 @@ export type EventInput = {
   referenceUrls: string[]
 }
 
+export type CategorizationResult =
+  | { type: 'person'; 'birth-date': string; 'death-date'?: string }
+  | { type: 'one-time-event'; 'start-date': string }
+  | { type: 'bounded-event'; 'start-date': string; 'end-date': string }
+  | { type: 'redirect' }
+  | { type: 'other' }
+
 export type WikiInfo = {
   name: string
   extract: string
   text: string
   htmlText: string
   links: string[]
+  categorization: CategorizationResult
 }
 
 export type EventResponse = {

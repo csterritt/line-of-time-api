@@ -195,6 +195,66 @@ export const seedEvents = async (): Promise<void> => {
 }
 
 /**
+ * Set AI mock categorization result for testing
+ */
+export const setAiMock = async (categorization: Record<string, string>): Promise<void> => {
+  try {
+    const response = await fetch('http://localhost:3000/test/ai-mock/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(categorization),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to set AI mock')
+    }
+
+    console.log('AI mock set successfully')
+  } catch (error) {
+    console.error('Failed to set AI mock:', error)
+    throw error
+  }
+}
+
+/**
+ * Reset AI mock categorization result
+ */
+export const resetAiMock = async (): Promise<void> => {
+  try {
+    const response = await fetch('http://localhost:3000/test/ai-mock/reset', {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to reset AI mock')
+    }
+
+    console.log('AI mock reset successfully')
+  } catch (error) {
+    console.error('Failed to reset AI mock:', error)
+    throw error
+  }
+}
+
+/**
  * Get event count from the database
  */
 export const getEventCount = async (): Promise<number> => {

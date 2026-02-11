@@ -4,6 +4,8 @@ import {
   seedDatabase,
   clearEvents,
   seedEvents,
+  setAiMock,
+  resetAiMock,
 } from '../support/db-helpers'
 import { submitSignInForm } from '../support/form-helpers'
 import {
@@ -17,9 +19,11 @@ import { BASE_URLS, TEST_USERS } from '../support/test-data'
 test.beforeEach(async () => {
   await clearDatabase()
   await seedDatabase()
+  await setAiMock({ type: 'other' })
 })
 
 test.afterEach(async () => {
+  await resetAiMock()
   await clearEvents()
   await clearDatabase()
 })
@@ -128,7 +132,7 @@ test('pressing Enter in name field triggers Wikipedia search', async ({
   expect(await isElementVisible(page, 'basic-description-input')).toBe(true)
 })
 
-test('name and reference URL are read-only on new-event page', async ({
+test('name is displayed as non-editable text and reference URL is read-only on new-event page', async ({
   page,
 }) => {
   await page.goto(BASE_URLS.SIGN_IN)
@@ -143,10 +147,11 @@ test('name and reference URL are read-only on new-event page', async ({
   await page.waitForSelector('[data-testid="basic-description-input"]', {
     timeout: 15000,
   })
-  const nameInput = page.getByTestId('name-input')
+  const nameDisplay = page.getByTestId('name-display')
   const refUrlInput = page.getByTestId('reference-url-input')
 
-  expect(await nameInput.getAttribute('readonly')).not.toBeNull()
+  const nameTag = await nameDisplay.evaluate((el) => el.tagName.toLowerCase())
+  expect(nameTag).toBe('div')
   expect(await refUrlInput.getAttribute('readonly')).not.toBeNull()
 })
 
@@ -271,8 +276,8 @@ test('clicking a related link searches and navigates to new-event page', async (
   })
   expect(page.url()).toContain('/ui/new-event')
 
-  const nameValue = await page.getByTestId('name-input').inputValue()
-  expect(nameValue.length).toBeGreaterThan(0)
+  const nameText = (await page.getByTestId('name-display').textContent())?.trim() ?? ''
+  expect(nameText.length).toBeGreaterThan(0)
 })
 
 test('Wikipedia Page section contains HTML content', async ({ page }) => {
@@ -410,4 +415,209 @@ test('shows "No events yet" when signed in with no events', async ({
   expect(await getElementText(page, 'no-events-message')).toContain(
     'No events yet'
   )
+})
+
+test('person categorization displays type and prefills birth/death dates', async ({
+  page,
+}) => {
+  await setAiMock({
+    type: 'person',
+    'birth-date': '1732-02-22',
+    'death-date': '1799-12-14',
+  })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'George Washington')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await getElementText(page, 'type-display')).toBe('person')
+  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
+    '1732-02-22'
+  )
+  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe(
+    '1799-12-14'
+  )
+})
+
+test('person categorization without death date leaves end date empty', async ({
+  page,
+}) => {
+  await setAiMock({
+    type: 'person',
+    'birth-date': '1946-08-19',
+  })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Bill Clinton')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await getElementText(page, 'type-display')).toBe('person')
+  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
+    '1946-08-19'
+  )
+  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+})
+
+test('one-time-event categorization prefills start date only', async ({
+  page,
+}) => {
+  await setAiMock({
+    type: 'one-time-event',
+    'start-date': '1969-07-20',
+  })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Moon landing')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await getElementText(page, 'type-display')).toBe('one-time-event')
+  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
+    '1969-07-20'
+  )
+  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+})
+
+test('bounded-event categorization prefills start and end dates', async ({
+  page,
+}) => {
+  await setAiMock({
+    type: 'bounded-event',
+    'start-date': '1739-10-22',
+    'end-date': '1748-10-18',
+  })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await getElementText(page, 'type-display')).toBe('bounded-event')
+  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
+    '1739-10-22'
+  )
+  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe(
+    '1748-10-18'
+  )
+})
+
+test('other categorization leaves dates empty', async ({ page }) => {
+  await setAiMock({ type: 'other' })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await getElementText(page, 'type-display')).toBe('other')
+  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+})
+
+test('redirect categorization auto-navigates to first link search', async ({
+  page,
+}) => {
+  await setAiMock({ type: 'redirect' })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  // Wait for redirect to search page, then set mock to 'other' so the
+  // follow-up search doesn't loop
+  await page.waitForURL('**/ui/search?name=**', { timeout: 30000 })
+  await setAiMock({ type: 'other' })
+
+  await page.waitForSelector('[data-testid="basic-description-input"]', {
+    timeout: 30000,
+  })
+  expect(page.url()).toContain('/ui/new-event')
+
+  const nameText = (await page.getByTestId('name-display').textContent())?.trim() ?? ''
+  expect(nameText.length).toBeGreaterThan(0)
+})
+
+test('type display shows categorization type next to name', async ({
+  page,
+}) => {
+  await setAiMock({
+    type: 'person',
+    'birth-date': '1732-02-22',
+    'death-date': '1799-12-14',
+  })
+
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForSelector('[data-testid="name-input"]')
+
+  await fillInput(page, 'name-input', 'George Washington')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await page.waitForSelector('[data-testid="type-display"]', {
+    timeout: 15000,
+  })
+
+  expect(await isElementVisible(page, 'name-display')).toBe(true)
+  expect(await isElementVisible(page, 'type-display')).toBe(true)
+
+  const nameDisplay = page.getByTestId('name-display')
+  const typeDisplay = page.getByTestId('type-display')
+
+  const nameRect = await nameDisplay.boundingBox()
+  const typeRect = await typeDisplay.boundingBox()
+
+  expect(nameRect).not.toBeNull()
+  expect(typeRect).not.toBeNull()
+  if (nameRect && typeRect) {
+    expect(Math.abs(nameRect.y - typeRect.y)).toBeLessThan(20)
+  }
 })

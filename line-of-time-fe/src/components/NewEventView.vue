@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
-import type { EventInput } from '@/stores/event-store'
+import type { EventInput, CategorizationResult } from '@/stores/event-store'
 
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
 const basicDescriptionMax = 1002
@@ -10,22 +10,56 @@ const basicDescriptionMax = 1002
 const router = useRouter()
 const eventStore = useEventStore()
 
+const getStartDate = (cat: CategorizationResult): string => {
+  if (cat.type === 'person') {
+    return cat['birth-date']
+  }
+  if (cat.type === 'one-time-event' || cat.type === 'bounded-event') {
+    return cat['start-date']
+  }
+  return ''
+}
+
+const getEndDate = (cat: CategorizationResult): string => {
+  if (cat.type === 'person' && cat['death-date']) {
+    return cat['death-date']
+  }
+  if (cat.type === 'bounded-event') {
+    return cat['end-date']
+  }
+  return ''
+}
+
 onMounted(() => {
   if (!eventStore.wikiInfo) {
     router.replace('/search')
+    return
+  }
+
+  if (
+    eventStore.wikiInfo.categorization.type === 'redirect' &&
+    eventStore.wikiInfo.links.length > 0
+  ) {
+    const firstLink = eventStore.wikiInfo.links[0]
+    eventStore.wikiInfo = null
+    router.replace('/search?name=' + encodeURIComponent(firstLink))
   }
 })
 
 const name = computed(() => eventStore.wikiInfo?.name ?? '')
+const categorizationType = computed(
+  () => eventStore.wikiInfo?.categorization?.type ?? 'other'
+)
 const referenceUrl = computed(() =>
   eventStore.wikiInfo
     ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
     : ''
 )
 
+const categorization = eventStore.wikiInfo?.categorization
 const basicDescription = ref(eventStore.wikiInfo?.extract ?? '')
-const startTimestamp = ref('')
-const endTimestamp = ref('')
+const startTimestamp = ref(categorization ? getStartDate(categorization) : '')
+const endTimestamp = ref(categorization ? getEndDate(categorization) : '')
 
 const handleSearchAgain = () => {
   eventStore.wikiInfo = null
@@ -77,18 +111,25 @@ const handleSubmit = async () => {
         <span>{{ eventStore.errorMessage }}</span>
       </div>
 
-      <div class="form-control">
-        <label class="label" for="name-input">
-          <span class="label-text">Name</span>
-        </label>
-        <input
-          id="name-input"
-          type="text"
-          class="input input-bordered w-full"
-          :value="name"
-          readonly
-          data-testid="name-input"
-        />
+      <div class="flex flex-row gap-4 items-end">
+        <div class="form-control flex-1">
+          <label class="label">
+            <span class="label-text">Name</span>
+          </label>
+          <div
+            class="input input-bordered w-full flex items-center"
+            data-testid="name-display"
+          >{{ name }}</div>
+        </div>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Type</span>
+          </label>
+          <div
+            class="input input-bordered flex items-center"
+            data-testid="type-display"
+          >{{ categorizationType }}</div>
+        </div>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4 mt-4">
@@ -108,7 +149,7 @@ const handleSubmit = async () => {
 
         <div class="form-control">
           <label class="label" for="start-timestamp-input">
-            <span class="label-text">Start Date/Time</span>
+            <span class="label-text">Start Date</span>
           </label>
           <input
             id="start-timestamp-input"
@@ -122,7 +163,7 @@ const handleSubmit = async () => {
 
         <div class="form-control">
           <label class="label" for="end-timestamp-input">
-            <span class="label-text">End Date/Time (optional)</span>
+            <span class="label-text">End Date (optional)</span>
           </label>
           <input
             id="end-timestamp-input"
