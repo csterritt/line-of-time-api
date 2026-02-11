@@ -42,14 +42,12 @@ onMounted(() => {
   ) {
     const firstLink = eventStore.wikiInfo.links[0]
     eventStore.wikiInfo = null
-    router.replace('/search?name=' + encodeURIComponent(firstLink))
+    router.replace('/search?name=' + encodeURIComponent(firstLink!))
   }
 })
 
 const name = computed(() => eventStore.wikiInfo?.name ?? '')
-const categorizationType = computed(
-  () => eventStore.wikiInfo?.categorization?.type ?? 'other'
-)
+const categorizationType = computed(() => eventStore.wikiInfo?.categorization?.type ?? 'other')
 const referenceUrl = computed(() =>
   eventStore.wikiInfo
     ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
@@ -116,19 +114,17 @@ const handleSubmit = async () => {
           <label class="label">
             <span class="label-text">Name</span>
           </label>
-          <div
-            class="input input-bordered w-full flex items-center"
-            data-testid="name-display"
-          >{{ name }}</div>
+          <div class="input input-bordered w-full flex items-center" data-testid="name-display">
+            {{ name }}
+          </div>
         </div>
         <div class="form-control">
           <label class="label">
             <span class="label-text">Type</span>
           </label>
-          <div
-            class="input input-bordered flex items-center"
-            data-testid="type-display"
-          >{{ categorizationType }}</div>
+          <div class="input input-bordered flex items-center" data-testid="type-display">
+            {{ categorizationType }}
+          </div>
         </div>
       </div>
 
@@ -219,10 +215,7 @@ const handleSubmit = async () => {
           </ul>
         </div>
 
-        <div
-          class="border border-base-300 rounded-lg p-4"
-          data-testid="wiki-page"
-        >
+        <div class="border border-base-300 rounded-lg p-4" data-testid="wiki-page">
           <h3 class="font-bold text-lg mb-2">Wikipedia Page</h3>
           <div class="wiki-content" v-html="eventStore.wikiInfo.htmlText"></div>
         </div>

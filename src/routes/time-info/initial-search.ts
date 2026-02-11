@@ -8,8 +8,11 @@ import { convert } from 'html-to-text'
 
 import { AppEnv } from '../../local-types'
 import { aiCategorizationAndSearch } from '../../lib/ai-search'
+import { getWikiMockData } from '../test/wiki-mock' // PRODUCTION:REMOVE
 
 const MAX_BASIC_DESCRIPTION_LENGTH = 1000
+
+const utilityLinkPattern = /^[A-Z ]\S*:[A-Z]/i
 
 interface InitialSearchInput {
   name: string
@@ -106,15 +109,24 @@ initialSearchRouter.post('/', async (c) => {
 
   const encodedName = encodeURIComponent(name.trim())
 
+  // PRODUCTION:REMOVE-NEXT-LINE
+  const wikiMock = getWikiMockData(name.trim()) // PRODUCTION:REMOVE
+
   // GET 1: Query for extract
   let queryData: WikiQueryResponse
-  try {
-    const queryUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&titles=${encodedName}`
-    const queryResponse = await fetch(queryUrl, { headers: WIKI_FETCH_HEADERS })
-    queryData = (await queryResponse.json()) as WikiQueryResponse
-  } catch {
-    return c.json({ error: 'Failed to fetch from Wikipedia' }, 502)
-  }
+  // PRODUCTION:REMOVE-NEXT-LINE
+  if (wikiMock) { // PRODUCTION:REMOVE
+    queryData = wikiMock.query as WikiQueryResponse // PRODUCTION:REMOVE
+    console.log('Using wiki mock query data for:', name.trim()) // PRODUCTION:REMOVE
+  } else { // PRODUCTION:REMOVE
+    try {
+      const queryUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&titles=${encodedName}`
+      const queryResponse = await fetch(queryUrl, { headers: WIKI_FETCH_HEADERS })
+      queryData = (await queryResponse.json()) as WikiQueryResponse
+    } catch {
+      return c.json({ error: 'Failed to fetch from Wikipedia' }, 502)
+    }
+  } // PRODUCTION:REMOVE
 
   const pages = queryData.query.pages
   if ('-1' in pages) {
@@ -127,15 +139,21 @@ initialSearchRouter.post('/', async (c) => {
 
   // GET 2: Parse for text and links
   let parseData: WikiParseResponse | WikiParseErrorResponse
-  try {
-    const parseUrl = `https://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text|links&page=${encodedName}`
-    const parseResponse = await fetch(parseUrl, { headers: WIKI_FETCH_HEADERS })
-    parseData = (await parseResponse.json()) as
-      | WikiParseResponse
-      | WikiParseErrorResponse
-  } catch {
-    return c.json({ error: 'Failed to fetch from Wikipedia' }, 502)
-  }
+  // PRODUCTION:REMOVE-NEXT-LINE
+  if (wikiMock) { // PRODUCTION:REMOVE
+    parseData = wikiMock.parse as WikiParseResponse // PRODUCTION:REMOVE
+    console.log('Using wiki mock parse data for:', name.trim()) // PRODUCTION:REMOVE
+  } else { // PRODUCTION:REMOVE
+    try {
+      const parseUrl = `https://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text|links&page=${encodedName}`
+      const parseResponse = await fetch(parseUrl, { headers: WIKI_FETCH_HEADERS })
+      parseData = (await parseResponse.json()) as
+        | WikiParseResponse
+        | WikiParseErrorResponse
+    } catch {
+      return c.json({ error: 'Failed to fetch from Wikipedia' }, 502)
+    }
+  } // PRODUCTION:REMOVE
 
   if ('error' in parseData && !('parse' in parseData)) {
     return c.json({ error: 'Nothing found for that name' }, 404)
@@ -151,7 +169,9 @@ initialSearchRouter.post('/', async (c) => {
   const convertedName = convert(rawTitle) as string
   const convertedExtract = convert(rawExtract) as string
   const convertedText = convert(rawText) as string
-  const convertedLinks = rawLinks.map((link) => convert(link) as string)
+  const convertedLinks = rawLinks
+    .map((link) => convert(link) as string)
+    .filter((link) => !utilityLinkPattern.test(link))
 
   // Trim extract to fit within MAX_BASIC_DESCRIPTION_LENGTH
   const trimmedExtract = trimToMaxWords(

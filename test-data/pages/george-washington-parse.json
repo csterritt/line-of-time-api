@@ -1,0 +1,206 @@
+{
+  "parse": {
+    "pageid": 11968,
+    "title": "George Washington",
+    "text": {
+      "*": "<p><b>George Washington</b> (February 22, 1732 \u2013 December 14, 1799) was an American Founding Father and the first president of the United States.</p>"
+    },
+    "links": [
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "General Washington (disambiguation)"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "George Washington (disambiguation)"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "President of the United States"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Vice President of the United States"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Washington family"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Philadelphia campaign"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Northwest Indian War"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Whiskey Rebellion"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Siege of Boston"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "George Washington's crossing of the Delaware River"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Battle of Trenton"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Battle of Princeton"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Battle of Brandywine"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Battle of Germantown"
+      },
+      {
+        "ns": 0,
+        "exists": "",
+        "*": "Siege of Yorktown"
+      },
+      {
+        "ns": 4,
+        "exists": "",
+        "*": "Wikipedia:Featured articles*"
+      },
+      {
+        "ns": 4,
+        "exists": "",
+        "*": "Wikipedia:Protection policy"
+      },
+      {
+        "ns": 4,
+        "exists": "",
+        "*": "Wikipedia:The Wikipedia Library"
+      },
+      {
+        "ns": 4,
+        "exists": "",
+        "*": "Wikipedia:Wikimedia sister projects"
+      },
+      {
+        "ns": 4,
+        "exists": "",
+        "*": "Wikipedia:Contents/Portals"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:George Washington series"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Cite book"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:George Washington"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Presidents of the United States"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Continental Association"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Constitution of the United States"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:American Revolutionary War"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Washington family"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:College of William & Mary chancellors"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Hall of Fame for Great Americans"
+      },
+      {
+        "ns": 10,
+        "exists": "",
+        "*": "Template:Mount Rushmore"
+      },
+      {
+        "ns": 12,
+        "exists": "",
+        "*": "Help:CS1 errors"
+      },
+      {
+        "ns": 12,
+        "exists": "",
+        "*": "Help:Authority control"
+      },
+      {
+        "ns": 14,
+        "exists": "",
+        "*": "Category:George Washington"
+      },
+      {
+        "ns": 14,
+        "exists": "",
+        "*": "Category:Presidents of the United States"
+      },
+      {
+        "ns": 100,
+        "exists": "",
+        "*": "Portal:Biography"
+      },
+      {
+        "ns": 100,
+        "exists": "",
+        "*": "Portal:Politics"
+      },
+      {
+        "ns": 100,
+        "exists": "",
+        "*": "Portal:United States"
+      },
+      {
+        "ns": 100,
+        "exists": "",
+        "*": "Portal:Virginia"
+      }
+    ]
+  }
+}

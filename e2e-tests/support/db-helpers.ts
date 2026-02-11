@@ -255,6 +255,70 @@ export const resetAiMock = async (): Promise<void> => {
 }
 
 /**
+ * Set wiki mock data for a specific page name
+ */
+export const setWikiMock = async (data: {
+  name: string
+  query: unknown
+  parse: unknown
+}): Promise<void> => {
+  try {
+    const response = await fetch('http://localhost:3000/test/wiki-mock/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to set wiki mock')
+    }
+
+    console.log('Wiki mock set successfully for:', data.name)
+  } catch (error) {
+    console.error('Failed to set wiki mock:', error)
+    throw error
+  }
+}
+
+/**
+ * Reset all wiki mock data
+ */
+export const resetWikiMock = async (): Promise<void> => {
+  try {
+    const response = await fetch('http://localhost:3000/test/wiki-mock/reset', {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = (await response.json()) as {
+      success: boolean
+      error?: string
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to reset wiki mock')
+    }
+
+    console.log('Wiki mock reset successfully')
+  } catch (error) {
+    console.error('Failed to reset wiki mock:', error)
+    throw error
+  }
+}
+
+/**
  * Get event count from the database
  */
 export const getEventCount = async (): Promise<number> => {

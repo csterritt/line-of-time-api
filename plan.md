@@ -1,78 +1,59 @@
-# Plan: AI Categorization Display, Date Prefill, Redirect & Testing
+# Plan: Mock Wikipedia for Utility Link Filtering Tests
 
 ## Assumptions
 
-- The AI categorization result should be returned from the backend API and displayed on the frontend
-- For e2e tests, we mock the AI at the server level via a test route (same pattern as SMTP mock), not via Playwright `page.route()`
-- The "redirect" type means the Wikipedia page is a redirect; we follow the first link automatically
-- The name display changes from `<input readonly>` to a styled `<div>` — existing tests checking `readonly` on name-input will need updating
+- The `utilityLinkPattern` regex in `initial-search.ts` is already implemented and filters links like `Wikipedia:Help`, `Category:Foo`, `Template:Infobox`, `Portal:X`, etc.
+- We follow the same mock pattern used for AI (module-level variable + test route to set/reset).
+- The AI mock is already wired up; we continue to use it alongside the new wiki mock.
+- Test fixture JSON files live in `test-data/pages/` and contain trimmed real Wikipedia API responses.
 
 ## Files to Create / Modify
 
 | File | Action |
 | --- | --- |
-| `src/lib/ai-search.ts` | **Modify** — return typed `CategorizationResult`, robust JSON parsing |
-| `src/routes/time-info/initial-search.ts` | **Modify** — include `categorization` in API response |
-| `src/routes/test/ai-mock.ts` | **Create** — test route to set/reset AI mock response |
-| `src/index.ts` | **Modify** — register AI mock test route |
-| `line-of-time-fe/src/stores/event-store.ts` | **Modify** — add `categorization` to `WikiInfo` type |
-| `line-of-time-fe/src/components/NewEventView.vue` | **Modify** — name as div, type display, date prefill, redirect handling |
-| `e2e-tests/support/db-helpers.ts` | **Modify** — add `setAiMock` / `resetAiMock` helpers |
-| `e2e-tests/general/04-new-event.spec.ts` | **Modify** — update name-input readonly test, add categorization tests |
+| `test-data/pages/george-washington-query.json` | **Create** — trimmed Wikipedia query API response |
+| `test-data/pages/george-washington-parse.json` | **Create** — trimmed Wikipedia parse API response (15 normal + 24 utility links) |
+| `src/routes/test/wiki-mock.ts` | **Create** — test route to set/reset wiki mock data (keyed by page name) |
+| `src/routes/time-info/initial-search.ts` | **Modify** — check wiki mock before fetching from Wikipedia |
+| `src/index.ts` | **Modify** — register wiki-mock test route |
+| `e2e-tests/support/db-helpers.ts` | **Modify** — add `setWikiMock` / `resetWikiMock` helpers |
+| `e2e-tests/time-info/07-initial-search-utility-links.spec.ts` | **Modify** — load fixture files and use wiki mock instead of live Wikipedia |
 
 ## Implementation Steps
 
-### Step 1: Harden `aiCategorizationAndSearch`
-- Define `CategorizationResult` discriminated union type
-- Return `CategorizationResult` instead of `void`
-- Parse AI response JSON robustly (strip markdown fences, handle `choices[0].message.content`, try/catch)
-- Validate the parsed object matches one of the known shapes
-- Fall back to `{ type: "other" }` on any failure
+### Step 1: Create test fixture files
+- `test-data/pages/george-washington-query.json` — trimmed query response with extract
+- `test-data/pages/george-washington-parse.json` — trimmed parse response with 15 normal links + 24 utility links (Wikipedia:, Template:, Help:, Category:, Portal:)
 
-### Step 2: Update `initial-search.ts`
-- Capture the return value of `aiCategorizationAndSearch`
-- Include `categorization` field in the JSON response
+### Step 2: Create `src/routes/test/wiki-mock.ts`
+- Module-level `Map<string, { query: object; parse: object }>` keyed by page name
+- `POST /set` — accepts `{ name, query, parse }` and stores it
+- `POST /reset` — clears all mocks
+- Export `getWikiMockData(name)` for use in `initial-search.ts`
 
-### Step 3: Create AI mock test route
-- `POST /test/ai-mock/set` — stores a mock categorization result in module-level variable
-- `POST /test/ai-mock/reset` — clears the mock
-- Export `getAiMockResult()` for use in `ai-search.ts`
-- In `ai-search.ts`, check for mock before calling real AI
+### Step 3: Modify `initial-search.ts`
+- Import `getWikiMockData` (with `// PRODUCTION:REMOVE` annotation)
+- Before each Wikipedia fetch, check if mock data exists for the requested name
+- If mock data exists, use it instead of fetching
 
-### Step 4: Register AI mock route in `index.ts`
-- Import and mount under test routes guard
+### Step 4: Register wiki-mock route in `index.ts`
+- Import and mount at `/test/wiki-mock` inside the test routes guard
 
-### Step 5: Update frontend `WikiInfo` type
-- Add `categorization` field to `WikiInfo` in `event-store.ts`
+### Step 5: Add `setWikiMock` / `resetWikiMock` to `db-helpers.ts`
 
-### Step 6: Update `NewEventView.vue`
-- Replace name `<input readonly>` with a styled `<div>` using same classes
-- Add type display next to name: `Type: <<type>>`
-- Prefill `startTimestamp` from `start-date` or `birth-date`
-- Prefill `endTimestamp` from `end-date` or `death-date`
-- If type is `redirect`, auto-navigate to `/search?name=<first link>`
+### Step 6: Update test `07-initial-search-utility-links.spec.ts`
+- Load fixture JSON files from `test-data/pages/`
+- In `beforeEach`: call `setWikiMock` with fixture data + `setAiMock`
+- In `afterEach`: call `resetWikiMock` + `resetAiMock`
+- Test verifies no returned link matches `utilityLinkPattern`
+- Test verifies returned links include expected normal links
+- Test verifies returned link count matches expected (15 normal, 0 utility)
 
-### Step 7: Add e2e test helpers
-- `setAiMock(categorization)` and `resetAiMock()` in `db-helpers.ts`
-
-### Step 8: Update existing tests
-- Test checking `name-input` `readonly` attribute → check it's a div with text content instead
-- Test checking `name-input` `inputValue()` → use `textContent()` instead
-
-### Step 9: Write new e2e tests
-- **Person categorization**: mock returns person type, verify type displayed, birth/death dates prefilled
-- **One-time event**: mock returns one-time-event, verify start date prefilled
-- **Bounded event**: mock returns bounded-event, verify start/end dates prefilled
-- **Redirect**: mock returns redirect type, verify auto-navigation to first link's search
-- **Other/fallback**: mock returns other, verify no dates prefilled
-
-### Step 10: Run tests, fix failures iteratively
+### Step 7: Run tests, fix failures
 
 ## Pitfalls
 
-1. **Existing tests break** — The name field changes from `<input>` to `<div>`, so any test using `.inputValue()` on `name-input` will fail. Must update to `.textContent()`.
-2. **AI JSON parsing** — LLMs often wrap JSON in markdown fences or add reasoning text. Must strip these robustly.
-3. **Redirect loops** — If a redirect page's first link also redirects, could loop. Should limit redirect depth or just do one level.
-4. **Mock leaking between tests** — Must `resetAiMock()` in `afterEach` to avoid test pollution.
-5. **Date format** — AI returns `YYYY-MM-DD` which matches HTML date input format, but must verify this works with the existing date-to-timestamp logic.
-6. **Race condition on redirect** — The redirect navigation happens in `onMounted`; must ensure `wikiInfo` and `categorization` are set before the component mounts.
+1. **Fixture staleness** — The fixture data is a snapshot. If the Wikipedia API response shape changes, fixtures need updating. Unlikely since the MediaWiki API is stable.
+2. **Mock leaking between tests** — Must `resetWikiMock()` in `afterEach`.
+3. **Name matching** — The mock is keyed by the trimmed name from the request body. Must match exactly what the test sends.
+4. **PRODUCTION:REMOVE annotations** — The wiki mock import and check in `initial-search.ts` must be annotated so they're stripped in production builds.

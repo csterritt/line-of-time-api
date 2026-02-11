@@ -135,4 +135,5 @@ export const BASE_URLS = {
   TIME_INFO_EVENT: 'http://localhost:3000/time-info/event',
   TIME_INFO_NEW_EVENT: 'http://localhost:3000/time-info/new-event',
   TIME_INFO_SEARCH: 'http://localhost:3000/time-info/search',
+  TIME_INFO_INITIAL_SEARCH: 'http://localhost:3000/time-info/initial-search',
 } as const
