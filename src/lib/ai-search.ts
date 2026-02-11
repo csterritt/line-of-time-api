@@ -26,6 +26,10 @@ export type RedirectResult = {
   type: 'redirect'
 }
 
+export type DisambiguationResult = {
+  type: 'disambiguation'
+}
+
 export type OtherResult = {
   type: 'other'
 }
@@ -35,6 +39,7 @@ export type CategorizationResult =
   | OneTimeEventResult
   | BoundedEventResult
   | RedirectResult
+  | DisambiguationResult
   | OtherResult
 
 const VALID_TYPES = new Set([
@@ -42,6 +47,7 @@ const VALID_TYPES = new Set([
   'one-time-event',
   'bounded-event',
   'redirect',
+  'disambiguation',
   'other',
 ])
 
@@ -98,6 +104,8 @@ const validateCategorizationResult = (
     }
     case 'redirect':
       return { type: 'redirect' }
+    case 'disambiguation':
+      return { type: 'disambiguation' }
     case 'other':
       return { type: 'other' }
     default:
@@ -152,12 +160,15 @@ const CATEGORIZATION_PROMPT = `Examine the following wikipedia page and give me 
 
 For example, for persons, "George Washington" has a birth date of "1732-02-22" and a death date of "1799-12-14". "Bill Clinton" only has a birth date. For a one-time-event, "The First Manned Moon Landing" has a date of "1969-07-20". For a bounded event, the "War of Jenkins Ear" has a start date of "1739-10-22" and an end date of "1748-10-18".
 
+Disambiguation pages are pages that list multiple possible meanings for a term. For example, "Apple" could refer to the fruit, the company, or other things. In this case, you should return "disambiguation" as the type.
+
 Return ONLY JSON of one of the following forms. Do not include any reasoning, reasoning_content, or explanation:
 
 {"type": "person", "birth-date": "YYYY-MM-DD", "death-date": "YYYY-MM-DD"}
 {"type": "one-time-event", "start-date": "YYYY-MM-DD"}
 {"type": "bounded-event", "start-date": "YYYY-MM-DD", "end-date": "YYYY-MM-DD"}
 {"type": "redirect"}
+{"type": "disambiguation"}
 {"type": "other"}
 
 For a person, the "death-date" is optional if there is no death date given in the input.
