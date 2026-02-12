@@ -1,0 +1,21 @@
+Timeline panels:
+
+- Earliest time
+- Latest time
+- Earliest/latest extracted from earliest/latest events shown. Changing constrains and/or searches to change the events shown.
+- Columns:
+  - List of dates, increasing from top to bottom
+    - Monospaced
+    - Styled as (say) 1.25 rem
+    - Less than ’N’ year(s) - months shown
+    - Less than ’M’ year(s) - month and day shown
+  - Event brackets
+    - SVG lines that go from each event’s center up to its start date, down to its end date
+    - So event is in the middle?
+    - Lines are various pastels, check for red-green-blindness at least colors
+    - Mouseover or tap on an event changes its bracket to white (in dark mode) or black (in light mode)
+  - Event name and description fragment
+    - One line, not name above description like now
+    - Exact same 1.25 rem styling, should line up
+- Plus sign in circle to its right, floats to either center of timeline or center of displayed area, clicking it makes a search panel to this panel’s immediate right, disappears once there is a panel
+- Panels past the left-most one have an ‘X’ in a circle to close that panel
