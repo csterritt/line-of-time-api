@@ -2,7 +2,7 @@ import { test } from '@playwright/test'
 
 import { startSignIn } from '../support/auth-helpers'
 import { verifyAlert } from '../support/finders'
-import { verifyOnProtectedPage } from '../support/page-verifiers'
+import { verifyOnTimelinePage } from '../support/page-verifiers'
 import { testWithDatabase } from '../support/test-helpers'
 import { navigateToHome } from '../support/navigation-helpers'
 import { submitSignInForm } from '../support/form-helpers'
@@ -26,7 +26,7 @@ test(
     // Check for success alert message first (it might appear briefly)
     await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
 
-    // Should be redirected to the protected page after successful sign-in
-    await verifyOnProtectedPage(page)
+    // Should be redirected to the UI page after successful sign-in
+    await verifyOnTimelinePage(page)
   })
 )

@@ -125,7 +125,7 @@ export const BASE_URLS = {
   INTEREST_SIGN_UP: 'http://localhost:3000/auth/interest-sign-up',
   FORGOT_PASSWORD: 'http://localhost:3000/auth/forgot-password',
   AWAIT_VERIFICATION: 'http://localhost:3000/auth/await-verification',
-  PRIVATE: 'http://localhost:3000/private',
+  TIMELINE: 'http://localhost:3000/ui',
   WAITING_FOR_RESET: 'http://localhost:3000/auth/waiting-for-reset',
   SIGN_OUT: 'http://localhost:3000/auth/sign-out',
   PROFILE: 'http://localhost:3000/profile',

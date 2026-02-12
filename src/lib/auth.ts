@@ -100,7 +100,7 @@ export const createAuth = (env: Bindings) => {
     ],
     // baseURL: 'https://line-of-time-api.cls.cloud', // PRODUCTION:UNCOMMENT
     baseURL: 'http://localhost:3000', // PRODUCTION:REMOVE
-    redirectTo: '/private', // Redirect to protected page after successful sign-in
+    redirectTo: '/ui', // Redirect to UI page after successful sign-in
     secret: env.BETTER_AUTH_SECRET,
   })
 }

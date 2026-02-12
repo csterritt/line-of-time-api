@@ -47,5 +47,17 @@ const renderNotFound = () => {
  * @param app - Hono app instance
  */
 export const build404 = (app: Hono<{ Bindings: Bindings }>): void => {
-  app.notFound((c) => c.render(useLayout(c, renderNotFound())))
+  app.notFound(async (c) => {
+    const asset = await c.env.ASSETS.fetch(
+      new Request(`https://dummy${c.req.path}`)
+    )
+    if (asset.ok) {
+      return new Response(asset.body, {
+        status: asset.status,
+        headers: asset.headers,
+      })
+    }
+
+    return c.render(useLayout(c, renderNotFound()))
+  })
 }

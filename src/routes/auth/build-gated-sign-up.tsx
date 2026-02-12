@@ -68,7 +68,7 @@ export const buildGatedSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
     ) as { id: string } | null
     if (user) {
       console.log('Already signed in')
-      return redirectWithMessage(c, PATHS.PRIVATE, MESSAGES.ALREADY_SIGNED_IN)
+      return redirectWithMessage(c, PATHS.PUBLIC, MESSAGES.ALREADY_SIGNED_IN)
     }
 
     const emailEntered: string = retrieveCookie(c, COOKIES.EMAIL_ENTERED) ?? ''

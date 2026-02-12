@@ -68,7 +68,7 @@ const handleVerifiedSignIn = (
 ): Response => {
   const redirectResponse = redirectWithMessage(
     c,
-    PATHS.PRIVATE,
+    PATHS.PUBLIC,
     ERROR_MESSAGES.WELCOME
   )
 

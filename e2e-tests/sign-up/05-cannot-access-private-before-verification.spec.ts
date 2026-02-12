@@ -16,7 +16,7 @@ import { submitSignUpForm, submitSignInForm } from '../support/form-helpers'
 import { BASE_URLS } from '../support/test-data'
 
 test(
-  'cannot access private page before email verification',
+  'cannot access protected page before email verification',
   testWithDatabase(async ({ page }) => {
     await skipIfNotMode('OPEN_SIGN_UP')
     // Navigate to sign-up page and submit form
@@ -37,8 +37,8 @@ test(
     // Should be redirected to await verification page
     await verifyOnAwaitVerificationPage(page)
 
-    // Now try to directly access the private page without being signed in
-    await page.goto(BASE_URLS.PRIVATE)
+    // Now try to directly access the profile page without being signed in
+    await page.goto(BASE_URLS.PROFILE)
 
     // Should be redirected back to sign-in page with access denied message
     await verifyOnSignInPage(page)
@@ -55,8 +55,8 @@ test(
       'Please verify your email address before signing in. Check your email for a verification link.'
     )
 
-    // Try to access private page again after failed sign-in attempt
-    await page.goto(BASE_URLS.PRIVATE)
+    // Try to access profile page again after failed sign-in attempt
+    await page.goto(BASE_URLS.PROFILE)
 
     // Should still be redirected back to sign-in page with access denied message
     await verifyOnSignInPage(page)

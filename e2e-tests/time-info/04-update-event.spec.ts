@@ -43,7 +43,7 @@ test.describe('PUT /time-info/event/:id', () => {
   test('updates event when authenticated', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -66,7 +66,7 @@ test.describe('PUT /time-info/event/:id', () => {
   test('preserves createdAt on update', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -92,7 +92,7 @@ test.describe('PUT /time-info/event/:id', () => {
   test('returns 404 for non-existent event', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -113,7 +113,7 @@ test.describe('PUT /time-info/event/:id', () => {
   test('returns 400 for invalid input', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')

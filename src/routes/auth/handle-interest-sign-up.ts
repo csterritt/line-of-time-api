@@ -36,7 +36,7 @@ export const handleInterestSignUp = (
         if (user) {
           return redirectWithMessage(
             c,
-            PATHS.PRIVATE,
+            PATHS.PUBLIC,
             MESSAGES.ALREADY_SIGNED_IN
           )
         }

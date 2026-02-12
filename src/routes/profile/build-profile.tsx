@@ -69,7 +69,7 @@ const renderProfile = (userName: string, userEmail: string) => {
           <div className='flex justify-between'>
             <h2 className='card-title text-2xl font-bold mb-4'>Profile</h2>
             <a
-              href={PATHS.PRIVATE}
+              href={PATHS.PUBLIC}
               className='btn btn-secondary'
               data-testid='go-back-action'
             >

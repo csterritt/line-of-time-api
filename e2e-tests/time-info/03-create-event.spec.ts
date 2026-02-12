@@ -39,7 +39,7 @@ test.describe('POST /time-info/new-event', () => {
   test('creates event when authenticated', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -64,7 +64,7 @@ test.describe('POST /time-info/new-event', () => {
   test('creates event with all optional fields', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -89,7 +89,7 @@ test.describe('POST /time-info/new-event', () => {
   test('returns 400 for missing required fields', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -111,7 +111,7 @@ test.describe('POST /time-info/new-event', () => {
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -130,7 +130,7 @@ test.describe('POST /time-info/new-event', () => {
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')

@@ -13,7 +13,6 @@ import { showRoutes } from 'hono/dev' // PRODUCTION:REMOVE
 import { HTML_STATUS, SIGN_UP_MODES } from './constants'
 import { renderer } from './renderer'
 import { buildRoot } from './routes/build-root' // PRODUCTION:REMOVE
-import { buildPrivate } from './routes/build-private'
 import { build404 } from './routes/build-404'
 import { buildEmailConfirmation } from './routes/auth/build-email-confirmation'
 import { buildAwaitVerification } from './routes/auth/build-await-verification'
@@ -62,7 +61,8 @@ import { eventRouter } from './routes/time-info/event'
 import { newEventRouter } from './routes/time-info/new-event'
 import { searchRouter } from './routes/time-info/search'
 import { initialSearchRouter } from './routes/time-info/initial-search'
-import { PATHS } from './constants'
+import { PATHS, COOKIES } from './constants'
+import { retrieveCookie, removeCookie } from './lib/cookie-support'
 
 /**
  * Validates that all required environment variables are set
@@ -183,7 +183,6 @@ setupBetterAuth(app)
 
 // Route declarations
 buildRoot(app) // PRODUCTION:REMOVE
-buildPrivate(app)
 buildSignIn(app)
 if (env.SIGN_UP_MODE === SIGN_UP_MODES.OPEN_SIGN_UP) {
   buildSignUp(app)
@@ -240,11 +239,10 @@ if (isTestRouteEnabledFlag) {
   app.route('/test/wiki-mock', testWikiMockRouter) // PRODUCTION:REMOVE
 }
 
-// SPA assets: map /ui/assets/* to /assets/*
+// SPA assets: serve /ui/assets/* directly
 app.get('/ui/assets/*', async (c) => {
-  const assetPath = c.req.path.replace('/ui/assets/', '/assets/')
   const asset = await c.env.ASSETS.fetch(
-    new Request(`https://dummy${assetPath}`)
+    new Request(`https://dummy${c.req.path}`)
   )
   return new Response(asset.body, {
     status: asset.status,
@@ -255,12 +253,26 @@ app.get('/ui/assets/*', async (c) => {
 // SPA catch-all: serve /ui/index.html for all /ui/* routes
 app.get('/ui', (c) => c.redirect('/ui/'))
 app.get('/ui/*', async (c) => {
+  const message = retrieveCookie(c, COOKIES.MESSAGE_FOUND)
+  const error = retrieveCookie(c, COOKIES.ERROR_FOUND)
+  if (message) {
+    removeCookie(c, COOKIES.MESSAGE_FOUND)
+  }
+
+  if (error) {
+    removeCookie(c, COOKIES.ERROR_FOUND)
+  }
+
   const asset = await c.env.ASSETS.fetch(
     new Request('https://dummy/ui/index.html')
   )
-  return new Response(asset.body, {
-    headers: { 'Content-Type': 'text/html', url: c.req.path },
-  })
+  let html = await asset.text()
+  if (message || error) {
+    const flashScript = `<script>window.__FLASH_MESSAGE__=${JSON.stringify(message || '')};window.__FLASH_ERROR__=${JSON.stringify(error || '')};</script>`
+    html = html.replace('</head>', `${flashScript}</head>`)
+  }
+
+  return c.html(html)
 })
 
 // this MUST be the last route declared!

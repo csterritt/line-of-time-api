@@ -17,7 +17,7 @@ import {
 import {
   verifyOnAwaitVerificationPage,
   verifyOnSignInPage,
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
   verifyOnWaitingForResetPage,
 } from './page-verifiers'
 import { startSignIn } from './auth-helpers'
@@ -78,7 +78,7 @@ export const completeSignInFlow = async (
   await startSignIn(page)
   await submitSignInForm(page, user)
   await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
-  await verifyOnProtectedPage(page)
+  await verifyOnTimelinePage(page)
 }
 
 /**

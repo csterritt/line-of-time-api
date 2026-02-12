@@ -5,7 +5,7 @@ import {
   verifyOnSignInPage,
   verifyOnSignUpPage,
   verifyOnAwaitVerificationPage,
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
 } from '../support/page-verifiers'
 import { testWithDatabase } from '../support/test-helpers'
 import { skipIfNotMode } from '../support/mode-helpers'
@@ -145,8 +145,8 @@ test(
 
     await submitSignInForm(page, { email: newEmail, password: newPassword })
 
-    // Should be successfully signed in and redirected to protected page
-    await verifyOnProtectedPage(page)
+    // Should be successfully signed in and redirected to UI page
+    await verifyOnTimelinePage(page)
     await verifyAlert(page, 'Welcome! You have been signed in successfully.')
   })
 )

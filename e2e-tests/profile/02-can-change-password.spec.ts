@@ -4,7 +4,7 @@ import { clickLink, verifyAlert } from '../support/finders'
 import {
   verifyOnSignInPage,
   verifyOnProfilePage,
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
 } from '../support/page-verifiers'
 import { testWithDatabase } from '../support/test-helpers'
 import { navigateToProfile } from '../support/navigation-helpers'
@@ -46,7 +46,7 @@ test(
     })
 
     // Should be successfully signed in
-    await verifyOnProtectedPage(page)
+    await verifyOnTimelinePage(page)
     await verifyAlert(page, 'Welcome! You have been signed in successfully.')
 
     // Sign out again

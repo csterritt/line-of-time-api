@@ -20,8 +20,9 @@ export const verifyOnSignUpPage = async (page: Page) => {
 export const verifyOnInterestSignUpPage = verifyOnSignUpPage
 export const verifyOnGatedSignUpPage = verifyOnSignUpPage
 
-export const verifyOnProtectedPage = async (page: Page) => {
-  expect(await verifyElementExists(page, 'private-page-banner')).toBe(true)
+export const verifyOnTimelinePage = async (page: Page) => {
+  await page.waitForURL(/\/ui/)
+  expect(page.url()).toContain('/ui')
 }
 
 export const verifyOnAwaitVerificationPage = async (page: Page) => {

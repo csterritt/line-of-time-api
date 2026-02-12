@@ -17,8 +17,8 @@ test(
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
-    // Click the Profile link
-    await clickLink(page, 'visit-profile-action')
+    // Navigate directly to profile page
+    await navigateToProfile(page)
 
     // Should be on profile page
     await verifyOnProfilePage(page)

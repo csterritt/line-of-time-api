@@ -37,7 +37,7 @@ test.describe('DELETE /time-info/event/:id', () => {
   test('deletes event when authenticated', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const countBefore = await getEventCount()
     expect(countBefore).toBe(3)
@@ -67,7 +67,7 @@ test.describe('DELETE /time-info/event/:id', () => {
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     // Use page.evaluate to make the DELETE request with the page's cookies
     await page.evaluate(async (url) => {
@@ -83,7 +83,7 @@ test.describe('DELETE /time-info/event/:id', () => {
   test('returns 404 for non-existent event', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const result = await page.evaluate(async (url) => {
       const response = await fetch(url, {
@@ -100,7 +100,7 @@ test.describe('DELETE /time-info/event/:id', () => {
   test('cannot delete same event twice', async ({ page }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/private/)
+    await page.waitForURL(/\/ui/)
 
     const firstDelete = await page.evaluate(async (url) => {
       const response = await fetch(url, {

@@ -3,7 +3,7 @@ import { test } from '@playwright/test'
 import { startSignIn } from '../support/auth-helpers'
 import { clickLink, verifyAlert, getElementText } from '../support/finders'
 import {
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
   verifyOnStartupPage,
   verifyOnSignInPage,
   verifyOnSignOutPage,
@@ -30,7 +30,7 @@ test(
 
     // Verify successful sign-in
     await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
-    await verifyOnProtectedPage(page)
+    await verifyOnTimelinePage(page)
 
     // Now sign out
     await clickLink(page, 'sign-out-action')
@@ -52,8 +52,8 @@ test(
     // Verify we're on the startup page
     await verifyOnStartupPage(page)
 
-    // Try to access the private page again - should be redirected to sign-in
-    await page.goto(BASE_URLS.PRIVATE)
+    // Try to access the profile page again - should be redirected to sign-in
+    await page.goto(BASE_URLS.PROFILE)
 
     // Should be redirected to sign-in page
     await verifyOnSignInPage(page)

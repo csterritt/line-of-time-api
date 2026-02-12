@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 import { fillInput, clickLink, verifyAlert } from '../support/finders'
 import {
   verifyOnInterestSignUpPage,
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
 } from '../support/page-verifiers'
 import {
   skipIfNotExactMode,
@@ -57,7 +57,7 @@ test.describe('Interest Sign-Up Mode: Behavior Tests', () => {
   })
 
   test(
-    'redirects to protected page when already authenticated',
+    'redirects to timeline page when already authenticated',
     testWithDatabase(async ({ page }) => {
       await navigateToHome(page)
       await signInUser(
@@ -65,7 +65,7 @@ test.describe('Interest Sign-Up Mode: Behavior Tests', () => {
         TEST_USERS.KNOWN_USER.email,
         TEST_USERS.KNOWN_USER.password
       )
-      await verifyOnProtectedPage(page)
+      await verifyOnTimelinePage(page)
 
       // Try to navigate to interest sign-up page while authenticated
       const mode = await detectSignUpMode()
@@ -75,9 +75,9 @@ test.describe('Interest Sign-Up Mode: Behavior Tests', () => {
           : BASE_URLS.SIGN_UP
       await page.goto(url)
 
-      // Should be redirected back to protected page
-      await verifyOnProtectedPage(page)
-      expect(page.url()).toContain('/private')
+      // Should be redirected back to timeline page
+      await verifyOnTimelinePage(page)
+      expect(page.url()).toContain('/ui')
     })
   )
 

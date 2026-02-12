@@ -3,7 +3,7 @@ import { clickLink, fillInput } from './finders'
 import {
   verifyOnSignInPage,
   verifyOnStartupPage,
-  verifyOnProtectedPage,
+  verifyOnTimelinePage,
   verifyOnSignOutPage,
 } from './page-verifiers'
 
@@ -33,6 +33,6 @@ export const signInUser = async (
   await fillInput(page, 'email-input', email)
   await fillInput(page, 'password-input', password)
   await clickLink(page, 'submit')
-  // For successful login, we should be redirected to the protected page
-  await verifyOnProtectedPage(page)
+  // For successful login, we should be redirected to the timeline page
+  await verifyOnTimelinePage(page)
 }
