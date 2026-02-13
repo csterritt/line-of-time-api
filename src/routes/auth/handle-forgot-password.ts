@@ -74,13 +74,12 @@ const sendPasswordResetEmail = async (
 ): Promise<SendResetEmailResult> => {
   try {
     const auth = createAuth(env)
-    const result = await auth.api.requestPasswordReset({
+    await auth.api.requestPasswordReset({
       body: {
         email,
         redirectTo: `${origin}${PATHS.AUTH.RESET_PASSWORD}`,
       },
     })
-    console.log('Password reset API result:', result)
     return { success: true }
   } catch (emailError) {
     console.error('Password reset email error:', emailError)
