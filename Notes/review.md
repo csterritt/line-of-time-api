@@ -2,19 +2,6 @@ Below is a review of src/ with findings ordered by severity. I cite the relevant
 
 🔴 Critical / High Severity
 
-Runtime environment validation logs only (app still starts)
-
-validateEnvironmentVariables() only logs errors; it does not fail startup or block requests if required env vars are missing. This risks running in a broken state (missing secrets / email config).
-
-Suggest: throw on invalid env or return non-200 at startup.
-@src/index.ts#71-112
-
-CSRF allowlist matches localhost/ALTERNATE_ORIGIN in production
-
-Current CSRF origin check allows localhost/alternate origin, with production values commented. If this ships, CSRF will accept local origins in prod.
-This is security risk if deployed without toggling.
-@src/index.ts#122-151
-
 Open redirect risk handled in one path but not globally
 There’s a good validateCallbackUrl utility, but it isn’t used in handlers that accept callbacks (e.g., sign-in/forgot password flows are building redirect URLs from origin or path constants, which is safe). Ensure any user-provided redirect param goes through validation.
 I didn’t find calls to validateCallbackUrl in reviewed handlers—verify unreviewed routes.
