@@ -1,58 +1,60 @@
-# Plan: Fix flash messages not showing on /ui routes
+# Plan: Timeline Filter Controls and Date Display
 
-## Problem
+## Feature Description
 
-After changing the post-sign-in redirect from `/private` (server-rendered) to `/ui` (Vue SPA),
-flash messages like "Welcome! You have been signed in successfully." no longer appear.
-
-**Root cause**: The server sets `MESSAGE_FOUND` and `ERROR_FOUND` as httpOnly cookies via
-`redirectWithMessage()`. The old `/private` route was server-rendered by `useLayout()`, which
-read these cookies server-side and rendered alert divs. The `/ui` route serves a static Vue SPA
-HTML file without reading cookies, and since cookies are httpOnly, the Vue client-side JS can't
-read them either.
+Add min/max timestamp filter controls to the `/ui/` timeline page, and change the date display
+format based on the range width.
 
 ## Assumptions
 
-- The redirect changes from `/private` to `/ui` are correct and should stay
-- Flash messages must be visible on the `/ui` page after redirect
-- The `verifyAlert` calls were incorrectly removed from tests — they should be restored
+- Timestamps are integer day-offsets (same units as `startTimestamp`/`endTimestamp` in events)
+- "More than 1 year apart" means the range spans > 365 days
+- The date picker controls use HTML `<input type="date">` (simple date, no time)
+- The min/max of the timeline is derived from the min `startTimestamp` and max `startTimestamp`
+  (or `endTimestamp` if present) across all events
+- When no events exist, the filter controls are hidden or disabled
+- The filter reloads the event list from the API using the chosen range
 
-## Pitfalls
+## Tasks (in order)
 
-- Cookies are httpOnly, so the fix must be server-side (inject into HTML before serving)
-- The CSP sandbox includes `allow-scripts` only in `ALLOW_SCRIPTS_SECURE_HEADERS`, need to
-  ensure the injected script is allowed
-- Must clear the cookies after reading them (one-time flash behavior)
-- The injected script hash must match CSP if script-src is restricted
+1. **Add `timestampToYear` and `timestampToYearMonth` helpers** to
+   `line-of-time-fe/src/utils/timestamp.ts`
+   - `timestampToYear(ts)` → `"YYYY"` string
+   - `timestampToYearMonth(ts)` → `"YYYY-MM"` string
+   - `timestampToDateInput(ts)` → `"YYYY-MM-DD"` string (for date input value)
+   - `dateInputToTimestamp(dateStr)` → number (inverse of above)
 
-## Plan
+2. **Update event-store** (`line-of-time-fe/src/stores/event-store.ts`)
+   - Change `fetchEvents()` to accept optional `start` and `end` timestamp params
+   - Add `minTimestamp` and `maxTimestamp` refs (the overall min/max of all events)
+   - Add `fetchAllEventsRange()` to fetch the full range (used to determine min/max)
+   - Track `filterStart` and `filterEnd` refs (current filter values)
 
-### Server-side fix (src/index.ts)
+3. **Update HomeView** (`line-of-time-fe/src/components/HomeView.vue`)
+   - Add filter controls at the top of the events section:
+     - Min date picker (`<input type="date">`) with reset button
+     - Max date picker (`<input type="date">`) with reset button
+   - When filter changes, call `fetchEvents(filterStart, filterEnd)`
+   - Reset buttons restore to the overall min/max timestamps
+   - Compute `rangeIsMoreThanOneYear` from `filterStart` and `filterEnd`
+   - Display event dates:
+     - If range > 1 year: show only start year (and end year if present)
+     - If range ≤ 1 year: show start year-month (and end year-month if present)
 
-1. In the `/ui/*` catch-all handler, read `MESSAGE_FOUND` and `ERROR_FOUND` cookies from the request
-2. If either cookie is present, inject a `<script>` tag into the HTML that sets
-   `window.__FLASH_MESSAGE__` and/or `window.__FLASH_ERROR__`
-3. Clear the cookies by setting them to empty with immediate expiry in the response
-4. Serve the modified HTML
+4. **Update existing e2e tests** (`e2e-tests/general/09-event-list-layout.spec.ts`)
+   - Tests that check for `yyyy-mm-dd` format need updating since format now depends on range
+   - Update to account for the new conditional display
 
-### Vue SPA fix (line-of-time-fe)
+5. **Write new e2e tests** (`e2e-tests/general/10-timeline-filter.spec.ts`)
+   - Filter controls appear when signed in with events
+   - Min/max date pickers start with the correct values
+   - Changing min date filters the event list
+   - Changing max date filters the event list
+   - Reset min button restores to original min
+   - Reset max button restores to original max
+   - Date display shows year-only when range > 1 year
+   - Date display shows year-month when range ≤ 1 year
 
-5. In `App.vue`, read `window.__FLASH_MESSAGE__` and `window.__FLASH_ERROR__` on mount
-6. Pass them as props to `AppLayout`
-7. Clear the window globals after reading (so they don't persist on SPA navigation)
+6. **Start server** with `npm run dev-open-sign-up`
 
-### Test fixes
-
-8. Restore `verifyAlert` calls that were removed from tests:
-   - `e2e-tests/sign-in/02-can-sign-in-with-known-email.spec.ts`
-   - `e2e-tests/sign-in/05-sign-out-successfully.spec.ts`
-   - `e2e-tests/sign-up/04-can-validate-email.spec.ts`
-   - `e2e-tests/sign-up/06-can-resend-verification-email.spec.ts`
-   - `e2e-tests/reset-password/03-complete-password-reset-flow.spec.ts`
-   - `e2e-tests/profile/02-can-change-password.spec.ts`
-   - `e2e-tests/support/workflow-helpers.ts`
-
-### Verify
-
-9. Start server with `npm run dev-open-sign-up`
-10. Run `npx playwright test -x` and fix failures one at a time
+7. **Run tests** with `npx playwright test -x` and fix failures one at a time

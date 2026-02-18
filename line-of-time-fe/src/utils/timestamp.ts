@@ -102,3 +102,40 @@ export const timestampToYmd = (timestamp: number): string => {
   const dStr = String(day).padStart(2, '0')
   return `${yStr}-${mStr}-${dStr}`
 }
+
+export const timestampToYear = (timestamp: number): string => {
+  const { year } = timestampToComponents(timestamp)
+  return String(Math.abs(year)).padStart(4, '0')
+}
+
+export const timestampToYearMonth = (timestamp: number): string => {
+  const { year, month } = timestampToComponents(timestamp)
+  const yStr = String(Math.abs(year)).padStart(4, '0')
+  const mStr = String(month).padStart(2, '0')
+  return `${yStr}-${mStr}`
+}
+
+export const timestampToDateInput = (timestamp: number): string => {
+  return timestampToYmd(timestamp)
+}
+
+export const dateInputToTimestamp = (dateStr: string): number => {
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) {
+    return 0
+  }
+  const year = parseInt(parts[0]!, 10)
+  const month = parseInt(parts[1]!, 10)
+  const day = parseInt(parts[2]!, 10)
+  return daysFromYear1ToYear(year) + getDaysUpToMonth(year, month) + (day - 1)
+}
+
+const getDaysUpToMonth = (year: number, month: number): number => {
+  let days = 0
+  for (let m = 1; m < month; m++) {
+    days += getDaysInMonth(year, m)
+  }
+  return days
+}
+
+export const DAYS_PER_YEAR = 365

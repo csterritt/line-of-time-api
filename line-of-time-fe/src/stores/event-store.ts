@@ -107,19 +107,66 @@ export const useEventStore = defineStore('event-store', () => {
   }
 
   const events = ref<EventResponse[]>([])
+  const minTimestamp = ref<number | null>(null)
+  const maxTimestamp = ref<number | null>(null)
+  const filterStart = ref<number | null>(null)
+  const filterEnd = ref<number | null>(null)
 
-  const fetchEvents = async () => {
+  const fetchAllEvents = async (): Promise<EventResponse[]> => {
     try {
       const response = await fetch('/time-info/events/-99999999999/99999999999')
       if (response.ok) {
+        return (await response.json()) as EventResponse[]
+      }
+      return []
+    } catch {
+      return []
+    }
+  }
+
+  const computeMinMax = (allEvents: EventResponse[]): void => {
+    if (allEvents.length === 0) {
+      minTimestamp.value = null
+      maxTimestamp.value = null
+      return
+    }
+    let min = allEvents[0]!.startTimestamp
+    let max = allEvents[0]!.startTimestamp
+    for (const evt of allEvents) {
+      if (evt.startTimestamp < min) {
+        min = evt.startTimestamp
+      }
+      const evtMax = evt.endTimestamp != null ? evt.endTimestamp : evt.startTimestamp
+      if (evtMax > max) {
+        max = evtMax
+      }
+    }
+    minTimestamp.value = min
+    maxTimestamp.value = max
+  }
+
+  const fetchEvents = async (start?: number, end?: number) => {
+    const s = start ?? -99999999999
+    const e = end ?? 99999999999
+    try {
+      const response = await fetch(`/time-info/events/${s}/${e}`)
+      if (response.ok) {
         const data = (await response.json()) as EventResponse[]
-        events.value = data.slice(0, 20)
+        events.value = data
       } else {
         events.value = []
       }
     } catch {
       events.value = []
     }
+  }
+
+  const initializeEvents = async () => {
+    const allEvents = await fetchAllEvents()
+    computeMinMax(allEvents)
+    filterStart.value = minTimestamp.value
+    filterEnd.value = maxTimestamp.value
+    await fetchEvents(filterStart.value ?? undefined, filterEnd.value ?? undefined)
   }
 
   return {
@@ -131,6 +178,11 @@ export const useEventStore = defineStore('event-store', () => {
     wikiLoading,
     getInfo,
     events,
+    minTimestamp,
+    maxTimestamp,
+    filterStart,
+    filterEnd,
     fetchEvents,
+    initializeEvents,
   }
 })
