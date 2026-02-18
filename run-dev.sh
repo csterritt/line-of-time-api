@@ -38,5 +38,5 @@ concurrently -c auto \
   -n mailpit,tailwind,wrangler,fe-build \
   "mailpit" \
   "npx @tailwindcss/cli -i ./src/style.css -o ${styleFile} --watch" \
-  "wrangler dev" \
+  "wrangler dev --local" \
   "cd line-of-time-fe && npm run build:watch"
