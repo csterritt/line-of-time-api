@@ -69,11 +69,15 @@ const handleSearchAgain = () => {
 const handleSubmit = async () => {
   eventStore.clearMessages()
 
+  const cat = eventStore.wikiInfo?.categorization
+  const eventType = cat?.type === 'person' ? 'person' : 'event'
+
   const eventData: EventInput = {
     name: name.value,
     basicDescription: basicDescription.value,
     startTimestamp: dateInputToTimestamp(startTimestamp.value),
     referenceUrls: [referenceUrl.value],
+    eventType,
   }
 
   if (endTimestamp.value) {

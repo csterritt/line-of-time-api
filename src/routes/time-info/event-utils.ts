@@ -12,6 +12,7 @@ export interface EventResponse {
   basicDescription: string
   referenceUrls: string[]
   relatedEventIds: string[]
+  eventType: string | null
   createdAt: string
   updatedAt: string
 }
@@ -45,6 +46,7 @@ export const parseEvent = (
     basicDescription: dbEvent.basicDescription,
     referenceUrls,
     relatedEventIds,
+    eventType: dbEvent.eventType ?? null,
     createdAt: dbEvent.createdAt,
     updatedAt: dbEvent.updatedAt,
   }

@@ -7,6 +7,7 @@ export type EventInput = {
   startTimestamp: number
   endTimestamp?: number | null
   referenceUrls: string[]
+  eventType?: string | null
 }
 
 export type CategorizationResult =
@@ -33,6 +34,7 @@ export type EventResponse = {
   endTimestamp: number | null
   referenceUrls: string[]
   relatedEventIds: string[]
+  eventType: string | null
   createdAt: string
   updatedAt: string
 }

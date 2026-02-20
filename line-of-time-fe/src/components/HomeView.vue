@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useUserInfoStore } from '@/stores/user-info'
 import { useEventStore } from '@/stores/event-store'
+import type { EventResponse } from '@/stores/event-store'
 import {
   timestampToYear,
   timestampToYearMonth,
@@ -13,15 +14,9 @@ import {
 const userInfo = useUserInfoStore()
 const eventStore = useEventStore()
 
-watch(
-  () => userInfo.isSignedIn,
-  (signedIn) => {
-    if (signedIn) {
-      eventStore.initializeEvents()
-    }
-  },
-  { immediate: true }
-)
+onMounted(() => {
+  eventStore.initializeEvents()
+})
 
 const rangeIsMoreThanOneYear = computed(() => {
   const start = eventStore.filterStart
@@ -47,8 +42,8 @@ const maxDateInputValue = computed(() => {
   return eventStore.filterEnd != null ? timestampToDateInput(eventStore.filterEnd) : ''
 })
 
-const onMinDateChange = (event: Event) => {
-  const val = (event.target as HTMLInputElement).value
+const onMinDateChange = (evt: Event) => {
+  const val = (evt.target as HTMLInputElement).value
   if (!val) {
     return
   }
@@ -57,8 +52,8 @@ const onMinDateChange = (event: Event) => {
   eventStore.fetchEvents(ts, eventStore.filterEnd ?? undefined)
 }
 
-const onMaxDateChange = (event: Event) => {
-  const val = (event.target as HTMLInputElement).value
+const onMaxDateChange = (evt: Event) => {
+  const val = (evt.target as HTMLInputElement).value
   if (!val) {
     return
   }
@@ -75,6 +70,61 @@ const resetMin = () => {
 const resetMax = () => {
   eventStore.filterEnd = eventStore.maxTimestamp
   eventStore.fetchEvents(eventStore.filterStart ?? undefined, eventStore.filterEnd ?? undefined)
+}
+
+type TimelineEntry = {
+  timestamp: number
+  dateLabel: string
+  type: 'start' | 'end'
+  event: EventResponse
+}
+
+type TimelineRow = TimelineEntry & {
+  isFirstInGroup: boolean
+}
+
+const timelineRows = computed((): TimelineRow[] => {
+  const entries: TimelineEntry[] = []
+
+  for (const evt of eventStore.events) {
+    entries.push({
+      timestamp: evt.startTimestamp,
+      dateLabel: formatEventDate(evt.startTimestamp),
+      type: 'start',
+      event: evt,
+    })
+    if (evt.endTimestamp != null) {
+      entries.push({
+        timestamp: evt.endTimestamp,
+        dateLabel: formatEventDate(evt.endTimestamp),
+        type: 'end',
+        event: evt,
+      })
+    }
+  }
+
+  entries.sort((a, b) => {
+    if (a.timestamp !== b.timestamp) {
+      return a.timestamp - b.timestamp
+    }
+    return a.type === 'start' ? -1 : 1
+  })
+
+  const rows: TimelineRow[] = []
+  let lastDateLabel = ''
+  for (const entry of entries) {
+    const isFirstInGroup = entry.dateLabel !== lastDateLabel
+    if (isFirstInGroup) {
+      lastDateLabel = entry.dateLabel
+    }
+    rows.push({ ...entry, isFirstInGroup })
+  }
+
+  return rows
+})
+
+const endDescription = (evt: EventResponse): string => {
+  return evt.eventType === 'person' ? `Death of ${evt.name}` : `End of ${evt.name}`
 }
 </script>
 
@@ -113,9 +163,7 @@ const resetMax = () => {
         </RouterLink>
       </div>
 
-      <div v-if="userInfo.isSignedIn" class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Events</h3>
-
+      <div v-if="userInfo.isSignedIn" class="mt-2">
         <div
           v-if="eventStore.minTimestamp != null && eventStore.maxTimestamp != null"
           class="flex flex-wrap gap-4 mb-4 items-end"
@@ -163,26 +211,39 @@ const resetMax = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        <div v-if="eventStore.events.length > 0" class="grid grid-cols-[auto_auto_1fr] gap-y-2" data-testid="event-list">
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-3">Timeline</h3>
+
+        <div
+          v-if="timelineRows.length > 0"
+          class="grid grid-cols-[auto_auto_1fr] gap-y-2"
+          data-testid="event-list"
+        >
           <template
-            v-for="evt in eventStore.events"
-            :key="evt.id"
+            v-for="(row, idx) in timelineRows"
+            :key="`${row.event.id}-${row.type}-${idx}`"
           >
-            <div class="font-mono text-sm self-center" data-testid="event-item" :data-event-id="evt.id">
-              <div class="font-mono text-sm" data-testid="event-date">
-                <div data-testid="event-start-date">{{ formatEventDate(evt.startTimestamp) }}{{ evt.endTimestamp != null ? ' -' : '' }}</div>
-                <div v-if="evt.endTimestamp != null" class="ml-2" data-testid="event-end-date">{{ formatEventDate(evt.endTimestamp) }}</div>
-              </div>
+            <div
+              class="font-mono text-sm self-center pr-2"
+              data-testid="timeline-date-cell"
+            >
+              <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
             </div>
             <div class="divider divider-horizontal mx-2"></div>
-            <div class="min-w-0 self-center">
-              <span class="font-bold" data-testid="event-name">{{ evt.name }}</span>
-              <div
-                class="truncate text-sm"
-                :title="evt.basicDescription"
-                data-testid="event-description"
-              >{{ evt.basicDescription }}</div>
+            <div class="min-w-0 self-center" data-testid="timeline-row">
+              <template v-if="row.type === 'start'">
+                <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
+                <div
+                  class="truncate text-sm"
+                  :title="row.event.basicDescription"
+                  data-testid="event-description"
+                >{{ row.event.basicDescription }}</div>
+              </template>
+              <template v-else>
+                <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
+              </template>
             </div>
           </template>
         </div>

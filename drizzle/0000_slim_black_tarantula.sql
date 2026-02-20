@@ -23,6 +23,7 @@ CREATE TABLE `event` (
 	`basic_description` text NOT NULL,
 	`reference_urls` text NOT NULL,
 	`related_event_ids` text,
+	`event_type` text,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL
 );

@@ -392,16 +392,16 @@ test('event list shows seeded events when signed in', async ({ page }) => {
   await page.waitForSelector('[data-testid="event-list"]')
   expect(await isElementVisible(page, 'event-list')).toBe(true)
 
-  const items = page.locator('[data-testid="event-item"]')
+  const items = page.locator('[data-testid="timeline-row"]')
   expect(await items.count()).toBeGreaterThan(0)
 })
 
-test('event list not shown when not signed in', async ({ page }) => {
+test('event list shown to non-signed-in users', async ({ page }) => {
   await seedEvents()
 
   await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="sign-in-prompt"]')
-  expect(await isElementVisible(page, 'event-list')).toBe(false)
+  await page.waitForSelector('[data-testid="event-list"]')
+  expect(await isElementVisible(page, 'event-list')).toBe(true)
 })
 
 test('shows "No events yet" when signed in with no events', async ({

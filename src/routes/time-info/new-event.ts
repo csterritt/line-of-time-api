@@ -47,6 +47,7 @@ newEventRouter.post('/', signedInAccess, async (c) => {
     relatedEventIds: body.relatedEventIds
       ? JSON.stringify(body.relatedEventIds)
       : null,
+    eventType: body.eventType ?? null,
     createdAt: now,
     updatedAt: now,
   }

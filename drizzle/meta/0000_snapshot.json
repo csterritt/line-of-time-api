@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9819dd1f-7aa6-4977-824e-190b43235782",
+  "id": "90490186-f653-4175-8601-ea4125391924",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -166,6 +166,13 @@
         },
         "related_event_ids": {
           "name": "related_event_ids",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "event_type": {
+          "name": "event_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

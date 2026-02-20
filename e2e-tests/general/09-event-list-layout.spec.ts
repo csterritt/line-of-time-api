@@ -6,7 +6,6 @@ import {
   seedEvents,
 } from '../support/db-helpers'
 import { submitSignInForm } from '../support/form-helpers'
-import { isElementVisible, getElementText } from '../support/finders'
 import { BASE_URLS, TEST_USERS } from '../support/test-data'
 
 test.beforeEach(async () => {
@@ -20,24 +19,24 @@ test.afterEach(async () => {
   await clearDatabase()
 })
 
-test('event rows show start date in yyyy format when range is more than 1 year', async ({ page }) => {
+test('date labels show in yyyy format when range is more than 1 year', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
   await page.goto(`${BASE_URLS.HOME}/ui/`)
   await page.waitForSelector('[data-testid="event-list"]')
 
-  const startDates = page.locator('[data-testid="event-start-date"]')
-  const count = await startDates.count()
+  const dateCells = page.locator('[data-testid="timeline-date-cell"]').filter({ hasText: /\d/ })
+  const count = await dateCells.count()
   expect(count).toBeGreaterThan(0)
 
   for (let i = 0; i < count; i++) {
-    const text = (await startDates.nth(i).textContent())?.trim()
-    expect(text).toMatch(/^\d{4}( -)?$/)
+    const text = (await dateCells.nth(i).textContent())?.trim()
+    expect(text).toMatch(/^\d{4}$/)
   }
 })
 
-test('event rows show correct years for seeded events when range is more than 1 year', async ({ page }) => {
+test('timeline shows correct years for seeded events', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
@@ -48,63 +47,51 @@ test('event rows show correct years for seeded events when range is more than 1 
   expect(listText).toContain('1969')
   expect(listText).toContain('1939')
   expect(listText).toContain('1776')
+  expect(listText).toContain('1732')
 })
 
-test('event with end timestamp shows dash after start date and end date on next line', async ({
-  page,
-}) => {
+test('event with end timestamp shows "End of X" end row', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
   await page.goto(`${BASE_URLS.HOME}/ui/`)
   await page.waitForSelector('[data-testid="event-list"]')
 
-  const items = page.locator('[data-testid="event-item"]')
-  const count = await items.count()
-  let foundWithEnd = false
+  const endDescriptions = page.locator('[data-testid="event-end-description"]')
+  const count = await endDescriptions.count()
+  expect(count).toBeGreaterThan(0)
 
-  for (let i = 0; i < count; i++) {
-    const endDate = items.nth(i).locator('[data-testid="event-end-date"]')
-    if ((await endDate.count()) > 0) {
-      foundWithEnd = true
-      const startText = (await items.nth(i).locator('[data-testid="event-start-date"]').textContent())?.trim()
-      expect(startText).toMatch(/\d+ -$/)
-
-      const endText = (await endDate.textContent())?.trim()
-      expect(endText).toMatch(/^\d+$/)
-
-      const endClasses = await endDate.getAttribute('class')
-      expect(endClasses).toContain('ml-2')
-    }
-  }
-
-  expect(foundWithEnd).toBe(true)
+  const texts = await endDescriptions.allTextContents()
+  const hasEndOf = texts.some((t) => t.startsWith('End of '))
+  expect(hasEndOf).toBe(true)
 })
 
-test('event without end timestamp has no dash and no end date', async ({
-  page,
-}) => {
+test('person event with end timestamp shows "Death of X" end row', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
   await page.goto(`${BASE_URLS.HOME}/ui/`)
   await page.waitForSelector('[data-testid="event-list"]')
 
-  const items = page.locator('[data-testid="event-item"]')
-  const count = await items.count()
-  let foundWithoutEnd = false
+  const listText = await page.getByTestId('event-list').textContent()
+  expect(listText).toContain('Death of George Washington')
+})
+
+test('end descriptions are italicized', async ({ page }) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/`)
+  await page.waitForSelector('[data-testid="event-list"]')
+
+  const endDescriptions = page.locator('[data-testid="event-end-description"]')
+  const count = await endDescriptions.count()
+  expect(count).toBeGreaterThan(0)
 
   for (let i = 0; i < count; i++) {
-    const endDate = items.nth(i).locator('[data-testid="event-end-date"]')
-    if ((await endDate.count()) === 0) {
-      foundWithoutEnd = true
-      const startText = (await items.nth(i).locator('[data-testid="event-start-date"]').textContent())?.trim()
-      expect(startText).toMatch(/^\d+$/)
-      expect(startText).not.toContain(' -')
-    }
+    const tag = await endDescriptions.nth(i).evaluate((el) => el.tagName.toLowerCase())
+    expect(tag).toBe('em')
   }
-
-  expect(foundWithoutEnd).toBe(true)
 })
 
 test('event name is bold', async ({ page }) => {
@@ -124,9 +111,7 @@ test('event name is bold', async ({ page }) => {
   }
 })
 
-test('event description has truncate class and title attribute', async ({
-  page,
-}) => {
+test('event description has truncate class and title attribute', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
@@ -149,21 +134,19 @@ test('event description has truncate class and title attribute', async ({
   }
 })
 
-test('vertical divider exists between date and name/description', async ({
-  page,
-}) => {
+test('vertical dividers exist for each timeline row', async ({ page }) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
   await page.goto(`${BASE_URLS.HOME}/ui/`)
   await page.waitForSelector('[data-testid="event-list"]')
 
-  const items = page.locator('[data-testid="event-item"]')
-  const itemCount = await items.count()
-  expect(itemCount).toBeGreaterThan(0)
+  const rows = page.locator('[data-testid="timeline-row"]')
+  const rowCount = await rows.count()
+  expect(rowCount).toBeGreaterThan(0)
 
   const dividers = page.getByTestId('event-list').locator('.divider-horizontal')
-  expect(await dividers.count()).toBe(itemCount)
+  expect(await dividers.count()).toBe(rowCount)
 })
 
 test('WWII event shows correct end year', async ({ page }) => {
@@ -175,4 +158,18 @@ test('WWII event shows correct end year', async ({ page }) => {
 
   const listText = await page.getByTestId('event-list').textContent()
   expect(listText).toContain('1945')
+})
+
+test('date shown once when multiple events on same date', async ({ page }) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+
+  await page.goto(`${BASE_URLS.HOME}/ui/`)
+  await page.waitForSelector('[data-testid="event-list"]')
+
+  const dateCells = page.locator('[data-testid="timeline-date-cell"]').filter({ hasText: /\d/ })
+  const allDates = await dateCells.allTextContents()
+  const trimmed = allDates.map((t) => t.trim())
+  const unique = new Set(trimmed)
+  expect(trimmed.length).toBe(unique.size)
 })

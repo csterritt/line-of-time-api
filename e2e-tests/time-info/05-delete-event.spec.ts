@@ -40,7 +40,7 @@ test.describe('DELETE /time-info/event/:id', () => {
     await page.waitForURL(/\/ui/)
 
     const countBefore = await getEventCount()
-    expect(countBefore).toBe(3)
+    expect(countBefore).toBe(4)
 
     // Use page.evaluate to make the DELETE request with the page's cookies
     const result = await page.evaluate(async (url) => {
@@ -58,7 +58,7 @@ test.describe('DELETE /time-info/event/:id', () => {
     expect(result.body.success).toBe(true)
 
     const countAfter = await getEventCount()
-    expect(countAfter).toBe(2)
+    expect(countAfter).toBe(3)
   })
 
   test('event is no longer retrievable after deletion', async ({

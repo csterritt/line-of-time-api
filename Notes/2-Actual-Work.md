@@ -1,8 +1,10 @@
+A previous conversation established the following behavior. Go ahead and continue to implement the plan in Notes/plan.md. The following is a summary of the behavior desired:
+
 This is the next set of steps in revising the behavior of the timeline.
-Please read through these, and create a new plan in plan.md, where each feature is set up as a checkbox so that as the plan is implemented, they can be checked off.
 
 Features:
 
+- Events should be shown on the timeline page for everyone, not just signed in users.
 - Each event should be displayed next to its start date, with no end date shown on that line.
 - Each event with an endTimestamp should be shown on the same line as its end date, with italicized "End of X" or "Death of X" for the description.
 - The events should be vertically spaced evenly.

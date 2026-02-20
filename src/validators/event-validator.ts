@@ -9,6 +9,7 @@ export interface EventInput {
   basicDescription: string
   referenceUrls: string[]
   relatedEventIds?: string[] | null
+  eventType?: string | null
 }
 
 interface ValidationResult {

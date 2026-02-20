@@ -39,10 +39,11 @@ test.describe('GET /time-info/events/:start/:end', () => {
 
     expect(response.status()).toBe(200)
     const events = await response.json()
-    expect(events).toHaveLength(3)
-    expect(events[0].name).toBe('US Declaration of Independence')
-    expect(events[1].name).toBe('World War II')
-    expect(events[2].name).toBe('Moon Landing')
+    expect(events).toHaveLength(4)
+    expect(events[0].name).toBe('George Washington')
+    expect(events[1].name).toBe('US Declaration of Independence')
+    expect(events[2].name).toBe('World War II')
+    expect(events[3].name).toBe('Moon Landing')
   })
 
   test('filters events by timestamp range', async ({ request }) => {
