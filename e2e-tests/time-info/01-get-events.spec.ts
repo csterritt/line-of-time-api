@@ -72,7 +72,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
 
     expect(event).toMatchObject({
       id: 'test-event-1',
-      startTimestamp: 719163,
+      startTimestamp: 718997,
       endTimestamp: null,
       name: 'Moon Landing',
       basicDescription: 'First human on the moon',

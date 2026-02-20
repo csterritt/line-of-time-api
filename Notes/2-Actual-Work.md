@@ -1,5 +1,15 @@
-For this task, I want not only a plan, but a list of tasks in the order I should do them.
-The main '/ui/' page shows the timeline.
-There should be a pair of controls at the top, giving the minimum and maximum timestamps to display on the timeline. The control should start with the current min and max timestamps of the timeline. You should be able to choose the min and max timestamps, and the timeline should update to show only the events that fall within the chosen range.
-There should be a simple date (without time) picker for each control. Additionally, there should be a "reset" button for each control, which will reset the control to the current min and max timestamps of the timeline.
-Currently, each event shows the start and optional end timestamps. Change the display to show only the start year of the event, when the min and max timestamps are more than 1 year apart. When the min and max timestamps are less than 1 year apart, show the start year and month of the event.
+This is the next set of steps in revising the behavior of the timeline.
+Please read through these, and create a new plan in plan.md, where each feature is set up as a checkbox so that as the plan is implemented, they can be checked off.
+
+Features:
+
+- Each event should be displayed next to its start date, with no end date shown on that line.
+- Each event with an endTimestamp should be shown on the same line as its end date, with italicized "End of X" or "Death of X" for the description.
+- The events should be vertically spaced evenly.
+- If several events occur on a date, vertically space both date column with just one date shown, but the same number of lines as events. Then display the events next to the date. For example (where the date and event description are separated by a pipe):
+
+  1772 | Event one starts
+  | Event two starts
+  | Event three happens
+  1774 | Event two ends (italicized)
+  1776 | Event one ends (italicized)

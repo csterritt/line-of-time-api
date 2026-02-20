@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 import type { EventInput, CategorizationResult } from '@/stores/event-store'
+import { dateInputToTimestamp } from '@/utils/timestamp'
 
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
 const basicDescriptionMax = 1002
@@ -71,12 +72,12 @@ const handleSubmit = async () => {
   const eventData: EventInput = {
     name: name.value,
     basicDescription: basicDescription.value,
-    startTimestamp: startTimestamp.value,
+    startTimestamp: dateInputToTimestamp(startTimestamp.value),
     referenceUrls: [referenceUrl.value],
   }
 
   if (endTimestamp.value) {
-    eventData.endTimestamp = endTimestamp.value
+    eventData.endTimestamp = dateInputToTimestamp(endTimestamp.value)
   }
 
   const success = await eventStore.createNewEvent(eventData)

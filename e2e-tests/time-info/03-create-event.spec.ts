@@ -10,7 +10,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 import { submitSignInForm } from '../support/form-helpers'
 
 const validEvent = {
-  startTimestamp: '2023-01-15',
+  startTimestamp: 738534,
   name: 'Test Event',
   basicDescription: 'A test event description',
   referenceUrls: ['https://example.com/reference'],
@@ -71,7 +71,7 @@ test.describe('POST /time-info/new-event', () => {
 
     const fullEvent = {
       ...validEvent,
-      endTimestamp: '2023-01-16',
+      endTimestamp: 738535,
       relatedEventIds: ['related-1', 'related-2'],
     }
 

@@ -359,7 +359,7 @@ testDatabaseRouter.post(
       const testEvents = [
         {
           id: 'test-event-1',
-          startTimestamp: 719163,
+          startTimestamp: 718997,
           endTimestamp: null,
           name: 'Moon Landing',
           basicDescription: 'First human on the moon',
@@ -372,8 +372,8 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-2',
-          startTimestamp: 708249,
-          endTimestamp: 710440,
+          startTimestamp: 708082,
+          endTimestamp: 710275,
           name: 'World War II',
           basicDescription: 'Global war from 1939 to 1945',
           referenceUrls: JSON.stringify([
@@ -385,7 +385,7 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-3',
-          startTimestamp: 648856,
+          startTimestamp: 648490,
           endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',

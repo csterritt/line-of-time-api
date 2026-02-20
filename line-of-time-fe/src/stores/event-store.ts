@@ -4,8 +4,8 @@ import { defineStore } from 'pinia'
 export type EventInput = {
   name: string
   basicDescription: string
-  startTimestamp: string
-  endTimestamp?: string | null
+  startTimestamp: number
+  endTimestamp?: number | null
   referenceUrls: string[]
 }
 

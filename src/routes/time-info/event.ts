@@ -13,7 +13,6 @@ import {
   EventInput,
 } from '../../validators/event-validator'
 import { parseEvent } from './event-utils'
-import { dateComponentsToTimestamp } from '../../lib/timestamp'
 
 const eventRouter = new Hono<AppEnv>()
 
@@ -54,24 +53,8 @@ eventRouter.put('/:id', signedInAccess, async (c) => {
 
   const now = new Date().toISOString()
 
-  const startTime = new Date(body.startTimestamp)
-  const startTimestamp = dateComponentsToTimestamp({
-    year: startTime.getUTCFullYear(),
-    month: startTime.getUTCMonth() + 1,
-    day: startTime.getUTCDate(),
-  })
-
-  const endTimestamp = body.endTimestamp
-    ? (() => {
-        const endTime = new Date(body.endTimestamp)
-        const endComponents = {
-          year: endTime.getUTCFullYear(),
-          month: endTime.getUTCMonth() + 1,
-          day: endTime.getUTCDate(),
-        }
-        return dateComponentsToTimestamp(endComponents)
-      })()
-    : null
+  const startTimestamp = body.startTimestamp
+  const endTimestamp = body.endTimestamp ?? null
 
   const updatedEvent = {
     startTimestamp,
