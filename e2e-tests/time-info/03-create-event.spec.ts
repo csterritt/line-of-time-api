@@ -142,4 +142,93 @@ test.describe('POST /time-info/new-event', () => {
 
     expect(response.status()).toBe(400)
   })
+
+  test("creates event with eventType 'person' and response contains that eventType", async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
+      data: { ...validEvent, eventType: 'person' },
+      headers: { Cookie: cookieHeader },
+    })
+
+    expect(response.status()).toBe(201)
+    const event = await response.json()
+    expect(event.eventType).toBe('person')
+  })
+
+  test("creates event with eventType 'event' and response contains that eventType", async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
+      data: { ...validEvent, eventType: 'event' },
+      headers: { Cookie: cookieHeader },
+    })
+
+    expect(response.status()).toBe(201)
+    const event = await response.json()
+    expect(event.eventType).toBe('event')
+  })
+
+  test('eventType is persisted and readable via GET after creation', async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const createResponse = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
+      data: { ...validEvent, eventType: 'person' },
+      headers: { Cookie: cookieHeader },
+    })
+
+    expect(createResponse.status()).toBe(201)
+    const created = await createResponse.json()
+    expect(created.id).toBeDefined()
+
+    const getResponse = await request.get(`${BASE_URLS.TIME_INFO_EVENT}/${created.id}`)
+    expect(getResponse.status()).toBe(200)
+    const fetched = await getResponse.json()
+    expect(fetched.eventType).toBe('person')
+  })
+
+  test('eventType defaults to null when omitted from creation', async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
+      data: validEvent,
+      headers: { Cookie: cookieHeader },
+    })
+
+    expect(response.status()).toBe(201)
+    const event = await response.json()
+    expect(event.eventType).toBeNull()
+  })
 })
