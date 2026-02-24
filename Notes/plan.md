@@ -1,31 +1,30 @@
-# Plan: Returning 409 Conflict for Existing Events
+# Plan: Extracting TimelineDisplay.vue
 
 ## Assumptions
-- We are working in `src/routes/time-info/initial-search.ts`.
-- `getEventByReferenceUrl` returns `Result<Event | null, Error>`, so checking `foundEvent != null` works but we should return 409.
-- The frontend `line-of-time-fe/src/stores/event-store.ts` already handles errors by setting `errorMessage.value` to the string returned by the backend `error` property, so we might just need to verify it handles 409.
+- We are working in `line-of-time-fe/src/components/`.
+- `HomeView.vue` currently contains the timeline display logic (lines 217-250) and computed properties/types for `timelineRows`, `TimelineEntry`, and `TimelineRow` (lines 75-128).
+- `TimelineDisplay.vue` will need to accept `events` as a prop and handle its own computed properties for displaying the timeline rows.
+- The `formatEventDate` function and `rangeIsMoreThanOneYear` computed property might need to be passed down or recreated in `TimelineDisplay.vue`, but since `eventStore` is accessible globally, `TimelineDisplay.vue` can just use `useEventStore()` directly.
 
 ## The Plan
-1. **Initial Search Route Update (`initial-search.ts`)**:
-   - Change `return { error: 'Event found', status: 404 }` to `{ error: 'An event for this Wikipedia page already exists.', status: 409 }`.
+1. **Create `TimelineDisplay.vue`**:
+   - Move lines 217-250 from `HomeView.vue` to `TimelineDisplay.vue`.
+   - Move the `TimelineEntry`, `TimelineRow`, `timelineRows`, `endDescription`, `formatEventDate`, and `rangeIsMoreThanOneYear` logic into `TimelineDisplay.vue`.
+   - Update `TimelineDisplay.vue` to use `useEventStore()`.
 
-2. **Frontend Notification (`event-store.ts` and components)**:
-   - Ensure the frontend properly handles the error and notifies the user (it likely already displays `errorMessage.value`).
+2. **Update `HomeView.vue`**:
+   - Import `TimelineDisplay` and use it in place of the old timeline HTML.
+   - Remove the extracted types, computed properties, and helper functions from `HomeView.vue` to clean it up.
 
-3. **E2E Tests (`e2e-tests/time-info/09-initial-search-conflict.spec.ts`)**:
-   - Write a new test (or add to an existing initial search test) that:
-     1. Creates an event with a specific Wikipedia URL.
-     2. Calls `/time-info/initial-search` with the same Wikipedia page name.
-     3. Verifies that the API returns a 409 status and the appropriate error message.
-   - Run tests using `npx playwright test e2e-tests/time-info/09-initial-search-conflict.spec.ts -x` first to see it fail (Red).
+3. **E2E Tests**:
+   - Check existing tests to see if they rely on the structure of the timeline in `HomeView.vue` (e.g., `data-testid="event-list"`, `data-testid="timeline-row"`).
+   - Ensure these `data-testid` attributes are preserved in `TimelineDisplay.vue` so existing tests don't break.
+   - Run tests using `npx playwright test` to ensure everything is still green.
 
-4. **Implement Fix & Re-run Tests (Green)**:
-   - Apply the change in `initial-search.ts`.
-   - Run the test again to see it pass.
-
-5. **Start Server**:
-   - Run the server with `npm run dev-open-sign-up` to manually verify if needed.
+4. **Verify**:
+   - Start the server with `npm run dev-open-sign-up`.
+   - Visually confirm the timeline looks and behaves exactly as before.
 
 ## Pitfalls
-- **Frontend Error Message Format**: The frontend `event-store.ts` assumes the server returns `{ error: 'string message' }`. If we change the structure, the frontend will break. We must keep `error` as a string.
-- **Reference URL Formatting**: The `initial-search` creates a `probableUrl` using `encodeURIComponent(trimmedName)`. If the created event doesn't exactly match this format, the lookup will fail.
+- **Props vs Store**: Since `HomeView.vue` relies heavily on `useEventStore()`, moving the logic to `TimelineDisplay.vue` might make it tightly coupled to the store. If `TimelineDisplay.vue` is meant to be a purely presentational component, it should take `events`, `filterStart`, and `filterEnd` as props instead of accessing the store directly. I will use the prop approach to make it more reusable, passing `eventStore.events`, `eventStore.filterStart`, and `eventStore.filterEnd` as props.
+- **Breaking Tests**: The e2e tests might fail if `data-testid` attributes are lost or if the DOM structure changes slightly. I must copy the HTML exactly.
