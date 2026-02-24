@@ -76,7 +76,7 @@ const handleSubmit = async () => {
     name: name.value,
     basicDescription: basicDescription.value,
     startTimestamp: dateInputToTimestamp(startTimestamp.value),
-    referenceUrls: [referenceUrl.value],
+    referenceUrl: referenceUrl.value,
     eventType,
   }
 

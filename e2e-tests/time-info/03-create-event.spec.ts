@@ -13,7 +13,7 @@ const validEvent = {
   startTimestamp: 738534,
   name: 'Test Event',
   basicDescription: 'A test event description',
-  referenceUrls: ['https://example.com/reference'],
+  referenceUrl: 'https://example.com/reference',
 }
 
 test.describe('POST /time-info/new-event', () => {
@@ -105,38 +105,36 @@ test.describe('POST /time-info/new-event', () => {
     expect(Array.isArray(body.error)).toBe(true)
   })
 
-  test('returns 400 for invalid URL in referenceUrls', async ({
+  test('returns 400 for invalid URL in referenceUrl', async ({
     page,
     request,
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
-      data: { ...validEvent, referenceUrls: ['not-a-valid-url'] },
+      data: { ...validEvent, referenceUrl: 'not-a-valid-url' },
       headers: { Cookie: cookieHeader },
     })
 
     expect(response.status()).toBe(400)
   })
 
-  test('returns 400 for empty referenceUrls array', async ({
+  test('returns 400 for empty referenceUrl string', async ({
     page,
     request,
   }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-    await page.waitForURL(/\/ui/)
 
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
-      data: { ...validEvent, referenceUrls: [] },
+      data: { ...validEvent, referenceUrl: '' },
       headers: { Cookie: cookieHeader },
     })
 

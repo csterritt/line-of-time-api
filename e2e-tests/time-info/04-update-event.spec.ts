@@ -13,7 +13,7 @@ const updatedEvent = {
   startTimestamp: 719164,
   name: 'Updated Moon Landing',
   basicDescription: 'Updated description',
-  referenceUrls: ['https://example.com/updated'],
+  referenceUrl: 'https://example.com/updated',
 }
 
 test.describe('PUT /time-info/event/:id', () => {

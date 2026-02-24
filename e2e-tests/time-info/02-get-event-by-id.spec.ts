@@ -58,9 +58,9 @@ test.describe('GET /time-info/event/:id', () => {
       name: 'World War II',
       basicDescription: 'Global war from 1939 to 1945',
     })
-    expect(event.referenceUrls).toEqual([
-      'https://en.wikipedia.org/wiki/World_War_II',
-    ])
+    expect(event.referenceUrl).toEqual(
+      'https://en.wikipedia.org/wiki/World_War_II'
+    )
   })
 
   test('does not require authentication', async ({ request }) => {

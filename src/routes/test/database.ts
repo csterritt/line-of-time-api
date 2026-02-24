@@ -363,9 +363,7 @@ testDatabaseRouter.post(
           endTimestamp: null,
           name: 'Moon Landing',
           basicDescription: 'First human on the moon',
-          referenceUrls: JSON.stringify([
-            'https://en.wikipedia.org/wiki/Apollo_11',
-          ]),
+          referenceUrl: 'https://en.wikipedia.org/wiki/Apollo_11',
           relatedEventIds: null,
           eventType: 'event',
           createdAt: now,
@@ -377,9 +375,7 @@ testDatabaseRouter.post(
           endTimestamp: 710275,
           name: 'World War II',
           basicDescription: 'Global war from 1939 to 1945',
-          referenceUrls: JSON.stringify([
-            'https://en.wikipedia.org/wiki/World_War_II',
-          ]),
+          referenceUrl: 'https://en.wikipedia.org/wiki/World_War_II',
           relatedEventIds: null,
           eventType: 'event',
           createdAt: now,
@@ -391,9 +387,7 @@ testDatabaseRouter.post(
           endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',
-          referenceUrls: JSON.stringify([
-            'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
-          ]),
+          referenceUrl: 'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
           relatedEventIds: null,
           eventType: 'event',
           createdAt: now,
@@ -405,9 +399,7 @@ testDatabaseRouter.post(
           endTimestamp: 657053,
           name: 'George Washington',
           basicDescription: 'First President of the United States',
-          referenceUrls: JSON.stringify([
-            'https://en.wikipedia.org/wiki/George_Washington',
-          ]),
+          referenceUrl: 'https://en.wikipedia.org/wiki/George_Washington',
           relatedEventIds: null,
           eventType: 'person',
           createdAt: now,

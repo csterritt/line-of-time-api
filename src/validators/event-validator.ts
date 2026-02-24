@@ -7,7 +7,7 @@ export interface EventInput {
   endTimestamp?: number | null
   name: string
   basicDescription: string
-  referenceUrls: string[]
+  referenceUrl: string
   relatedEventIds?: string[] | null
   eventType?: string | null
 }
@@ -32,7 +32,7 @@ const isValidUrl = (urlStr: string): boolean => {
 
 const MAX_NAME_LENGTH = 500
 const MAX_BASIC_DESCRIPTION_LENGTH = 1000
-const MAX_REFERENCE_URLS = 100
+const MAX_REFERENCE_URL_LENGTH = 2000
 const MAX_RELATED_EVENT_IDS = 100
 
 export const validateEventInput = (input: unknown): ValidationResult => {
@@ -78,19 +78,12 @@ export const validateEventInput = (input: unknown): ValidationResult => {
     )
   }
 
-  if (!Array.isArray(data.referenceUrls)) {
-    errors.push('referenceUrls is required and must be an array')
-  } else if (data.referenceUrls.length === 0) {
-    errors.push('referenceUrls must contain at least one URL')
-  } else if (data.referenceUrls.length > MAX_REFERENCE_URLS) {
-    errors.push(`referenceUrls must not exceed ${MAX_REFERENCE_URLS} URLs`)
-  } else {
-    const invalidUrls = data.referenceUrls.filter(
-      (url) => typeof url !== 'string' || !isValidUrl(url)
-    )
-    if (invalidUrls.length > 0) {
-      errors.push('referenceUrls must contain only valid URLs')
-    }
+  if (typeof data.referenceUrl !== 'string' || data.referenceUrl.trim() === '') {
+    errors.push('referenceUrl is required and must be a non-empty string')
+  } else if (!isValidUrl(data.referenceUrl)) {
+    errors.push('referenceUrl must be a valid URL')
+  } else if (data.referenceUrl.length > MAX_REFERENCE_URL_LENGTH) {
+    errors.push(`referenceUrl must not exceed ${MAX_REFERENCE_URL_LENGTH} characters`)
   }
 
   if (data.relatedEventIds !== undefined && data.relatedEventIds !== null) {

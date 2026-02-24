@@ -10,7 +10,7 @@ export interface EventResponse {
   endTimestamp: number | null
   name: string
   basicDescription: string
-  referenceUrls: string[]
+  referenceUrl: string
   relatedEventIds: string[]
   eventType: string | null
   createdAt: string
@@ -20,14 +20,6 @@ export interface EventResponse {
 export const parseEvent = (
   dbEvent: typeof event.$inferSelect
 ): EventResponse => {
-  let referenceUrls: string[] = []
-  try {
-    referenceUrls = JSON.parse(dbEvent.referenceUrls) as string[]
-  } catch {
-    console.error('Failed to parse referenceUrls for event:', dbEvent.id)
-    referenceUrls = []
-  }
-
   let relatedEventIds: string[] = []
   if (dbEvent.relatedEventIds) {
     try {
@@ -44,7 +36,7 @@ export const parseEvent = (
     endTimestamp: dbEvent.endTimestamp,
     name: dbEvent.name,
     basicDescription: dbEvent.basicDescription,
-    referenceUrls,
+    referenceUrl: dbEvent.referenceUrl,
     relatedEventIds,
     eventType: dbEvent.eventType ?? null,
     createdAt: dbEvent.createdAt,

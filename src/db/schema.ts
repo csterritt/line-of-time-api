@@ -96,7 +96,7 @@ export const event = sqliteTable(
     endTimestamp: integer('end_timestamp'),
     name: text('name').notNull(),
     basicDescription: text('basic_description').notNull(),
-    referenceUrls: text('reference_urls').notNull(),
+    referenceUrl: text('reference_url').notNull().unique(),
     relatedEventIds: text('related_event_ids'),
     eventType: text('event_type'),
     createdAt: text('created_at').notNull(),

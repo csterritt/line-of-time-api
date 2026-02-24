@@ -78,9 +78,9 @@ test.describe('GET /time-info/events/:start/:end', () => {
       name: 'Moon Landing',
       basicDescription: 'First human on the moon',
     })
-    expect(event.referenceUrls).toEqual([
-      'https://en.wikipedia.org/wiki/Apollo_11',
-    ])
+    expect(event.referenceUrl).toEqual(
+      'https://en.wikipedia.org/wiki/Apollo_11'
+    )
     expect(event.relatedEventIds).toEqual([])
     expect(event.createdAt).toBeDefined()
     expect(event.updatedAt).toBeDefined()

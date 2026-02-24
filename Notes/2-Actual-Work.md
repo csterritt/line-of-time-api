@@ -1,9 +1,4 @@
-Change the function 'aiCategorizationAndSearch' in the file 'ai-search.ts' to do a POST
-to 'https://bap.cls.cloud/pipe' with the following JSON:
+I have changed the schema.ts file to rename the event table column 'referenceUrls' to 'referenceUrl',
+and make it a string instead of an array of strings, and make it unique and not nullable.
 
-{
-connectionSecret: c.env.BENT_AI_CONNECTION_SECRET,
-content: rawText
-}
-
-Please for now just print the response to the console.
+Please follow the plan in plan.md to update all the code that references this column to use the new column name and type.

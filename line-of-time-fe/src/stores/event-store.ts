@@ -6,7 +6,7 @@ export type EventInput = {
   basicDescription: string
   startTimestamp: number
   endTimestamp?: number | null
-  referenceUrls: string[]
+  referenceUrl: string
   eventType?: string | null
 }
 
@@ -32,7 +32,7 @@ export type EventResponse = {
   basicDescription: string
   startTimestamp: number
   endTimestamp: number | null
-  referenceUrls: string[]
+  referenceUrl: string
   relatedEventIds: string[]
   eventType: string | null
   createdAt: string

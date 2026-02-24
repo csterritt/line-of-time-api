@@ -21,13 +21,14 @@ CREATE TABLE `event` (
 	`end_timestamp` integer,
 	`name` text NOT NULL,
 	`basic_description` text NOT NULL,
-	`reference_urls` text NOT NULL,
+	`reference_url` text NOT NULL,
 	`related_event_ids` text,
 	`event_type` text,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `event_reference_url_unique` ON `event` (`reference_url`);--> statement-breakpoint
 CREATE INDEX `startTimestamp_idx` ON `event` (`start_timestamp`);--> statement-breakpoint
 CREATE INDEX `endTimestamp_idx` ON `event` (`end_timestamp`);--> statement-breakpoint
 CREATE INDEX `name_idx` ON `event` (`name`);--> statement-breakpoint

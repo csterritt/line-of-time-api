@@ -43,7 +43,7 @@ newEventRouter.post('/', signedInAccess, async (c) => {
     endTimestamp,
     name: body.name,
     basicDescription: body.basicDescription,
-    referenceUrls: JSON.stringify(body.referenceUrls),
+    referenceUrl: body.referenceUrl,
     relatedEventIds: body.relatedEventIds
       ? JSON.stringify(body.relatedEventIds)
       : null,
@@ -57,7 +57,7 @@ newEventRouter.post('/', signedInAccess, async (c) => {
   return c.json(
     parseEvent({
       ...newEvent,
-      referenceUrls: newEvent.referenceUrls,
+      referenceUrl: newEvent.referenceUrl,
       relatedEventIds: newEvent.relatedEventIds,
     }),
     201

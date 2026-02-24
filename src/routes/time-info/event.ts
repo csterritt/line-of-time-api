@@ -61,10 +61,11 @@ eventRouter.put('/:id', signedInAccess, async (c) => {
     endTimestamp,
     name: body.name,
     basicDescription: body.basicDescription,
-    referenceUrls: JSON.stringify(body.referenceUrls),
+    referenceUrl: body.referenceUrl,
     relatedEventIds: body.relatedEventIds
       ? JSON.stringify(body.relatedEventIds)
       : null,
+    eventType: body.eventType ?? null,
     updatedAt: now,
   }
 
