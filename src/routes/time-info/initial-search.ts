@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { Hono } from 'hono'
+import Result from 'true-myth/result'
 // @ts-expect-error html-to-text has no type declarations
 import { convert } from 'html-to-text'
 
@@ -12,6 +13,8 @@ import {
   CategorizationResult,
 } from '../../lib/ai-search'
 import { getWikiMockData } from '../test/wiki-mock' // PRODUCTION:REMOVE
+import { getEventByReferenceUrl } from '../../lib/db-access'
+import { Event } from '../../db/schema'
 
 const MAX_BASIC_DESCRIPTION_LENGTH = 1000
 
@@ -107,10 +110,31 @@ const WIKI_FETCH_HEADERS = {
 export const getWikipediaEvent = async (
   name: string,
   env: Bindings,
+  db: any,
   options: GetWikipediaEventOptions
 ): Promise<WikipediaEventResult | WikipediaEventError> => {
   const trimmedName = name.trim()
   const encodedName = encodeURIComponent(trimmedName)
+  const probableUrl = `https://en.wikipedia.org/wiki/${encodedName}`
+
+  console.log('Probable URL:', probableUrl)
+  let foundEvent: Event | null = null
+  try {
+    const url: Result<Event | null, Error> = await getEventByReferenceUrl(
+      db,
+      probableUrl
+    )
+
+    if (url.isOk) {
+      foundEvent = url.value as Event
+    }
+  } catch (e) {
+    console.log('Error getting event by reference URL:', e)
+  }
+
+  if (foundEvent != null) {
+    return { error: 'Event found', status: 404 }
+  }
 
   // PRODUCTION:REMOVE-NEXT-LINE
   const wikiMock = getWikiMockData(trimmedName) // PRODUCTION:REMOVE
@@ -224,7 +248,7 @@ initialSearchRouter.post('/', async (c) => {
     )
   }
 
-  const result = await getWikipediaEvent(name, c.env, {
+  const result = await getWikipediaEvent(name, c.env, c.get('db'), {
     useAi: true,
     htmlText: true,
   })

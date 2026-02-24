@@ -10,7 +10,14 @@ import retry from 'async-retry'
 import Result from 'true-myth/result'
 import { eq, and, isNull, sql } from 'drizzle-orm'
 
-import { user, account, singleUseCode, interestedEmail } from '../db/schema'
+import {
+  user,
+  account,
+  singleUseCode,
+  interestedEmail,
+  event,
+  Event,
+} from '../db/schema'
 import { STANDARD_RETRY_OPTIONS } from '../constants'
 import type { DrizzleClient } from '../local-types'
 
@@ -313,6 +320,37 @@ const deleteUserAccountActual = async (
       (result as { rowsAffected?: number }).rowsAffected ??
       0
     return Result.ok(rowsDeleted >= 1)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Get an event by its reference URL
+ * @param db - Database instance
+ * @param referenceUrl - Reference URL to search for
+ * @returns Promise<Result<Event | null, Error>>
+ */
+export const getEventByReferenceUrl = (
+  db: DrizzleClient,
+  referenceUrl: string
+): Promise<Result<Event | null, Error>> =>
+  withRetry('getEventByReferenceUrl', () =>
+    getEventByReferenceUrlActual(db, referenceUrl)
+  )
+
+const getEventByReferenceUrlActual = async (
+  db: DrizzleClient,
+  referenceUrl: string
+): Promise<Result<Event | null, Error>> => {
+  try {
+    const result = await db
+      .select()
+      .from(event)
+      .where(eq(event.referenceUrl, referenceUrl))
+      .limit(1)
+
+    return Result.ok(result.length > 0 ? result[0] : null)
   } catch (e) {
     return Result.err(e instanceof Error ? e : new Error(String(e)))
   }
