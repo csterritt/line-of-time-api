@@ -1,27 +1,31 @@
-# Plan: Rename `referenceUrls` to `referenceUrl`
+# Plan: Returning 409 Conflict for Existing Events
 
 ## Assumptions
-- We are using Drizzle ORM and a SQLite database. We'll need to generate and apply migrations after modifying `src/db/schema.ts`.
-- `referenceUrl` should contain a single valid URL string.
-- Existing database data will need to be handled, as adding a `unique` and `notNull` constraint might fail if existing rows have arrays, missing data, or duplicates.
+- We are working in `src/routes/time-info/initial-search.ts`.
+- `getEventByReferenceUrl` returns `Result<Event | null, Error>`, so checking `foundEvent != null` works but we should return 409.
+- The frontend `line-of-time-fe/src/stores/event-store.ts` already handles errors by setting `errorMessage.value` to the string returned by the backend `error` property, so we might just need to verify it handles 409.
 
 ## The Plan
-1. **Database Schema Update**: 
-   - Modify `src/db/schema.ts` to change `referenceUrls: text('reference_urls').notNull()` to `referenceUrl: text('reference_url').notNull().unique()`.
-   - *This has been done.*
-2. **Backend Code Updates**:
-   - Update `src/validators/event-validator.ts` to validate a single URL string instead of an array.
-   - Update `src/routes/time-info/event-utils.ts`, `src/routes/time-info/new-event.ts`, `src/routes/time-info/event.ts` and `src/routes/test/database.ts` to handle `referenceUrl` as a string instead of JSON array.
-3. **Frontend Code Updates**:
-   - Update `line-of-time-fe/src/stores/event-store.ts` types to use `referenceUrl: string` instead of `referenceUrls: string[]`.
-   - Update `line-of-time-fe/src/components/NewEventView.vue` to send `referenceUrl: referenceUrl.value` instead of wrapping it in an array (`referenceUrls: [referenceUrl.value]`).
-4. **Tests Update**:
-   - Update existing e2e tests in `@e2e-tests` to provide/expect a single string `referenceUrl` rather than an array.
-   - Add a new test to verify the uniqueness constraint of `referenceUrl`.
-   - Run tests using `npx playwright test -x`.
-5. **Server Run**:
-   - Start the server using `npm run dev-open-sign-up` (as per rules).
+1. **Initial Search Route Update (`initial-search.ts`)**:
+   - Change `return { error: 'Event found', status: 404 }` to `{ error: 'An event for this Wikipedia page already exists.', status: 409 }`.
+
+2. **Frontend Notification (`event-store.ts` and components)**:
+   - Ensure the frontend properly handles the error and notifies the user (it likely already displays `errorMessage.value`).
+
+3. **E2E Tests (`e2e-tests/time-info/09-initial-search-conflict.spec.ts`)**:
+   - Write a new test (or add to an existing initial search test) that:
+     1. Creates an event with a specific Wikipedia URL.
+     2. Calls `/time-info/initial-search` with the same Wikipedia page name.
+     3. Verifies that the API returns a 409 status and the appropriate error message.
+   - Run tests using `npx playwright test e2e-tests/time-info/09-initial-search-conflict.spec.ts -x` first to see it fail (Red).
+
+4. **Implement Fix & Re-run Tests (Green)**:
+   - Apply the change in `initial-search.ts`.
+   - Run the test again to see it pass.
+
+5. **Start Server**:
+   - Run the server with `npm run dev-open-sign-up` to manually verify if needed.
 
 ## Pitfalls
-- **Data Migration**: Making the column `unique` and `notNull` will fail during migration if there are existing rows with duplicate URLs, or if we don't properly transform existing JSON array strings to a single URL string.
-- **Client Breakage**: Any API consumer or frontend component expecting `referenceUrls` as an array will break and needs to be updated to use the single string `referenceUrl`.
+- **Frontend Error Message Format**: The frontend `event-store.ts` assumes the server returns `{ error: 'string message' }`. If we change the structure, the frontend will break. We must keep `error` as a string.
+- **Reference URL Formatting**: The `initial-search` creates a `probableUrl` using `encodeURIComponent(trimmedName)`. If the created event doesn't exactly match this format, the lookup will fail.

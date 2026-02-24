@@ -81,7 +81,10 @@ export interface GetWikipediaEventOptions {
   htmlText: boolean
 }
 
-export type WikipediaEventError = { error: string; status: 400 | 404 | 502 }
+export type WikipediaEventError = {
+  error: string
+  status: 400 | 404 | 409 | 502
+}
 
 const trimToMaxWords = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) {
@@ -117,7 +120,6 @@ export const getWikipediaEvent = async (
   const encodedName = encodeURIComponent(trimmedName)
   const probableUrl = `https://en.wikipedia.org/wiki/${encodedName}`
 
-  console.log('Probable URL:', probableUrl)
   let foundEvent: Event | null = null
   try {
     const url: Result<Event | null, Error> = await getEventByReferenceUrl(
@@ -133,7 +135,10 @@ export const getWikipediaEvent = async (
   }
 
   if (foundEvent != null) {
-    return { error: 'Event found', status: 404 }
+    return {
+      error: 'An event for this Wikipedia page already exists.',
+      status: 409,
+    }
   }
 
   // PRODUCTION:REMOVE-NEXT-LINE

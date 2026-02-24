@@ -1,4 +1,5 @@
-I have changed the schema.ts file to rename the event table column 'referenceUrls' to 'referenceUrl',
-and make it a string instead of an array of strings, and make it unique and not nullable.
+The initial-search.ts file now uses the getEventByReferenceUrl function to check if an event already exists with the reference URL. Right now, it returns a 404 error if it does, but it should return a 409 error instead.
 
-Please follow the plan in plan.md to update all the code that references this column to use the new column name and type.
+The user should be notified if this happens that the event already exists.
+
+Please write tests for this behavior.
