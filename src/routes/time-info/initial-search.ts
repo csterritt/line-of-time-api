@@ -175,7 +175,7 @@ export const getWikipediaEvent = async (
   const rawLinks = parsed.links.map((link) => link['*'])
 
   const categorization = options.useAi
-    ? await aiCategorizationAndSearch(env, rawText)
+    ? await aiCategorizationAndSearch(env, rawText.slice(0, 29900))
     : null
 
   // Convert HTML to text

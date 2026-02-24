@@ -41,6 +41,7 @@ export interface Bindings {
   SMTP_SERVER_USER?: string
   SMTP_SERVER_PASSWORD?: string
   ENABLE_TEST_ROUTES?: string
+  BENT_AI_CONNECTION_SECRET?: string
 }
 
 /**
