@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
+
 import type { EventResponse } from '@/stores/event-store'
+import { useEventStore } from '@/stores/event-store'
+import { usePanelStore, type TimelinePanel } from '@/stores/panel-store'
 import {
   timestampToYear,
   timestampToYearMonth,
@@ -8,14 +11,38 @@ import {
 } from '@/utils/timestamp'
 
 const props = defineProps<{
-  events: EventResponse[]
-  filterStart: number | null
-  filterEnd: number | null
+  panel: TimelinePanel
 }>()
 
+const eventStore = useEventStore()
+const panelStore = usePanelStore()
+
+const localEvents = ref<EventResponse[]>([])
+
+const fetchEventsForPanel = async () => {
+  const s = props.panel.startTimestamp
+  const e = props.panel.endTimestamp
+  try {
+    const response = await fetch(`/time-info/events/${s}/${e}`)
+    if (response.ok) {
+      localEvents.value = (await response.json()) as EventResponse[]
+    } else {
+      localEvents.value = []
+    }
+  } catch {
+    localEvents.value = []
+  }
+}
+
+onMounted(() => {
+  fetchEventsForPanel()
+})
+
+watch(() => props.panel, fetchEventsForPanel, { deep: true })
+
 const rangeIsMoreThanOneYear = computed(() => {
-  const start = props.filterStart
-  const end = props.filterEnd
+  const start = props.panel.startTimestamp
+  const end = props.panel.endTimestamp
   if (start == null || end == null) {
     return true
   }
@@ -43,7 +70,7 @@ type TimelineRow = TimelineEntry & {
 const timelineRows = computed((): TimelineRow[] => {
   const entries: TimelineEntry[] = []
 
-  for (const evt of props.events) {
+  for (const evt of localEvents.value) {
     entries.push({
       timestamp: evt.startTimestamp,
       dateLabel: formatEventDate(evt.startTimestamp),
@@ -86,36 +113,53 @@ const endDescription = (evt: EventResponse): string => {
 </script>
 
 <template>
-  <div
-    v-if="timelineRows.length > 0"
-    class="grid grid-cols-[auto_auto_1fr] gap-y-2"
-    data-testid="event-list"
-  >
-    <template
-      v-for="(row, idx) in timelineRows"
-      :key="`${row.event.id}-${row.type}-${idx}`"
+  <div class="flex flex-row items-center gap-4 w-[66vw] shrink-0">
+    <div class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
+      <div class="card-body">
+        <h2 class="card-title mb-4">Timeline</h2>
+        <div
+          v-if="timelineRows.length > 0"
+          class="grid grid-cols-[auto_auto_1fr] gap-y-2"
+          data-testid="event-list"
+        >
+          <template
+            v-for="(row, idx) in timelineRows"
+            :key="`${row.event.id}-${row.type}-${idx}`"
+          >
+            <div
+              class="font-mono text-sm self-center pr-2"
+              data-testid="timeline-date-cell"
+            >
+              <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
+            </div>
+            <div class="divider divider-horizontal mx-2"></div>
+            <div class="min-w-0 self-center" data-testid="timeline-row">
+              <template v-if="row.type === 'start'">
+                <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
+                <div
+                  class="truncate text-sm"
+                  :title="row.event.basicDescription"
+                  data-testid="event-description"
+                >{{ row.event.basicDescription }}</div>
+              </template>
+              <template v-else>
+                <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
+              </template>
+            </div>
+          </template>
+        </div>
+        <p v-else data-testid="no-events-message">No events yet</p>
+      </div>
+    </div>
+    
+    <button 
+      class="btn btn-circle btn-secondary flex-shrink-0"
+      @click="panelStore.addLensPanel()"
+      title="Add Lens Panel"
+      data-testid="add-lens-panel-button"
     >
-      <div
-        class="font-mono text-sm self-center pr-2"
-        data-testid="timeline-date-cell"
-      >
-        <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
-      </div>
-      <div class="divider divider-horizontal mx-2"></div>
-      <div class="min-w-0 self-center" data-testid="timeline-row">
-        <template v-if="row.type === 'start'">
-          <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
-          <div
-            class="truncate text-sm"
-            :title="row.event.basicDescription"
-            data-testid="event-description"
-          >{{ row.event.basicDescription }}</div>
-        </template>
-        <template v-else>
-          <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
-        </template>
-      </div>
-    </template>
+      +
+    </button>
   </div>
-  <p v-else data-testid="no-events-message">No events yet</p>
 </template>
+

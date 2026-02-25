@@ -1,30 +1,44 @@
-# Plan: Extracting TimelineDisplay.vue
+# Plan: Implement Display Panels (Timeline and Lens)
 
 ## Assumptions
-- We are working in `line-of-time-fe/src/components/`.
-- `HomeView.vue` currently contains the timeline display logic (lines 217-250) and computed properties/types for `timelineRows`, `TimelineEntry`, and `TimelineRow` (lines 75-128).
-- `TimelineDisplay.vue` will need to accept `events` as a prop and handle its own computed properties for displaying the timeline rows.
-- The `formatEventDate` function and `rangeIsMoreThanOneYear` computed property might need to be passed down or recreated in `TimelineDisplay.vue`, but since `eventStore` is accessible globally, `TimelineDisplay.vue` can just use `useEventStore()` directly.
+- We are working in `line-of-time-fe/src`.
+- A 'Panel' is a TypeScript type, `TimelinePanel` or `LensPanel`.
+- `panel-store.ts` will manage the `displayList` state.
+- `TimelineDisplay.vue` already exists but will be updated to accept a `TimelinePanel` object and display the events for its timestamp range, plus a '+' button to add a new `LensPanel`.
+- `LensDisplay.vue` will be created to accept a `LensPanel` object, displaying a list of events and a dropdown to add more, plus a '+' button to add a new `TimelinePanel`.
+- `HomeView.vue` will iterate over `displayList` and render the appropriate display component in a horizontally scrolling container.
+- We will use DaisyUI for styling as per guidelines.
 
 ## The Plan
-1. **Create `TimelineDisplay.vue`**:
-   - Move lines 217-250 from `HomeView.vue` to `TimelineDisplay.vue`.
-   - Move the `TimelineEntry`, `TimelineRow`, `timelineRows`, `endDescription`, `formatEventDate`, and `rangeIsMoreThanOneYear` logic into `TimelineDisplay.vue`.
-   - Update `TimelineDisplay.vue` to use `useEventStore()`.
+1. **Create `panel-store.ts`**:
+   - Define types: `TimelinePanel` (`{ type: 'timeline', startTimestamp: number, endTimestamp: number }`) and `LensPanel` (`{ type: 'lens', eventNames: string[] }`).
+   - Define type: `Panel = TimelinePanel | LensPanel`.
+   - Create a Pinia store with `displayList: Panel[]`.
+   - Initialize `displayList` with a single `TimelinePanel` having min/max possible timestamps.
+   - Add actions to append a new `TimelinePanel` or `LensPanel`.
 
-2. **Update `HomeView.vue`**:
-   - Import `TimelineDisplay` and use it in place of the old timeline HTML.
-   - Remove the extracted types, computed properties, and helper functions from `HomeView.vue` to clean it up.
+2. **Update `TimelineDisplay.vue`**:
+   - Change props to accept a `panel` of type `TimelinePanel`.
+   - Update it to fetch/derive events based on its `startTimestamp` and `endTimestamp`.
+   - Wrap the display in a DaisyUI card, setting width to 2/3 of the page.
+   - Add a circular secondary button with a "+" to the right of the card, which adds a new `LensPanel` to the `displayList`.
 
-3. **E2E Tests**:
-   - Check existing tests to see if they rely on the structure of the timeline in `HomeView.vue` (e.g., `data-testid="event-list"`, `data-testid="timeline-row"`).
-   - Ensure these `data-testid` attributes are preserved in `TimelineDisplay.vue` so existing tests don't break.
-   - Run tests using `npx playwright test` to ensure everything is still green.
+3. **Create `LensDisplay.vue`**:
+   - Create the component accepting a `panel` of type `LensPanel`.
+   - Display the list of `eventNames` in a DaisyUI card (2/3 width).
+   - Add a dropdown at the end of the list with all known event names (autocomplete/type-to-search).
+   - Add a remove button next to each event name.
+   - Add a circular secondary button with a "+" to the right of the card, which adds a new `TimelinePanel` to the `displayList`.
 
-4. **Verify**:
-   - Start the server with `npm run dev-open-sign-up`.
-   - Visually confirm the timeline looks and behaves exactly as before.
+4. **Update `HomeView.vue`**:
+   - Remove the old single-timeline logic.
+   - Render a horizontally scrolling container.
+   - Iterate through `displayList` from `panel-store`, rendering `TimelineDisplay` or `LensDisplay` dynamically.
+
+5. **Update/Add E2E Tests**:
+   - Update existing timeline tests if the DOM structure or data-testids change.
+   - Add new tests for adding LensPanels and TimelinePanels, and adding/removing events in LensPanel.
 
 ## Pitfalls
-- **Props vs Store**: Since `HomeView.vue` relies heavily on `useEventStore()`, moving the logic to `TimelineDisplay.vue` might make it tightly coupled to the store. If `TimelineDisplay.vue` is meant to be a purely presentational component, it should take `events`, `filterStart`, and `filterEnd` as props instead of accessing the store directly. I will use the prop approach to make it more reusable, passing `eventStore.events`, `eventStore.filterStart`, and `eventStore.filterEnd` as props.
-- **Breaking Tests**: The e2e tests might fail if `data-testid` attributes are lost or if the DOM structure changes slightly. I must copy the HTML exactly.
+- Managing state for multiple `TimelineDisplay` components: Currently `eventStore.events` is a single list. We either need to fetch events specifically for each `TimelinePanel` without mutating a single global state, or rely on a shared cache in `eventStore`. The prompt says "They are sent by the TimelinePanel to the event-store to get the events that occurred between those timestamps", which implies we might want a new method in `eventStore` to just fetch and return events, rather than mutating `events.value`.
+- Horizontal scrolling layout with cards and "+" buttons requires careful CSS flexbox configuration to ensure it expands correctly without wrapping.
