@@ -1,44 +1,41 @@
-# Plan: Implement Display Panels (Timeline and Lens)
+# Plan: Fix Broken E2E Tests
+
+## Problem
+All 9 failing tests are in `e2e-tests/general/10-timeline-filter.spec.ts`. They fail because filter controls (`filter-controls`, `filter-min-date`, `filter-max-date`, `reset-min-action`, `reset-max-action`) were removed from `HomeView.vue` during the panel refactoring.
+
+## Solution
+Restore filter controls to `TimelineDisplay.vue` so each timeline panel has its own filtering capability.
+
+## Steps
+
+### 1. Add Filter Controls to TimelineDisplay.vue
+- Add local state for `filterStart` and `filterEnd` (initialized from `panel.startTimestamp` and `panel.endTimestamp`)
+- Add date input controls with proper data-testid attributes
+- Add reset buttons to restore original min/max dates
+- Update event fetching to use filtered dates
+- Ensure controls only show when signed in and events exist
+
+### 2. Update Event Fetching Logic
+- Fetch events using `filterStart` and `filterEnd` instead of panel timestamps directly
+- Store original min/max from panel for reset functionality
+- Watch for changes to filter inputs and refetch events
+
+### 3. Run Tests
+- Run `npx playwright test e2e-tests/general/10-timeline-filter.spec.ts`
+- Verify all 9 tests pass
+- Ensure no regressions in other tests
+
+### 4. Notify User
+- Run `/home/chris/notify-app Task Finished`
 
 ## Assumptions
-- We are working in `line-of-time-fe/src`.
-- A 'Panel' is a TypeScript type, `TimelinePanel` or `LensPanel`.
-- `panel-store.ts` will manage the `displayList` state.
-- `TimelineDisplay.vue` already exists but will be updated to accept a `TimelinePanel` object and display the events for its timestamp range, plus a '+' button to add a new `LensPanel`.
-- `LensDisplay.vue` will be created to accept a `LensPanel` object, displaying a list of events and a dropdown to add more, plus a '+' button to add a new `TimelinePanel`.
-- `HomeView.vue` will iterate over `displayList` and render the appropriate display component in a horizontally scrolling container.
-- We will use DaisyUI for styling as per guidelines.
-
-## The Plan
-1. **Create `panel-store.ts`**:
-   - Define types: `TimelinePanel` (`{ type: 'timeline', startTimestamp: number, endTimestamp: number }`) and `LensPanel` (`{ type: 'lens', eventNames: string[] }`).
-   - Define type: `Panel = TimelinePanel | LensPanel`.
-   - Create a Pinia store with `displayList: Panel[]`.
-   - Initialize `displayList` with a single `TimelinePanel` having min/max possible timestamps.
-   - Add actions to append a new `TimelinePanel` or `LensPanel`.
-
-2. **Update `TimelineDisplay.vue`**:
-   - Change props to accept a `panel` of type `TimelinePanel`.
-   - Update it to fetch/derive events based on its `startTimestamp` and `endTimestamp`.
-   - Wrap the display in a DaisyUI card, setting width to 2/3 of the page.
-   - Add a circular secondary button with a "+" to the right of the card, which adds a new `LensPanel` to the `displayList`.
-
-3. **Create `LensDisplay.vue`**:
-   - Create the component accepting a `panel` of type `LensPanel`.
-   - Display the list of `eventNames` in a DaisyUI card (2/3 width).
-   - Add a dropdown at the end of the list with all known event names (autocomplete/type-to-search).
-   - Add a remove button next to each event name.
-   - Add a circular secondary button with a "+" to the right of the card, which adds a new `TimelinePanel` to the `displayList`.
-
-4. **Update `HomeView.vue`**:
-   - Remove the old single-timeline logic.
-   - Render a horizontally scrolling container.
-   - Iterate through `displayList` from `panel-store`, rendering `TimelineDisplay` or `LensDisplay` dynamically.
-
-5. **Update/Add E2E Tests**:
-   - Update existing timeline tests if the DOM structure or data-testids change.
-   - Add new tests for adding LensPanels and TimelinePanels, and adding/removing events in LensPanel.
+- Filter controls should be per-panel, not global
+- Each TimelinePanel manages its own filter state
+- Tests expect specific data-testid attributes
+- Seed data includes events from 1732-1969
 
 ## Pitfalls
-- Managing state for multiple `TimelineDisplay` components: Currently `eventStore.events` is a single list. We either need to fetch events specifically for each `TimelinePanel` without mutating a single global state, or rely on a shared cache in `eventStore`. The prompt says "They are sent by the TimelinePanel to the event-store to get the events that occurred between those timestamps", which implies we might want a new method in `eventStore` to just fetch and return events, rather than mutating `events.value`.
-- Horizontal scrolling layout with cards and "+" buttons requires careful CSS flexbox configuration to ensure it expands correctly without wrapping.
+- Must preserve exact data-testid names expected by tests
+- Date format handling (year-only vs year-month based on range)
+- Proper reactivity when filter dates change
+- Reset buttons must restore to original panel timestamps, not global min/max

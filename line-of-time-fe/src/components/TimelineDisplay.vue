@@ -2,9 +2,11 @@
 import { computed, ref, onMounted, watch } from 'vue'
 
 import type { EventResponse } from '@/stores/event-store'
-import { useEventStore } from '@/stores/event-store'
 import { usePanelStore, type TimelinePanel } from '@/stores/panel-store'
+import { useUserInfoStore } from '@/stores/user-info'
 import {
+  dateInputToTimestamp,
+  timestampToDateInput,
   timestampToYear,
   timestampToYearMonth,
   DAYS_PER_YEAR,
@@ -14,14 +16,47 @@ const props = defineProps<{
   panel: TimelinePanel
 }>()
 
-const eventStore = useEventStore()
 const panelStore = usePanelStore()
+const userInfo = useUserInfoStore()
+
+const PANEL_DEFAULT_MIN = -99999999999
+const PANEL_DEFAULT_MAX = 99999999999
 
 const localEvents = ref<EventResponse[]>([])
+const originalStart = ref(props.panel.startTimestamp)
+const originalEnd = ref(props.panel.endTimestamp)
+const filterStart = ref(timestampToDateInput(props.panel.startTimestamp))
+const filterEnd = ref(timestampToDateInput(props.panel.endTimestamp))
+
+const parseStart = computed(() => dateInputToTimestamp(filterStart.value))
+const parseEnd = computed(() => dateInputToTimestamp(filterEnd.value))
+
+const computeEventMinMax = (
+  events: EventResponse[],
+): { minTimestamp: number | null; maxTimestamp: number | null } => {
+  if (events.length === 0) {
+    return { minTimestamp: null, maxTimestamp: null }
+  }
+
+  let minTimestamp = events[0]!.startTimestamp
+  let maxTimestamp = events[0]!.endTimestamp ?? events[0]!.startTimestamp
+
+  for (const event of events) {
+    if (event.startTimestamp < minTimestamp) {
+      minTimestamp = event.startTimestamp
+    }
+    const eventMax = event.endTimestamp ?? event.startTimestamp
+    if (eventMax > maxTimestamp) {
+      maxTimestamp = eventMax
+    }
+  }
+
+  return { minTimestamp, maxTimestamp }
+}
 
 const fetchEventsForPanel = async () => {
-  const s = props.panel.startTimestamp
-  const e = props.panel.endTimestamp
+  const s = parseStart.value
+  const e = parseEnd.value
   try {
     const response = await fetch(`/time-info/events/${s}/${e}`)
     if (response.ok) {
@@ -34,20 +69,84 @@ const fetchEventsForPanel = async () => {
   }
 }
 
+const initializeFilterBounds = async () => {
+  const panelUsesDefaultBounds =
+    props.panel.startTimestamp === PANEL_DEFAULT_MIN &&
+    props.panel.endTimestamp === PANEL_DEFAULT_MAX
+
+  if (!panelUsesDefaultBounds) {
+    await fetchEventsForPanel()
+    return
+  }
+
+  try {
+    const response = await fetch(`/time-info/events/${PANEL_DEFAULT_MIN}/${PANEL_DEFAULT_MAX}`)
+    if (!response.ok) {
+      await fetchEventsForPanel()
+      return
+    }
+
+    const allEvents = (await response.json()) as EventResponse[]
+    const { minTimestamp, maxTimestamp } = computeEventMinMax(allEvents)
+
+    if (minTimestamp == null || maxTimestamp == null) {
+      await fetchEventsForPanel()
+      return
+    }
+
+    originalStart.value = minTimestamp
+    originalEnd.value = maxTimestamp
+    filterStart.value = timestampToDateInput(minTimestamp)
+    filterEnd.value = timestampToDateInput(maxTimestamp)
+    await fetchEventsForPanel()
+  } catch {
+    await fetchEventsForPanel()
+  }
+}
+
 onMounted(() => {
-  fetchEventsForPanel()
+  initializeFilterBounds()
 })
 
 watch(() => props.panel, fetchEventsForPanel, { deep: true })
 
+watch(
+  () => [props.panel.startTimestamp, props.panel.endTimestamp],
+  ([nextStart, nextEnd]) => {
+    if (nextStart === PANEL_DEFAULT_MIN && nextEnd === PANEL_DEFAULT_MAX) {
+      return
+    }
+
+    originalStart.value = nextStart
+    originalEnd.value = nextEnd
+    filterStart.value = timestampToDateInput(nextStart)
+    filterEnd.value = timestampToDateInput(nextEnd)
+    fetchEventsForPanel()
+  },
+)
+
 const rangeIsMoreThanOneYear = computed(() => {
-  const start = props.panel.startTimestamp
-  const end = props.panel.endTimestamp
+  const start = parseStart.value
+  const end = parseEnd.value
   if (start == null || end == null) {
     return true
   }
   return end - start > DAYS_PER_YEAR
 })
+
+const applyFilter = () => {
+  fetchEventsForPanel()
+}
+
+const resetMin = () => {
+  filterStart.value = timestampToDateInput(originalStart.value)
+  fetchEventsForPanel()
+}
+
+const resetMax = () => {
+  filterEnd.value = timestampToDateInput(originalEnd.value)
+  fetchEventsForPanel()
+}
 
 const formatEventDate = (timestamp: number): string => {
   if (rangeIsMoreThanOneYear.value) {
@@ -117,6 +216,46 @@ const endDescription = (evt: EventResponse): string => {
     <div class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
       <div class="card-body">
         <h2 class="card-title mb-4">Timeline</h2>
+        <div
+          v-if="userInfo.isSignedIn && timelineRows.length > 0"
+          class="mb-4 flex flex-wrap items-end gap-2"
+          data-testid="filter-controls"
+        >
+          <label class="form-control">
+            <span class="label-text text-xs">Min date</span>
+            <input
+              v-model="filterStart"
+              type="date"
+              class="input input-bordered input-sm"
+              data-testid="filter-min-date"
+              @change="applyFilter"
+            />
+          </label>
+          <button
+            class="btn btn-outline btn-sm"
+            data-testid="reset-min-action"
+            @click="resetMin"
+          >
+            Reset min
+          </button>
+          <label class="form-control">
+            <span class="label-text text-xs">Max date</span>
+            <input
+              v-model="filterEnd"
+              type="date"
+              class="input input-bordered input-sm"
+              data-testid="filter-max-date"
+              @change="applyFilter"
+            />
+          </label>
+          <button
+            class="btn btn-outline btn-sm"
+            data-testid="reset-max-action"
+            @click="resetMax"
+          >
+            Reset max
+          </button>
+        </div>
         <div
           v-if="timelineRows.length > 0"
           class="grid grid-cols-[auto_auto_1fr] gap-y-2"

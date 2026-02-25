@@ -209,21 +209,6 @@ print_summary() {
 }
 
 main() {
-  # Parse arguments
-  for arg in "$@"; do
-    case $arg in
-      --report)
-        REPORT_FAILURES=true
-        shift
-        ;;
-      *)
-        echo "Unknown argument: $arg"
-        echo "Usage: $0 [--report]"
-        exit 1
-        ;;
-    esac
-  done
-  
   echo -e "${BLUE}Running e2e tests for all sign-up modes${NC}"
   if [ "$REPORT_FAILURES" = true ]; then
     echo -e "${YELLOW}Failure reporting enabled${NC}"
@@ -264,5 +249,22 @@ main() {
 
 # Trap to ensure cleanup on exit
 trap cleanup EXIT
+
+# Parse arguments
+echo "Processing arguments: $@"
+for arg in "$@"; do
+  echo "Processing argument: $arg"
+  case $arg in
+    --report)
+      REPORT_FAILURES=true
+      shift
+      ;;
+    *)
+      echo "Unknown argument: $arg"
+      echo "Usage: $0 [--report]"
+      exit 1
+      ;;
+  esac
+done
 
 main
