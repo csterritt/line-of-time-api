@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono'
 
-import { event } from '../../db/schema'
+import { insertEvent } from '../../lib/db-access'
 import { AppEnv } from '../../local-types'
 import { signedInAccess } from '../../middleware/signed-in-access'
 import {
@@ -52,7 +52,12 @@ newEventRouter.post('/', signedInAccess, async (c) => {
     updatedAt: now,
   }
 
-  await db.insert(event).values(newEvent)
+  const insertResult = await insertEvent(db, newEvent)
+
+  if (insertResult.isErr) {
+    console.error('Failed to insert event:', insertResult.error)
+    return c.json({ error: 'Failed to create event' }, 500)
+  }
 
   return c.json(
     parseEvent({

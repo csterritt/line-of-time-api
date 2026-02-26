@@ -17,6 +17,7 @@ import {
   interestedEmail,
   event,
   Event,
+  NewEvent,
 } from '../db/schema'
 import { STANDARD_RETRY_OPTIONS } from '../constants'
 import type { DrizzleClient } from '../local-types'
@@ -72,6 +73,27 @@ const toResult = async <T>(fn: () => Promise<T>): Promise<Result<T, Error>> => {
     return Result.err(e instanceof Error ? e : new Error(String(e)))
   }
 }
+
+/**
+ * Insert a new event
+ * @param db - Database instance
+ * @param newEvent - Event payload to insert
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const insertEvent = (
+  db: DrizzleClient,
+  newEvent: NewEvent
+): Promise<Result<boolean, Error>> =>
+  withRetry('insertEvent', () => insertEventActual(db, newEvent))
+
+const insertEventActual = (
+  db: DrizzleClient,
+  newEvent: NewEvent
+): Promise<Result<boolean, Error>> =>
+  toResult(async () => {
+    await db.insert(event).values(newEvent)
+    return true
+  })
 
 /**
  * Get user with account data for rate limiting checks
