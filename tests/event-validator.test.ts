@@ -10,7 +10,7 @@ const validEvent = {
   startTimestamp: 738534,
   name: 'Moon Landing',
   basicDescription: 'First human on the moon',
-  referenceUrls: ['https://en.wikipedia.org/wiki/Moon_landing'],
+  referenceUrl: 'https://en.wikipedia.org/wiki/Moon_landing',
 }
 
 describe('validateEventInput', () => {
@@ -42,16 +42,12 @@ describe('validateEventInput', () => {
       expect(result.valid).toBe(true)
     })
 
-    it('should accept multiple reference URLs', () => {
-      const eventWithMultipleUrls = {
+    it('should accept a valid single reference URL', () => {
+      const eventWithReferenceUrl = {
         ...validEvent,
-        referenceUrls: [
-          'https://example.com/1',
-          'https://example.com/2',
-          'https://example.com/3',
-        ],
+        referenceUrl: 'https://example.com/1',
       }
-      const result = validateEventInput(eventWithMultipleUrls)
+      const result = validateEventInput(eventWithReferenceUrl)
       expect(result.valid).toBe(true)
     })
   })
@@ -133,40 +129,40 @@ describe('validateEventInput', () => {
       ).toBe(true)
     })
 
-    it('should reject missing referenceUrls', () => {
-      const { referenceUrls, ...eventWithoutUrls } = validEvent
-      const result = validateEventInput(eventWithoutUrls)
+    it('should reject missing referenceUrl', () => {
+      const { referenceUrl, ...eventWithoutUrl } = validEvent
+      const result = validateEventInput(eventWithoutUrl)
       expect(result.valid).toBe(false)
       expect(
-        result.errors.some((e) => e.includes('referenceUrls is required'))
+        result.errors.some((e) => e.includes('referenceUrl is required'))
       ).toBe(true)
     })
 
-    it('should reject empty referenceUrls array', () => {
-      const result = validateEventInput({ ...validEvent, referenceUrls: [] })
+    it('should reject empty referenceUrl string', () => {
+      const result = validateEventInput({ ...validEvent, referenceUrl: '' })
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.includes('at least one URL'))).toBe(
-        true
-      )
+      expect(
+        result.errors.some((e) => e.includes('referenceUrl is required'))
+      ).toBe(true)
     })
 
-    it('should reject invalid URLs in referenceUrls', () => {
+    it('should reject invalid referenceUrl', () => {
       const result = validateEventInput({
         ...validEvent,
-        referenceUrls: ['not-a-url'],
+        referenceUrl: 'not-a-url',
       })
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.includes('valid URLs'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('valid URL'))).toBe(true)
     })
 
-    it('should reject non-array referenceUrls', () => {
+    it('should reject non-string referenceUrl', () => {
       const result = validateEventInput({
         ...validEvent,
-        referenceUrls: 'https://example.com',
+        referenceUrl: ['https://example.com'],
       })
       expect(result.valid).toBe(false)
       expect(
-        result.errors.some((e) => e.includes('referenceUrls is required'))
+        result.errors.some((e) => e.includes('referenceUrl is required'))
       ).toBe(true)
     })
 

@@ -6,17 +6,14 @@ import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
 import { createDbClient } from '../../db/client'
-import { NewAccount, NewEvent, NewSingleUseCode, NewUser } from '../../db/schema'
 import {
-  clearTestDatabase,
-  clearTestSessions,
-  seedAuthTestData,
-  getTestDatabaseCounts,
-  checkSingleUseCodeAvailable,
-  clearAllEvents,
-  seedEventTestData,
-  getEventCount,
-} from '../../lib/db-access'
+  NewAccount,
+  NewEvent,
+  NewSingleUseCode,
+  NewUser,
+} from '../../db/schema'
+import { testDbAccess } from '../../../e2e-tests/support/db-access'
+import { checkSingleUseCodeAvailable } from '../../lib/db-access'
 import { STANDARD_SECURE_HEADERS } from '../../constants'
 
 /**
@@ -39,7 +36,7 @@ testDatabaseRouter.delete(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      const clearResult = await clearTestDatabase(db)
+      const clearResult = await testDbAccess.clearTestDatabase(db)
 
       if (clearResult.isErr) {
         throw clearResult.error
@@ -87,7 +84,7 @@ testDatabaseRouter.delete(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      const clearResult = await clearTestSessions(db)
+      const clearResult = await testDbAccess.clearTestSessions(db)
 
       if (clearResult.isErr) {
         throw clearResult.error
@@ -193,7 +190,7 @@ testDatabaseRouter.post(
         { code: 'DEMO-ACCESS-111' },
       ]
 
-      const seedResult = await seedAuthTestData(
+      const seedResult = await testDbAccess.seedAuthTestData(
         db,
         testUsers,
         testAccounts,
@@ -240,7 +237,7 @@ testDatabaseRouter.get(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      const countsResult = await getTestDatabaseCounts(db)
+      const countsResult = await testDbAccess.getTestDatabaseCounts(db)
 
       if (countsResult.isErr) {
         throw countsResult.error
@@ -321,7 +318,7 @@ testDatabaseRouter.delete(
   async (c) => {
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
-      const clearResult = await clearAllEvents(db)
+      const clearResult = await testDbAccess.clearAllEvents(db)
 
       if (clearResult.isErr) {
         throw clearResult.error
@@ -392,7 +389,8 @@ testDatabaseRouter.post(
           endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',
-          referenceUrl: 'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
+          referenceUrl:
+            'https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence',
           relatedEventIds: null,
           eventType: 'event',
           createdAt: now,
@@ -412,7 +410,7 @@ testDatabaseRouter.post(
         },
       ]
 
-      const seedResult = await seedEventTestData(db, testEvents)
+      const seedResult = await testDbAccess.seedEventTestData(db, testEvents)
 
       if (seedResult.isErr) {
         throw seedResult.error
@@ -452,7 +450,7 @@ testDatabaseRouter.get(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      const countResult = await getEventCount(db)
+      const countResult = await testDbAccess.getEventCount(db)
 
       if (countResult.isErr) {
         throw countResult.error
