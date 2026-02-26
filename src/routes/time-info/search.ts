@@ -3,9 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { Hono } from 'hono'
-import { or, sql } from 'drizzle-orm'
 
-import { event } from '../../db/schema'
+import { searchEvents } from '../../lib/db-access'
 import { AppEnv } from '../../local-types'
 import { SEARCH } from '../../constants'
 
@@ -52,32 +51,14 @@ searchRouter.post('/', async (c) => {
     )
   }
 
-  // Build the search pattern with wildcards
-  // The search term is parameterized by Drizzle, preventing SQL injection
-  // Escape LIKE special characters (% and _) to prevent unintended wildcard matching
-  const escapedSearch = search.replace(/[%_]/g, '\\$&')
-  const searchPattern = `%${escapedSearch}%`
+  const searchResult = await searchEvents(db, search, SEARCH.RESULTS_LIMIT)
 
-  // Query with case-insensitive LIKE using LOWER() for full Unicode support
-  // Using parameterized sql template to prevent SQL injection
-  const lowerPattern = searchPattern.toLowerCase()
-  const results = await db
-    .select({
-      id: event.id,
-      name: event.name,
-      basicDescription: event.basicDescription,
-    })
-    .from(event)
-    .where(
-      or(
-        sql`LOWER(${event.name}) LIKE ${lowerPattern}`,
-        sql`LOWER(${event.basicDescription}) LIKE ${lowerPattern}`
-      )
-    )
-    .orderBy(event.startTimestamp)
-    .limit(SEARCH.RESULTS_LIMIT)
+  if (searchResult.isErr) {
+    console.error('Failed to search events:', searchResult.error)
+    return c.json({ error: 'Failed to search events' }, 500)
+  }
 
-  return c.json(results as SearchResult[])
+  return c.json(searchResult.value as SearchResult[])
 })
 
 export { searchRouter }

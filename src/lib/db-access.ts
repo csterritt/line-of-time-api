@@ -8,16 +8,20 @@
  */
 import retry from 'async-retry'
 import Result from 'true-myth/result'
-import { eq, and, isNull, sql } from 'drizzle-orm'
+import { eq, and, isNull, sql, gte, lte, or } from 'drizzle-orm'
 
 import {
   user,
   account,
+  session,
   singleUseCode,
   interestedEmail,
   event,
   Event,
   NewEvent,
+  NewUser,
+  NewAccount,
+  NewSingleUseCode,
 } from '../db/schema'
 import { STANDARD_RETRY_OPTIONS } from '../constants'
 import type { DrizzleClient } from '../local-types'
@@ -35,6 +39,20 @@ export interface UserWithAccountData {
 
 export interface UserIdData {
   id: string
+}
+
+export interface SearchEventResult {
+  id: string
+  name: string
+  basicDescription: string
+}
+
+export interface TestDatabaseCounts {
+  users: number
+  accounts: number
+  sessions: number
+  singleUseCodes: number
+  interestedEmail: number
 }
 
 /**
@@ -94,6 +112,380 @@ const insertEventActual = (
     await db.insert(event).values(newEvent)
     return true
   })
+
+/**
+ * Get a single event by ID
+ * @param db - Database instance
+ * @param id - Event ID
+ * @returns Promise<Result<Event | null, Error>>
+ */
+export const getEventById = (
+  db: DrizzleClient,
+  id: string
+): Promise<Result<Event | null, Error>> =>
+  withRetry('getEventById', () => getEventByIdActual(db, id))
+
+const getEventByIdActual = async (
+  db: DrizzleClient,
+  id: string
+): Promise<Result<Event | null, Error>> => {
+  try {
+    const events = await db.select().from(event).where(eq(event.id, id)).limit(1)
+    return Result.ok(events.length > 0 ? events[0] : null)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Get events where start timestamp is within [start, end]
+ * @param db - Database instance
+ * @param start - Start timestamp inclusive
+ * @param end - End timestamp inclusive
+ * @returns Promise<Result<Event[], Error>>
+ */
+export const getEventsByTimestampRange = (
+  db: DrizzleClient,
+  start: number,
+  end: number
+): Promise<Result<Event[], Error>> =>
+  withRetry('getEventsByTimestampRange', () =>
+    getEventsByTimestampRangeActual(db, start, end)
+  )
+
+const getEventsByTimestampRangeActual = async (
+  db: DrizzleClient,
+  start: number,
+  end: number
+): Promise<Result<Event[], Error>> => {
+  try {
+    const eventsInRange = await db
+      .select()
+      .from(event)
+      .where(and(gte(event.startTimestamp, start), lte(event.startTimestamp, end)))
+      .orderBy(event.startTimestamp)
+    return Result.ok(eventsInRange)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Search events by case-insensitive name/description match
+ * @param db - Database instance
+ * @param searchTerm - Search input
+ * @param limit - Max number of results
+ * @returns Promise<Result<SearchEventResult[], Error>>
+ */
+export const searchEvents = (
+  db: DrizzleClient,
+  searchTerm: string,
+  limit: number
+): Promise<Result<SearchEventResult[], Error>> =>
+  withRetry('searchEvents', () => searchEventsActual(db, searchTerm, limit))
+
+const searchEventsActual = async (
+  db: DrizzleClient,
+  searchTerm: string,
+  limit: number
+): Promise<Result<SearchEventResult[], Error>> => {
+  try {
+    const escapedSearch = searchTerm.replace(/[%_]/g, '\\$&')
+    const searchPattern = `%${escapedSearch}%`
+    const lowerPattern = searchPattern.toLowerCase()
+
+    const results = await db
+      .select({
+        id: event.id,
+        name: event.name,
+        basicDescription: event.basicDescription,
+      })
+      .from(event)
+      .where(
+        or(
+          sql`LOWER(${event.name}) LIKE ${lowerPattern}`,
+          sql`LOWER(${event.basicDescription}) LIKE ${lowerPattern}`
+        )
+      )
+      .orderBy(event.startTimestamp)
+      .limit(limit)
+
+    return Result.ok(results)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Update an event by ID
+ * @param db - Database instance
+ * @param id - Event ID
+ * @param updatedEvent - Partial update payload
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const updateEventById = (
+  db: DrizzleClient,
+  id: string,
+  updatedEvent: Partial<NewEvent>
+): Promise<Result<boolean, Error>> =>
+  withRetry('updateEventById', () => updateEventByIdActual(db, id, updatedEvent))
+
+const updateEventByIdActual = async (
+  db: DrizzleClient,
+  id: string,
+  updatedEvent: Partial<NewEvent>
+): Promise<Result<boolean, Error>> => {
+  try {
+    await db.update(event).set(updatedEvent).where(eq(event.id, id))
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Delete an event by ID
+ * @param db - Database instance
+ * @param id - Event ID
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const deleteEventById = (
+  db: DrizzleClient,
+  id: string
+): Promise<Result<boolean, Error>> =>
+  withRetry('deleteEventById', () => deleteEventByIdActual(db, id))
+
+const deleteEventByIdActual = async (
+  db: DrizzleClient,
+  id: string
+): Promise<Result<boolean, Error>> => {
+  try {
+    await db.delete(event).where(eq(event.id, id))
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Clear all test database tables in FK-safe order
+ * @param db - Database instance
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const clearTestDatabase = (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> =>
+  withRetry('clearTestDatabase', () => clearTestDatabaseActual(db))
+
+const clearTestDatabaseActual = async (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> => {
+  try {
+    await db.delete(session)
+    await db.delete(account)
+    await db.delete(user)
+    await db.delete(singleUseCode)
+    await db.delete(interestedEmail)
+    await db.delete(event)
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Clear test sessions
+ * @param db - Database instance
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const clearTestSessions = (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> =>
+  withRetry('clearTestSessions', () => clearTestSessionsActual(db))
+
+const clearTestSessionsActual = async (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> => {
+  try {
+    await db.delete(session)
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Seed auth-related test data
+ * @param db - Database instance
+ * @param users - User records
+ * @param accounts - Account records
+ * @param codes - Single use code records
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const seedAuthTestData = (
+  db: DrizzleClient,
+  users: NewUser[],
+  accounts: NewAccount[],
+  codes: NewSingleUseCode[]
+): Promise<Result<boolean, Error>> =>
+  withRetry('seedAuthTestData', () =>
+    seedAuthTestDataActual(db, users, accounts, codes)
+  )
+
+const seedAuthTestDataActual = async (
+  db: DrizzleClient,
+  users: NewUser[],
+  accounts: NewAccount[],
+  codes: NewSingleUseCode[]
+): Promise<Result<boolean, Error>> => {
+  try {
+    for (const userData of users) {
+      await db.insert(user).values(userData)
+    }
+
+    for (const accountData of accounts) {
+      await db.insert(account).values(accountData)
+    }
+
+    for (const codeData of codes) {
+      await db.insert(singleUseCode).values(codeData)
+    }
+
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Get table counts used by test status endpoint
+ * @param db - Database instance
+ * @returns Promise<Result<TestDatabaseCounts, Error>>
+ */
+export const getTestDatabaseCounts = (
+  db: DrizzleClient
+): Promise<Result<TestDatabaseCounts, Error>> =>
+  withRetry('getTestDatabaseCounts', () => getTestDatabaseCountsActual(db))
+
+const getTestDatabaseCountsActual = async (
+  db: DrizzleClient
+): Promise<Result<TestDatabaseCounts, Error>> => {
+  try {
+    const userCount = await db.select().from(user)
+    const accountCount = await db.select().from(account)
+    const sessionCount = await db.select().from(session)
+    const singleUseCodeCount = await db.select().from(singleUseCode)
+    const interestedEmailCount = await db.select().from(interestedEmail)
+
+    return Result.ok({
+      users: userCount.length,
+      accounts: accountCount.length,
+      sessions: sessionCount.length,
+      singleUseCodes: singleUseCodeCount.length,
+      interestedEmail: interestedEmailCount.length,
+    })
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Check if a single-use code exists and is unclaimed
+ * @param db - Database instance
+ * @param code - Code to check
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const checkSingleUseCodeAvailable = (
+  db: DrizzleClient,
+  code: string
+): Promise<Result<boolean, Error>> =>
+  withRetry('checkSingleUseCodeAvailable', () =>
+    checkSingleUseCodeAvailableActual(db, code)
+  )
+
+const checkSingleUseCodeAvailableActual = async (
+  db: DrizzleClient,
+  code: string
+): Promise<Result<boolean, Error>> => {
+  try {
+    const result = await db
+      .select({ code: singleUseCode.code })
+      .from(singleUseCode)
+      .where(and(eq(singleUseCode.code, code), isNull(singleUseCode.email)))
+      .limit(1)
+    return Result.ok(result.length === 1)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Clear all events for test setup
+ * @param db - Database instance
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const clearAllEvents = (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> =>
+  withRetry('clearAllEvents', () => clearAllEventsActual(db))
+
+const clearAllEventsActual = async (
+  db: DrizzleClient
+): Promise<Result<boolean, Error>> => {
+  try {
+    await db.delete(event)
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Seed event test data
+ * @param db - Database instance
+ * @param events - Event records
+ * @returns Promise<Result<boolean, Error>>
+ */
+export const seedEventTestData = (
+  db: DrizzleClient,
+  events: NewEvent[]
+): Promise<Result<boolean, Error>> =>
+  withRetry('seedEventTestData', () => seedEventTestDataActual(db, events))
+
+const seedEventTestDataActual = async (
+  db: DrizzleClient,
+  events: NewEvent[]
+): Promise<Result<boolean, Error>> => {
+  try {
+    for (const eventData of events) {
+      await db.insert(event).values(eventData)
+    }
+    return Result.ok(true)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
+
+/**
+ * Count all events
+ * @param db - Database instance
+ * @returns Promise<Result<number, Error>>
+ */
+export const getEventCount = (
+  db: DrizzleClient
+): Promise<Result<number, Error>> =>
+  withRetry('getEventCount', () => getEventCountActual(db))
+
+const getEventCountActual = async (
+  db: DrizzleClient
+): Promise<Result<number, Error>> => {
+  try {
+    const events = await db.select().from(event)
+    return Result.ok(events.length)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
 
 /**
  * Get user with account data for rate limiting checks

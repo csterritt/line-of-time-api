@@ -5,17 +5,18 @@
 import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
-import { eq, and, isNull } from 'drizzle-orm'
-
 import { createDbClient } from '../../db/client'
+import { NewAccount, NewEvent, NewSingleUseCode, NewUser } from '../../db/schema'
 import {
-  user,
-  account,
-  session,
-  singleUseCode,
-  interestedEmail,
-  event,
-} from '../../db/schema'
+  clearTestDatabase,
+  clearTestSessions,
+  seedAuthTestData,
+  getTestDatabaseCounts,
+  checkSingleUseCodeAvailable,
+  clearAllEvents,
+  seedEventTestData,
+  getEventCount,
+} from '../../lib/db-access'
 import { STANDARD_SECURE_HEADERS } from '../../constants'
 
 /**
@@ -38,13 +39,11 @@ testDatabaseRouter.delete(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      // Delete in order to avoid foreign key constraints
-      await db.delete(session)
-      await db.delete(account)
-      await db.delete(user)
-      await db.delete(singleUseCode)
-      await db.delete(interestedEmail)
-      await db.delete(event)
+      const clearResult = await clearTestDatabase(db)
+
+      if (clearResult.isErr) {
+        throw clearResult.error
+      }
 
       console.log('Test database cleared successfully')
 
@@ -88,8 +87,11 @@ testDatabaseRouter.delete(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      // Delete in order to avoid foreign key constraints
-      await db.delete(session)
+      const clearResult = await clearTestSessions(db)
+
+      if (clearResult.isErr) {
+        throw clearResult.error
+      }
 
       console.log('Test database sessions cleared successfully')
 
@@ -125,7 +127,7 @@ testDatabaseRouter.post(
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
       // Insert test users
-      const testUsers = [
+      const testUsers: NewUser[] = [
         {
           id: 'gv9HBfkV7WbSSAkgVW0g5WtYf6hqaJyv',
           name: 'Chris',
@@ -146,12 +148,8 @@ testDatabaseRouter.post(
         },
       ]
 
-      for (const userData of testUsers) {
-        await db.insert(user).values(userData)
-      }
-
       // Insert test accounts with credentials
-      const testAccounts = [
+      const testAccounts: NewAccount[] = [
         {
           id: 'u95mdScYyupHDIAF76793YXkI8mDBxwf',
           userId: 'gv9HBfkV7WbSSAkgVW0g5WtYf6hqaJyv',
@@ -186,12 +184,8 @@ testDatabaseRouter.post(
         },
       ]
 
-      for (const accountData of testAccounts) {
-        await db.insert(account).values(accountData)
-      }
-
       // Insert test single-use codes for gated sign-up testing
-      const testSingleUseCodes = [
+      const testSingleUseCodes: NewSingleUseCode[] = [
         { code: 'WELCOME2024' },
         { code: 'BETA-ACCESS-123' },
         { code: 'EARLY-BIRD-456' },
@@ -199,8 +193,15 @@ testDatabaseRouter.post(
         { code: 'DEMO-ACCESS-111' },
       ]
 
-      for (const codeData of testSingleUseCodes) {
-        await db.insert(singleUseCode).values(codeData)
+      const seedResult = await seedAuthTestData(
+        db,
+        testUsers,
+        testAccounts,
+        testSingleUseCodes
+      )
+
+      if (seedResult.isErr) {
+        throw seedResult.error
       }
 
       console.log('Test database seeded successfully')
@@ -239,21 +240,20 @@ testDatabaseRouter.get(
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      // Count records in each table
-      const userCount = await db.select().from(user)
-      const accountCount = await db.select().from(account)
-      const sessionCount = await db.select().from(session)
-      const singleUseCodeCount = await db.select().from(singleUseCode)
-      const interestedEmailCount = await db.select().from(interestedEmail)
+      const countsResult = await getTestDatabaseCounts(db)
+
+      if (countsResult.isErr) {
+        throw countsResult.error
+      }
 
       return c.json({
         success: true,
         counts: {
-          users: userCount.length,
-          accounts: accountCount.length,
-          sessions: sessionCount.length,
-          singleUseCodes: singleUseCodeCount.length,
-          interestedEmail: interestedEmailCount.length,
+          users: countsResult.value.users,
+          accounts: countsResult.value.accounts,
+          sessions: countsResult.value.sessions,
+          singleUseCodes: countsResult.value.singleUseCodes,
+          interestedEmail: countsResult.value.interestedEmail,
         },
         timestamp: new Date().toISOString(),
       })
@@ -284,14 +284,15 @@ testDatabaseRouter.get(
       const code = c.req.param('code')
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
 
-      const result = await db
-        .select({ code: singleUseCode.code })
-        .from(singleUseCode)
-        .where(and(eq(singleUseCode.code, code), isNull(singleUseCode.email)))
+      const existsResult = await checkSingleUseCodeAvailable(db, code)
+
+      if (existsResult.isErr) {
+        throw existsResult.error
+      }
 
       return c.json({
         success: true,
-        exists: result.length === 1,
+        exists: existsResult.value,
         code,
         timestamp: new Date().toISOString(),
       })
@@ -320,7 +321,11 @@ testDatabaseRouter.delete(
   async (c) => {
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
-      await db.delete(event)
+      const clearResult = await clearAllEvents(db)
+
+      if (clearResult.isErr) {
+        throw clearResult.error
+      }
 
       console.log('Test events cleared successfully')
 
@@ -356,7 +361,7 @@ testDatabaseRouter.post(
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
       const now = new Date().toISOString()
 
-      const testEvents = [
+      const testEvents: NewEvent[] = [
         {
           id: 'test-event-1',
           startTimestamp: 718997,
@@ -407,8 +412,10 @@ testDatabaseRouter.post(
         },
       ]
 
-      for (const eventData of testEvents) {
-        await db.insert(event).values(eventData)
+      const seedResult = await seedEventTestData(db, testEvents)
+
+      if (seedResult.isErr) {
+        throw seedResult.error
       }
 
       console.log('Test events seeded successfully')
@@ -444,11 +451,16 @@ testDatabaseRouter.get(
   async (c) => {
     try {
       const db = createDbClient(c.env.LINE_OF_TIME_DB)
-      const events = await db.select().from(event)
+
+      const countResult = await getEventCount(db)
+
+      if (countResult.isErr) {
+        throw countResult.error
+      }
 
       return c.json({
         success: true,
-        count: events.length,
+        count: countResult.value,
         timestamp: new Date().toISOString(),
       })
     } catch (error) {

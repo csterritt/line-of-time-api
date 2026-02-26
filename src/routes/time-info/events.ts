@@ -3,9 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { Hono } from 'hono'
-import { and, gte, lte } from 'drizzle-orm'
 
-import { event } from '../../db/schema'
+import { getEventsByTimestampRange } from '../../lib/db-access'
 import { AppEnv } from '../../local-types'
 import { parseEvent } from './event-utils'
 
@@ -27,15 +26,14 @@ eventsRouter.get('/:start/:end', async (c) => {
     return c.json({ error: 'start must be less than or equal to end' }, 400)
   }
 
-  const events = await db
-    .select()
-    .from(event)
-    .where(
-      and(gte(event.startTimestamp, start), lte(event.startTimestamp, end))
-    )
-    .orderBy(event.startTimestamp)
+  const eventsResult = await getEventsByTimestampRange(db, start, end)
 
-  return c.json(events.map(parseEvent))
+  if (eventsResult.isErr) {
+    console.error('Failed to get events by timestamp range:', eventsResult.error)
+    return c.json({ error: 'Failed to get events' }, 500)
+  }
+
+  return c.json(eventsResult.value.map(parseEvent))
 })
 
 export { eventsRouter }
