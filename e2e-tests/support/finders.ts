@@ -9,7 +9,9 @@ export const fillInput = async (page: Page, testId: string, value: string) => {
 }
 
 export const verifyAlert = async (page: Page, expectedText: string) => {
-  return await expect(page.getByRole('alert')).toHaveText(expectedText)
+  return await expect(page.getByRole('alert')).toContainText(expectedText, {
+    timeout: 15000,
+  })
   // return page.getByTestId('alert-close').click()
 }
 

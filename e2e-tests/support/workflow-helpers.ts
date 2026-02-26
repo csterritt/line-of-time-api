@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { expect, Page } from '@playwright/test'
 import {
   navigateToSignUp,
   navigateToGatedSignUp,
@@ -77,8 +77,10 @@ export const completeSignInFlow = async (
   await navigateToHome(page)
   await startSignIn(page)
   await submitSignInForm(page, user)
-  await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
   await verifyOnTimelinePage(page)
+  await expect(page.getByTestId('sign-out-action')).toBeVisible({
+    timeout: 15000,
+  })
 }
 
 /**

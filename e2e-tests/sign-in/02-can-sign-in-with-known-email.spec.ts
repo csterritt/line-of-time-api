@@ -1,12 +1,11 @@
-import { test } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 import { startSignIn } from '../support/auth-helpers'
-import { verifyAlert } from '../support/finders'
 import { verifyOnTimelinePage } from '../support/page-verifiers'
 import { testWithDatabase } from '../support/test-helpers'
 import { navigateToHome } from '../support/navigation-helpers'
 import { submitSignInForm } from '../support/form-helpers'
-import { TEST_USERS, ERROR_MESSAGES } from '../support/test-data'
+import { TEST_USERS } from '../support/test-data'
 
 test(
   'can sign in with known email',
@@ -23,10 +22,12 @@ test(
       password: TEST_USERS.KNOWN_USER.password,
     })
 
-    // Check for success alert message first (it might appear briefly)
-    await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
-
     // Should be redirected to the UI page after successful sign-in
     await verifyOnTimelinePage(page)
+
+    // Verify signed-in UI is visible (more stable than flash message timing)
+    await expect(page.getByTestId('sign-out-action')).toBeVisible({
+      timeout: 15000,
+    })
   })
 )

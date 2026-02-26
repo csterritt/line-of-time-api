@@ -345,6 +345,9 @@ test('successfully creating an event redirects to home with success message and 
   await clickLink(page, 'create-event-action')
 
   await page.waitForSelector('[data-testid="success-message"]')
+  await page.waitForSelector('[data-testid="event-list"]', {
+    timeout: 15000,
+  })
   expect(await getElementText(page, 'success-message')).toContain(
     'Event created successfully'
   )

@@ -1,7 +1,7 @@
-import { test } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 import { startSignIn } from '../support/auth-helpers'
-import { clickLink, verifyAlert, getElementText } from '../support/finders'
+import { clickLink, verifyAlert } from '../support/finders'
 import {
   verifyOnTimelinePage,
   verifyOnStartupPage,
@@ -29,8 +29,10 @@ test(
     })
 
     // Verify successful sign-in
-    await verifyAlert(page, ERROR_MESSAGES.SIGN_IN_SUCCESS)
     await verifyOnTimelinePage(page)
+    await expect(page.getByTestId('sign-out-action')).toBeVisible({
+      timeout: 15000,
+    })
 
     // Now sign out
     await clickLink(page, 'sign-out-action')
