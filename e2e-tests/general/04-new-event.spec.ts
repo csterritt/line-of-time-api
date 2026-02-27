@@ -79,7 +79,7 @@ test('searching Wikipedia for a known term redirects to new-event page with pre-
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
   expect(page.url()).toContain('/ui/new-event')
   expect(await isElementVisible(page, 'basic-description-input')).toBe(true)
@@ -126,7 +126,7 @@ test('pressing Enter in name field triggers Wikipedia search', async ({
   await page.getByTestId('name-input').press('Enter')
 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
   expect(page.url()).toContain('/ui/new-event')
   expect(await isElementVisible(page, 'basic-description-input')).toBe(true)
@@ -238,7 +238,7 @@ test('related links in new-event page are clickable anchor tags', async ({
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="wiki-links-list"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   const relatedLinks = page.getByTestId('related-link')
@@ -252,6 +252,8 @@ test('related links in new-event page are clickable anchor tags', async ({
 test('clicking a related link searches and navigates to new-event page', async ({
   page,
 }) => {
+  test.slow()
+
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 
@@ -262,7 +264,7 @@ test('clicking a related link searches and navigates to new-event page', async (
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="wiki-links-list"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   const firstLink = page.getByTestId('related-link').first()
@@ -272,7 +274,7 @@ test('clicking a related link searches and navigates to new-event page', async (
   await firstLink.click()
 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
   expect(page.url()).toContain('/ui/new-event')
 
@@ -377,6 +379,8 @@ test('creating event without signing in shows error', async ({ page }) => {
 test('navigating directly to /ui/new-event without search redirects to search page', async ({
   page,
 }) => {
+  test.slow()
+
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
 

@@ -25,11 +25,67 @@ const PANEL_DEFAULT_MAX = 99999999999
 const localEvents = ref<EventResponse[]>([])
 const originalStart = ref(props.panel.startTimestamp)
 const originalEnd = ref(props.panel.endTimestamp)
-const filterStart = ref(timestampToDateInput(props.panel.startTimestamp))
-const filterEnd = ref(timestampToDateInput(props.panel.endTimestamp))
 
-const parseStart = computed(() => dateInputToTimestamp(filterStart.value))
-const parseEnd = computed(() => dateInputToTimestamp(filterEnd.value))
+type FilterInputs = {
+  year: string
+  month: string
+  day: string
+}
+
+const timestampToFilterInputs = (timestamp: number): FilterInputs => {
+  const [year = '', month = '', day = ''] = timestampToDateInput(timestamp).split('-')
+  return {
+    year,
+    month,
+    day,
+  }
+}
+
+const parsePositiveInteger = (value: string): number | null => {
+  if (!/^\d+$/.test(value)) {
+    return null
+  }
+  const parsed = parseInt(value, 10)
+  if (parsed <= 0) {
+    return null
+  }
+  return parsed
+}
+
+const toTimestampWithDefaults = (inputs: FilterInputs): { timestamp: number; normalized: FilterInputs } | null => {
+  const year = parsePositiveInteger(inputs.year)
+  if (year == null) {
+    return null
+  }
+
+  const month = inputs.month.trim() === '' ? 1 : parsePositiveInteger(inputs.month)
+  if (month == null || month > 12) {
+    return null
+  }
+
+  const day = inputs.day.trim() === '' ? 1 : parsePositiveInteger(inputs.day)
+  if (day == null || day > 31) {
+    return null
+  }
+
+  const monthStr = String(month).padStart(2, '0')
+  const dayStr = String(day).padStart(2, '0')
+  const timestamp = dateInputToTimestamp(`${inputs.year.padStart(4, '0')}-${monthStr}-${dayStr}`)
+
+  return {
+    timestamp,
+    normalized: {
+      year: inputs.year,
+      month: String(month),
+      day: String(day),
+    },
+  }
+}
+
+const filterStartInputs = ref<FilterInputs>(timestampToFilterInputs(props.panel.startTimestamp))
+const filterEndInputs = ref<FilterInputs>(timestampToFilterInputs(props.panel.endTimestamp))
+const appliedStart = ref(props.panel.startTimestamp)
+const appliedEnd = ref(props.panel.endTimestamp)
 
 const computeEventMinMax = (
   events: EventResponse[],
@@ -55,8 +111,8 @@ const computeEventMinMax = (
 }
 
 const fetchEventsForPanel = async () => {
-  const s = parseStart.value
-  const e = parseEnd.value
+  const s = appliedStart.value
+  const e = appliedEnd.value
   try {
     const response = await fetch(`/time-info/events/${s}/${e}`)
     if (response.ok) {
@@ -96,8 +152,10 @@ const initializeFilterBounds = async () => {
 
     originalStart.value = minTimestamp
     originalEnd.value = maxTimestamp
-    filterStart.value = timestampToDateInput(minTimestamp)
-    filterEnd.value = timestampToDateInput(maxTimestamp)
+    appliedStart.value = minTimestamp
+    appliedEnd.value = maxTimestamp
+    filterStartInputs.value = timestampToFilterInputs(minTimestamp)
+    filterEndInputs.value = timestampToFilterInputs(maxTimestamp)
     await fetchEventsForPanel()
   } catch {
     await fetchEventsForPanel()
@@ -119,32 +177,47 @@ watch(
 
     originalStart.value = nextStart
     originalEnd.value = nextEnd
-    filterStart.value = timestampToDateInput(nextStart)
-    filterEnd.value = timestampToDateInput(nextEnd)
+    appliedStart.value = nextStart
+    appliedEnd.value = nextEnd
+    filterStartInputs.value = timestampToFilterInputs(nextStart)
+    filterEndInputs.value = timestampToFilterInputs(nextEnd)
     fetchEventsForPanel()
   },
 )
 
 const rangeIsMoreThanOneYear = computed(() => {
-  const start = parseStart.value
-  const end = parseEnd.value
-  if (start == null || end == null) {
-    return true
-  }
-  return end - start > DAYS_PER_YEAR
+  return appliedEnd.value - appliedStart.value > DAYS_PER_YEAR
 })
 
-const applyFilter = () => {
+const applyMinFilter = () => {
+  const parsed = toTimestampWithDefaults(filterStartInputs.value)
+  if (parsed == null) {
+    return
+  }
+  appliedStart.value = parsed.timestamp
+  filterStartInputs.value = parsed.normalized
+  fetchEventsForPanel()
+}
+
+const applyMaxFilter = () => {
+  const parsed = toTimestampWithDefaults(filterEndInputs.value)
+  if (parsed == null) {
+    return
+  }
+  appliedEnd.value = parsed.timestamp
+  filterEndInputs.value = parsed.normalized
   fetchEventsForPanel()
 }
 
 const resetMin = () => {
-  filterStart.value = timestampToDateInput(originalStart.value)
+  appliedStart.value = originalStart.value
+  filterStartInputs.value = timestampToFilterInputs(originalStart.value)
   fetchEventsForPanel()
 }
 
 const resetMax = () => {
-  filterEnd.value = timestampToDateInput(originalEnd.value)
+  appliedEnd.value = originalEnd.value
+  filterEndInputs.value = timestampToFilterInputs(originalEnd.value)
   fetchEventsForPanel()
 }
 
@@ -221,16 +294,44 @@ const endDescription = (evt: EventResponse): string => {
           class="mb-4 flex flex-wrap items-end gap-2"
           data-testid="filter-controls"
         >
-          <label class="form-control">
-            <span class="label-text text-xs">Min date</span>
-            <input
-              v-model="filterStart"
-              type="date"
-              class="input input-bordered input-sm"
-              data-testid="filter-min-date"
-              @change="applyFilter"
-            />
-          </label>
+          <form class="flex items-end gap-2" @submit.prevent="applyMinFilter">
+            <label class="form-control">
+              <span class="label-text text-xs">Min year</span>
+              <input
+                v-model="filterStartInputs.year"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-20"
+                data-testid="filter-min-year"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs">Min month</span>
+              <input
+                v-model="filterStartInputs.month"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="filter-min-month"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs">Min day</span>
+              <input
+                v-model="filterStartInputs.day"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="filter-min-day"
+              />
+            </label>
+            <button class="btn btn-outline btn-sm" data-testid="filter-min-go-action" type="submit">
+              Go
+            </button>
+          </form>
           <button
             class="btn btn-outline btn-sm"
             data-testid="reset-min-action"
@@ -238,16 +339,44 @@ const endDescription = (evt: EventResponse): string => {
           >
             Reset min
           </button>
-          <label class="form-control">
-            <span class="label-text text-xs">Max date</span>
-            <input
-              v-model="filterEnd"
-              type="date"
-              class="input input-bordered input-sm"
-              data-testid="filter-max-date"
-              @change="applyFilter"
-            />
-          </label>
+          <form class="flex items-end gap-2" @submit.prevent="applyMaxFilter">
+            <label class="form-control">
+              <span class="label-text text-xs">Max year</span>
+              <input
+                v-model="filterEndInputs.year"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-20"
+                data-testid="filter-max-year"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs">Max month</span>
+              <input
+                v-model="filterEndInputs.month"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="filter-max-month"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs">Max day</span>
+              <input
+                v-model="filterEndInputs.day"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="filter-max-day"
+              />
+            </label>
+            <button class="btn btn-outline btn-sm" data-testid="filter-max-go-action" type="submit">
+              Go
+            </button>
+          </form>
           <button
             class="btn btn-outline btn-sm"
             data-testid="reset-max-action"

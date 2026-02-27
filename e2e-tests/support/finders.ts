@@ -5,7 +5,9 @@ export const clickLink = async (page: Page, testId: string) => {
 }
 
 export const fillInput = async (page: Page, testId: string, value: string) => {
-  return page.getByTestId(testId).fill(value)
+  const input = page.getByTestId(testId)
+  await input.waitFor({ state: 'visible' })
+  return input.fill(value)
 }
 
 export const verifyAlert = async (page: Page, expectedText: string) => {

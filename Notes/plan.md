@@ -1,32 +1,29 @@
-# Plan: Move Test-only DB Access Out of src/lib
+# Plan: Timeline Date Inputs as Numeric Fields + Go
 
 ## Assumptions
 
-- No database schema change is needed.
-- Test-only route code can import from `e2e-tests/support/db-access.ts`.
-- The test-only functions to move are: `clearTestDatabase`, `clearTestSessions`, `seedAuthTestData`, `getTestDatabaseCounts`, `clearAllEvents`, `seedEventTestData`, and `getEventCount`.
+- The change applies to both timeline filter date entries (min and max).
+- No database schema changes are required.
+- Existing timeline E2E tests are the primary regression safety net for this behavior.
 
 ## Answer
 
-Move test-only database helpers out of `src/lib/db-access.ts` into `e2e-tests/support/db-access.ts`, then update test-route imports to use the new module and verify all `tests` and `e2e-tests` pass.
+Replace each date picker with three numeric inputs (year, month, day) and a `Go` button, where `Enter` in any field applies that side’s filter, editing alone does not apply, and missing month/day default to January/1.
 
 ## Plan
 
-1. Create `e2e-tests/support/db-access.ts` with the moved test-only helpers and required local types/interfaces.
-2. Update `src/routes/test/database.ts` to import those helpers from `e2e-tests/support/db-access.ts`.
-3. Remove moved helpers/types from `src/lib/db-access.ts` and clean up now-unused imports.
-4. Run Red/Green test cycle: start server with `npm run dev-open-sign-up`, run failing tests first, fix, then run full `tests` and `e2e-tests`.
+1. Update timeline E2E tests first (Red) to reflect the new control layout and interactions.
+2. Refactor `TimelineDisplay.vue` to hold per-side numeric input state (`year`, `month`, `day`) instead of date strings.
+3. Add helper parsing/build functions to construct timestamps with defaults:
+   - year only -> `year-01-01`
+   - year + month -> `year-month-01`
+4. Wire `Go` buttons and `Enter` key handling to apply filters; remove auto-apply on input edits.
+5. Keep reset actions, timeline formatting, and fetch behavior consistent with existing behavior.
+6. Run tests in Red/Green mode, then run all tests in `e2e-tests` and `tests`.
 
 ## Pitfalls
 
-- Breaking build paths between `src` and `e2e-tests`.
-- Accidentally moving non-test code used by production routes.
-- Missing one of the helper functions and leaving stale imports.
-- Type mismatches after moving `TestDatabaseCounts`.
-
-## Test Plan (Red/Green TDD)
-
-1. **Red**: run one focused failing suite first (start with `npx playwright test -x`).
-2. **Green**: apply minimal fix for first failure.
-3. Repeat Red/Green until no failures remain.
-4. Run full checks for both folders and confirm green.
+- Accidentally applying filters on every keystroke instead of explicit action.
+- Not handling partial inputs correctly (year-only / year+month defaults).
+- Breaking existing selectors and failing current E2E coverage.
+- Invalid month/day values producing unexpected timestamps.
