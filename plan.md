@@ -1,65 +1,26 @@
-# Plan: Restore Timeline Filters and Stabilize E2E
+# Plan: Lens/Timeline Layout + Max-Date Behavior
 
 ## Assumptions
-- The failing behavior is in the timeline filter UI and panel-level event fetching.
-- Existing Playwright tests in `e2e-tests/general/10-timeline-filter.spec.ts` define expected behavior.
 - No database schema changes are needed.
+- "Lens creation" means clicking the Timeline panel add-lens action.
+- Existing Playwright tests will be updated/extended for coverage.
 
 ## Answer
-Implement per-panel date filter controls in the timeline component, wire those controls to fetch filtered events, preserve reset behavior, and validate using Playwright with Red/Green iteration.
+Update panel behavior so adding a Lens also creates a following Timeline, make Lens width one-quarter of the screen and remove its add-timeline "+" action, render min/max controls in a CSS grid with label/input spacing, and hide death/end rows beyond the current max date.
 
 ## Plan
-1. Add timeline filter UI controls (`filter-controls`, min/max date inputs, reset actions) to `TimelineDisplay.vue`.
-2. Track panel-local filter state initialized from panel start/end timestamps.
-3. Fetch events using the current filter range instead of raw panel timestamps.
-4. Ensure date formatting mode (year vs year-month) derives from the active filtered range.
-5. Run targeted Playwright tests with `-x`, fix failures one at a time, and apply related fixes broadly where appropriate.
+1. Add/adjust E2E coverage first (Red) for:
+   - Lens has no add-timeline button.
+   - Adding a lens creates both a Lens and a trailing Timeline.
+2. Update panel store logic so `addLensPanel()` appends Lens + Timeline in order.
+3. Update `LensDisplay.vue`:
+   - width to 1/4 screen.
+   - remove add-timeline "+" button UI.
+4. Update `TimelineDisplay.vue` filter controls into a grid layout and add explicit label/input spacing.
+5. Ensure timeline end/death rows are not rendered when end timestamp is greater than applied max filter.
+6. Run Red/Green iteration for affected tests, then run all tests in `e2e-tests` and `tests`.
 
 ## Pitfalls
-- `data-testid` values must exactly match the Playwright selectors.
-- Date input conversion can silently produce wrong ranges if parsing/format assumptions drift.
-- Reset actions must restore original panel min/max, not the latest edited values.
-- Filters should only render for signed-in users with timeline data to satisfy visibility tests.
-
-## Test Plan (Red/Green TDD)
-- Red: Run `npx playwright test e2e-tests/general/10-timeline-filter.spec.ts -x` and observe first failure.
-- Green: Implement minimal fix for that failure, rerun same command.
-- Repeat until the timeline filter spec passes.
-- Optionally run adjacent timeline/home specs if needed for regression confidence.
-
-## Reboot Handoff Notes
-
-### Current Status
-- Timeline filter implementation is done in `line-of-time-fe/src/components/TimelineDisplay.vue`.
-- Added per-panel filter state + controls and wired filtering/reset behavior.
-- Added required test selectors:
-  - `filter-controls`
-  - `filter-min-date`
-  - `filter-max-date`
-  - `reset-min-action`
-  - `reset-max-action`
-- Updated event fetch to use date-input-derived filter range.
-- Updated year vs year-month formatting to use active filtered range.
-
-### Validation Attempt Result
-- Server command used: `npm run dev-open-sign-up`
-- Test command used: `npx playwright test e2e-tests/general/10-timeline-filter.spec.ts -x`
-- Blocking issue: Playwright browser binary missing.
-  - Error requested: `npx playwright install`
-
-### First Steps After Reboot
-1. Start server:
-   - `npm run dev-open-sign-up`
-2. Run the target spec in Red/Green mode:
-   - `npx playwright test e2e-tests/general/10-timeline-filter.spec.ts -x`
-3. If a test fails, apply minimal fix and rerun step 3 until green.
-
-### If/When Tests Turn Green
-1. (Optional confidence pass) run nearby specs as needed.
-2. Send completion notification:
-   - Preferred: `/home/chris/notify-app Task Finished`
-   - Fallback: `/Users/chris/bin/notify-app Task Finished`
-
-### Guardrails
-- Do **not** propose DB schema changes without explicit permission.
-- Keep fixes minimal and targeted to timeline filter behavior.
+- Removing lens "+" action can break any legacy test IDs/selectors.
+- Adding two panels from one action can affect ordering assumptions.
+- Filtering death/end rows only in UI must match expected max-date semantics.

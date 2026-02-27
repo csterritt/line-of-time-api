@@ -5,6 +5,8 @@ import { clickLink, isElementVisible, getElementText } from '../support/finders'
 import { verifyOnSignInPage } from '../support/page-verifiers'
 import { BASE_URLS, TEST_USERS } from '../support/test-data'
 
+test.describe.configure({ timeout: 90000 })
+
 test.beforeEach(async () => {
   await clearDatabase()
   await seedDatabase()

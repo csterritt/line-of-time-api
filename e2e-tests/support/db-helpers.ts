@@ -2,15 +2,71 @@
  * Clear all data from authentication-related tables
  * Calls test-only server endpoint to clear database
  */
+const transientStatuses = new Set([502, 503, 504])
+const retryAttempts = 3
+const retryDelayMs = 500
+
+const sleep = async (ms: number): Promise<void> => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+const fetchWithRetry = async (
+  url: string,
+  options: RequestInit,
+  operationName: string
+): Promise<Response> => {
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= retryAttempts; attempt++) {
+    try {
+      const response = await fetch(url, options)
+
+      if (response.ok) {
+        return response
+      }
+
+      const responseError = new Error(
+        `HTTP ${response.status}: ${response.statusText}`
+      )
+
+      if (!transientStatuses.has(response.status) || attempt === retryAttempts) {
+        throw responseError
+      }
+
+      lastError = responseError
+      console.warn(
+        `${operationName} attempt ${attempt} failed with ${response.status}. Retrying...`
+      )
+    } catch (error) {
+      const fetchError = error as Error
+
+      if (attempt === retryAttempts) {
+        throw fetchError
+      }
+
+      lastError = fetchError
+      console.warn(
+        `${operationName} attempt ${attempt} failed: ${fetchError.message}. Retrying...`
+      )
+    }
+
+    await sleep(retryDelayMs * attempt)
+  }
+
+  throw lastError ?? new Error(`${operationName} failed after retries`)
+}
+
 export const clearDatabase = async (): Promise<void> => {
   try {
-    const response = await fetch('http://localhost:3000/test/database/clear', {
-      method: 'DELETE',
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
+    const response = await fetchWithRetry(
+      'http://localhost:3000/test/database/clear',
+      {
+        method: 'DELETE',
+      },
+      'clearDatabase'
+    )
 
     const result = (await response.json()) as {
       success: boolean
@@ -100,14 +156,14 @@ export const checkCodeExists = async (code: string): Promise<boolean> => {
  */
 export const seedDatabase = async (): Promise<void> => {
   try {
-    const response = await fetch('http://localhost:3000/test/database/seed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
+    const response = await fetchWithRetry(
+      'http://localhost:3000/test/database/seed',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      'seedDatabase'
+    )
 
     const result = (await response.json()) as {
       success: boolean
@@ -199,15 +255,15 @@ export const seedEvents = async (): Promise<void> => {
  */
 export const setAiMock = async (categorization: Record<string, string>): Promise<void> => {
   try {
-    const response = await fetch('http://localhost:3000/test/ai-mock/set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(categorization),
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
+    const response = await fetchWithRetry(
+      'http://localhost:3000/test/ai-mock/set',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categorization),
+      },
+      'setAiMock'
+    )
 
     const result = (await response.json()) as {
       success: boolean

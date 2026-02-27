@@ -1697,6 +1697,9 @@
   .mt-6 {
     margin-top: calc(var(--spacing) * 6);
   }
+  .mb-1 {
+    margin-bottom: calc(var(--spacing) * 1);
+  }
   .mb-2 {
     margin-bottom: calc(var(--spacing) * 2);
   }
@@ -1978,6 +1981,9 @@
   .w-20 {
     width: calc(var(--spacing) * 20);
   }
+  .w-\[25vw\] {
+    width: 25vw;
+  }
   .w-\[66vw\] {
     width: 66vw;
   }
@@ -2044,6 +2050,9 @@
   .list-none {
     list-style-type: none;
   }
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
   .grid-cols-\[auto_auto_1fr\] {
     grid-template-columns: auto auto 1fr;
   }
@@ -2052,9 +2061,6 @@
   }
   .flex-row {
     flex-direction: row;
-  }
-  .flex-wrap {
-    flex-wrap: wrap;
   }
   .items-center {
     align-items: center;
@@ -2382,6 +2388,11 @@
     @layer daisyui.l1.l2.l3 {
       --btn-color: var(--color-secondary);
       --btn-fg: var(--color-secondary-content);
+    }
+  }
+  .lg\:grid-cols-2 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 }

@@ -36,6 +36,11 @@ export const usePanelStore = defineStore('panel-store', () => {
       type: 'lens',
       eventNames: [],
     })
+    displayList.value.push({
+      type: 'timeline',
+      startTimestamp: -99999999999,
+      endTimestamp: 99999999999,
+    })
   }
 
   return {

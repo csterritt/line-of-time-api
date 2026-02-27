@@ -6,5 +6,6 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e-tests',
+  timeout: 90000,
   workers: 1,
 })

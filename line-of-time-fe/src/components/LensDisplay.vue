@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-import { usePanelStore, type LensPanel } from '@/stores/panel-store'
+import { type LensPanel } from '@/stores/panel-store'
 import { useEventStore } from '@/stores/event-store'
 
 const props = defineProps<{
   panel: LensPanel
 }>()
 
-const panelStore = usePanelStore()
 const eventStore = useEventStore()
 
 const newEventName = ref('')
@@ -33,8 +32,8 @@ const removeEvent = (name: string) => {
 </script>
 
 <template>
-  <div class="flex flex-row items-center gap-4 w-[66vw] shrink-0">
-    <div class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
+  <div class="w-[25vw] shrink-0">
+    <div class="card bg-base-100 shadow-xl h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
       <div class="card-body">
         <h2 class="card-title mb-4">Lens</h2>
         
@@ -84,14 +83,5 @@ const removeEvent = (name: string) => {
 
       </div>
     </div>
-    
-    <button 
-      class="btn btn-circle btn-secondary flex-shrink-0"
-      @click="panelStore.addTimelinePanel()"
-      title="Add Timeline Panel"
-      data-testid="add-timeline-panel-button"
-    >
-      +
-    </button>
   </div>
 </template>

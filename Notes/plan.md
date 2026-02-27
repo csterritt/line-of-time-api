@@ -1,29 +1,31 @@
-# Plan: Timeline Date Inputs as Numeric Fields + Go
+# Plan: Lens/Timeline Layout + Max-Date Behavior
 
 ## Assumptions
 
-- The change applies to both timeline filter date entries (min and max).
-- No database schema changes are required.
-- Existing timeline E2E tests are the primary regression safety net for this behavior.
+- No database schema changes are needed.
+- "Lens creation" means clicking the Timeline panel's add-lens action.
+- Existing Playwright tests will be updated/extended for coverage.
 
 ## Answer
 
-Replace each date picker with three numeric inputs (year, month, day) and a `Go` button, where `Enter` in any field applies that side’s filter, editing alone does not apply, and missing month/day default to January/1.
+Update panel behavior so adding a Lens also creates a following Timeline, make Lens width one-quarter of the screen and remove its add-timeline "+" action, render min/max controls in a CSS grid with label/input spacing, and hide death/end rows beyond the current max date.
 
 ## Plan
 
-1. Update timeline E2E tests first (Red) to reflect the new control layout and interactions.
-2. Refactor `TimelineDisplay.vue` to hold per-side numeric input state (`year`, `month`, `day`) instead of date strings.
-3. Add helper parsing/build functions to construct timestamps with defaults:
-   - year only -> `year-01-01`
-   - year + month -> `year-month-01`
-4. Wire `Go` buttons and `Enter` key handling to apply filters; remove auto-apply on input edits.
-5. Keep reset actions, timeline formatting, and fetch behavior consistent with existing behavior.
-6. Run tests in Red/Green mode, then run all tests in `e2e-tests` and `tests`.
+1. Add/adjust E2E coverage first (Red) for:
+   - Lens has no add-timeline button.
+   - Adding a lens creates both a Lens and a trailing Timeline.
+2. Update panel store logic so `addLensPanel()` appends Lens + Timeline in order.
+3. Update `LensDisplay.vue`:
+   - width to 1/4 screen.
+   - remove add-timeline "+" button UI.
+4. Update `TimelineDisplay.vue` filter controls into a grid layout and add explicit label/input spacing.
+5. Ensure timeline end/death rows are not rendered when end timestamp is greater than applied max filter.
+6. Run Red/Green iteration for affected tests, then run all tests in `e2e-tests` and `tests`.
 
 ## Pitfalls
 
-- Accidentally applying filters on every keystroke instead of explicit action.
-- Not handling partial inputs correctly (year-only / year+month defaults).
-- Breaking existing selectors and failing current E2E coverage.
-- Invalid month/day values producing unexpected timestamps.
+- Removing lens "+" action can break any legacy test IDs/selectors.
+- Adding two panels from one action can affect ordering assumptions.
+- Filtering death/end rows only in UI must match expected max-date semantics.
+- CSS refactor can accidentally reduce mobile usability if grid is not responsive.

@@ -249,7 +249,7 @@ const timelineRows = computed((): TimelineRow[] => {
       type: 'start',
       event: evt,
     })
-    if (evt.endTimestamp != null) {
+    if (evt.endTimestamp != null && evt.endTimestamp <= appliedEnd.value) {
       entries.push({
         timestamp: evt.endTimestamp,
         dateLabel: formatEventDate(evt.endTimestamp),
@@ -291,12 +291,12 @@ const endDescription = (evt: EventResponse): string => {
         <h2 class="card-title mb-4">Timeline</h2>
         <div
           v-if="userInfo.isSignedIn && timelineRows.length > 0"
-          class="mb-4 flex flex-wrap items-end gap-2"
+          class="mb-4 grid gap-3 lg:grid-cols-2"
           data-testid="filter-controls"
         >
-          <form class="flex items-end gap-2" @submit.prevent="applyMinFilter">
+          <form class="grid grid-cols-4 items-end gap-2" @submit.prevent="applyMinFilter">
             <label class="form-control">
-              <span class="label-text text-xs">Min year</span>
+              <span class="label-text text-xs mb-1">Min year</span>
               <input
                 v-model="filterStartInputs.year"
                 type="text"
@@ -307,7 +307,7 @@ const endDescription = (evt: EventResponse): string => {
               />
             </label>
             <label class="form-control">
-              <span class="label-text text-xs">Min month</span>
+              <span class="label-text text-xs mb-1">Min month</span>
               <input
                 v-model="filterStartInputs.month"
                 type="text"
@@ -318,7 +318,7 @@ const endDescription = (evt: EventResponse): string => {
               />
             </label>
             <label class="form-control">
-              <span class="label-text text-xs">Min day</span>
+              <span class="label-text text-xs mb-1">Min day</span>
               <input
                 v-model="filterStartInputs.day"
                 type="text"
@@ -332,16 +332,18 @@ const endDescription = (evt: EventResponse): string => {
               Go
             </button>
           </form>
-          <button
-            class="btn btn-outline btn-sm"
-            data-testid="reset-min-action"
-            @click="resetMin"
-          >
-            Reset min
-          </button>
-          <form class="flex items-end gap-2" @submit.prevent="applyMaxFilter">
+          <div class="flex items-end">
+            <button
+              class="btn btn-outline btn-sm"
+              data-testid="reset-min-action"
+              @click="resetMin"
+            >
+              Reset min
+            </button>
+          </div>
+          <form class="grid grid-cols-4 items-end gap-2" @submit.prevent="applyMaxFilter">
             <label class="form-control">
-              <span class="label-text text-xs">Max year</span>
+              <span class="label-text text-xs mb-1">Max year</span>
               <input
                 v-model="filterEndInputs.year"
                 type="text"
@@ -352,7 +354,7 @@ const endDescription = (evt: EventResponse): string => {
               />
             </label>
             <label class="form-control">
-              <span class="label-text text-xs">Max month</span>
+              <span class="label-text text-xs mb-1">Max month</span>
               <input
                 v-model="filterEndInputs.month"
                 type="text"
@@ -363,7 +365,7 @@ const endDescription = (evt: EventResponse): string => {
               />
             </label>
             <label class="form-control">
-              <span class="label-text text-xs">Max day</span>
+              <span class="label-text text-xs mb-1">Max day</span>
               <input
                 v-model="filterEndInputs.day"
                 type="text"
@@ -377,13 +379,15 @@ const endDescription = (evt: EventResponse): string => {
               Go
             </button>
           </form>
-          <button
-            class="btn btn-outline btn-sm"
-            data-testid="reset-max-action"
-            @click="resetMax"
-          >
-            Reset max
-          </button>
+          <div class="flex items-end">
+            <button
+              class="btn btn-outline btn-sm"
+              data-testid="reset-max-action"
+              @click="resetMax"
+            >
+              Reset max
+            </button>
+          </div>
         </div>
         <div
           v-if="timelineRows.length > 0"

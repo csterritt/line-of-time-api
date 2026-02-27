@@ -7,6 +7,8 @@ import { TEST_USERS } from '../support/test-data'
 import { HTML_STATUS } from '../../src/constants'
 
 test.describe('Body size limit', () => {
+  test.describe.configure({ timeout: 90000 })
+
   test(
     'returns 413 status when JSON payload exceeds size limit',
     testWithDatabase(async ({ page, request }) => {

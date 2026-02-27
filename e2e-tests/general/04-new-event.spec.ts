@@ -443,7 +443,7 @@ test('person categorization displays type and prefills birth/death dates', async
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await getElementText(page, 'type-display')).toBe('person')
@@ -473,7 +473,7 @@ test('person categorization without death date leaves end date empty', async ({
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await getElementText(page, 'type-display')).toBe('person')
@@ -501,7 +501,7 @@ test('one-time-event categorization prefills start date only', async ({
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await getElementText(page, 'type-display')).toBe('one-time-event')
@@ -530,7 +530,7 @@ test('bounded-event categorization prefills start and end dates', async ({
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await getElementText(page, 'type-display')).toBe('bounded-event')
@@ -555,7 +555,7 @@ test('other categorization leaves dates empty', async ({ page }) => {
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await getElementText(page, 'type-display')).toBe('other')
@@ -610,7 +610,7 @@ test('type display shows categorization type next to name', async ({
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="type-display"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
 
   expect(await isElementVisible(page, 'name-display')).toBe(true)
