@@ -3,7 +3,6 @@ import { computed, ref, onMounted, watch } from 'vue'
 
 import type { EventResponse } from '@/stores/event-store'
 import { usePanelStore, type TimelinePanel } from '@/stores/panel-store'
-import { useUserInfoStore } from '@/stores/user-info'
 import {
   dateInputToTimestamp,
   timestampToDateInput,
@@ -17,7 +16,6 @@ const props = defineProps<{
 }>()
 
 const panelStore = usePanelStore()
-const userInfo = useUserInfoStore()
 
 const PANEL_DEFAULT_MIN = -99999999999
 const PANEL_DEFAULT_MAX = 99999999999
@@ -52,7 +50,9 @@ const parsePositiveInteger = (value: string): number | null => {
   return parsed
 }
 
-const toTimestampWithDefaults = (inputs: FilterInputs): { timestamp: number; normalized: FilterInputs } | null => {
+const toTimestampWithDefaults = (
+  inputs: FilterInputs
+): { timestamp: number; normalized: FilterInputs } | null => {
   const year = parsePositiveInteger(inputs.year)
   if (year == null) {
     return null
@@ -88,7 +88,7 @@ const appliedStart = ref(props.panel.startTimestamp)
 const appliedEnd = ref(props.panel.endTimestamp)
 
 const computeEventMinMax = (
-  events: EventResponse[],
+  events: EventResponse[]
 ): { minTimestamp: number | null; maxTimestamp: number | null } => {
   if (events.length === 0) {
     return { minTimestamp: null, maxTimestamp: null }
@@ -182,7 +182,7 @@ watch(
     filterStartInputs.value = timestampToFilterInputs(nextStart)
     filterEndInputs.value = timestampToFilterInputs(nextEnd)
     fetchEventsForPanel()
-  },
+  }
 )
 
 const rangeIsMoreThanOneYear = computed(() => {
@@ -286,14 +286,12 @@ const endDescription = (evt: EventResponse): string => {
 
 <template>
   <div class="flex flex-row items-center gap-4 w-[66vw] shrink-0">
-    <div class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
+    <div
+      class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]"
+    >
       <div class="card-body">
         <h2 class="card-title mb-4">Timeline</h2>
-        <div
-          v-if="userInfo.isSignedIn && timelineRows.length > 0"
-          class="mb-4 grid gap-3 lg:grid-cols-2"
-          data-testid="filter-controls"
-        >
+        <div class="mb-4 grid gap-3 lg:grid-cols-2" data-testid="filter-controls">
           <form class="grid grid-cols-4 items-end gap-2" @submit.prevent="applyMinFilter">
             <label class="form-control">
               <span class="label-text text-xs mb-1">Min year</span>
@@ -333,11 +331,7 @@ const endDescription = (evt: EventResponse): string => {
             </button>
           </form>
           <div class="flex items-end">
-            <button
-              class="btn btn-outline btn-sm"
-              data-testid="reset-min-action"
-              @click="resetMin"
-            >
+            <button class="btn btn-outline btn-sm" data-testid="reset-min-action" @click="resetMin">
               Reset min
             </button>
           </div>
@@ -380,11 +374,7 @@ const endDescription = (evt: EventResponse): string => {
             </button>
           </form>
           <div class="flex items-end">
-            <button
-              class="btn btn-outline btn-sm"
-              data-testid="reset-max-action"
-              @click="resetMax"
-            >
+            <button class="btn btn-outline btn-sm" data-testid="reset-max-action" @click="resetMax">
               Reset max
             </button>
           </div>
@@ -394,14 +384,8 @@ const endDescription = (evt: EventResponse): string => {
           class="grid grid-cols-[auto_auto_1fr] gap-y-2"
           data-testid="event-list"
         >
-          <template
-            v-for="(row, idx) in timelineRows"
-            :key="`${row.event.id}-${row.type}-${idx}`"
-          >
-            <div
-              class="font-mono text-sm self-center pr-2"
-              data-testid="timeline-date-cell"
-            >
+          <template v-for="(row, idx) in timelineRows" :key="`${row.event.id}-${row.type}-${idx}`">
+            <div class="font-mono text-sm self-center pr-2" data-testid="timeline-date-cell">
               <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
             </div>
             <div class="divider divider-horizontal mx-2"></div>
@@ -412,7 +396,9 @@ const endDescription = (evt: EventResponse): string => {
                   class="truncate text-sm"
                   :title="row.event.basicDescription"
                   data-testid="event-description"
-                >{{ row.event.basicDescription }}</div>
+                >
+                  {{ row.event.basicDescription }}
+                </div>
               </template>
               <template v-else>
                 <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
@@ -423,8 +409,8 @@ const endDescription = (evt: EventResponse): string => {
         <p v-else data-testid="no-events-message">No events yet</p>
       </div>
     </div>
-    
-    <button 
+
+    <button
       class="btn btn-circle btn-secondary flex-shrink-0"
       @click="panelStore.addLensPanel()"
       title="Add Lens Panel"
@@ -434,4 +420,3 @@ const endDescription = (evt: EventResponse): string => {
     </button>
   </div>
 </template>
-
