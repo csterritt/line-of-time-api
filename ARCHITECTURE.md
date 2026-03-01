@@ -10,7 +10,7 @@ The application will consist of a back end and a front end.
 
 The back end will be a Cloudflare Worker, built with Hono and Cloudflare D1 database, accessed via the Drizzle ORM.
 
-The front end will be a web page, built with Vue 3, Pinia, Tailwind CSS, and DaisyUI.
+The front end will be a SPA (Single Page Application), built with Vue 3, Pinia, Tailwind CSS, and DaisyUI.
 
 The two will communicate via an API, which will send and receive JSON.
 
