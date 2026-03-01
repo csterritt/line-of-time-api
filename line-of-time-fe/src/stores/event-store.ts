@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 export type EventInput = {
@@ -108,67 +108,45 @@ export const useEventStore = defineStore('event-store', () => {
     }
   }
 
-  const events = ref<EventResponse[]>([])
-  const minTimestamp = ref<number | null>(null)
-  const maxTimestamp = ref<number | null>(null)
-  const filterStart = ref<number | null>(null)
-  const filterEnd = ref<number | null>(null)
+  const allEvents = ref<EventResponse[]>([])
+  const eventsLoaded = ref(false)
 
-  const fetchAllEvents = async (): Promise<EventResponse[]> => {
+  const minTimestamp = computed((): number | null => {
+    if (allEvents.value.length === 0) {
+      return null
+    }
+    return allEvents.value.reduce(
+      (min, evt) => (evt.startTimestamp < min ? evt.startTimestamp : min),
+      allEvents.value[0]!.startTimestamp,
+    )
+  })
+
+  const maxTimestamp = computed((): number | null => {
+    if (allEvents.value.length === 0) {
+      return null
+    }
+    return allEvents.value.reduce((max, evt) => {
+      const evtMax = evt.endTimestamp != null ? evt.endTimestamp : evt.startTimestamp
+      return evtMax > max ? evtMax : max
+    }, allEvents.value[0]!.startTimestamp)
+  })
+
+  const loadAllEvents = async (): Promise<void> => {
+    if (eventsLoaded.value) {
+      return
+    }
     try {
       const response = await fetch('/time-info/events/-99999999999/99999999999')
       if (response.ok) {
-        return (await response.json()) as EventResponse[]
-      }
-      return []
-    } catch {
-      return []
-    }
-  }
-
-  const computeMinMax = (allEvents: EventResponse[]): void => {
-    if (allEvents.length === 0) {
-      minTimestamp.value = null
-      maxTimestamp.value = null
-      return
-    }
-    let min = allEvents[0]!.startTimestamp
-    let max = allEvents[0]!.startTimestamp
-    for (const evt of allEvents) {
-      if (evt.startTimestamp < min) {
-        min = evt.startTimestamp
-      }
-      const evtMax = evt.endTimestamp != null ? evt.endTimestamp : evt.startTimestamp
-      if (evtMax > max) {
-        max = evtMax
-      }
-    }
-    minTimestamp.value = min
-    maxTimestamp.value = max
-  }
-
-  const fetchEvents = async (start?: number, end?: number) => {
-    const s = start ?? -99999999999
-    const e = end ?? 99999999999
-    try {
-      const response = await fetch(`/time-info/events/${s}/${e}`)
-      if (response.ok) {
-        const data = (await response.json()) as EventResponse[]
-        events.value = data
+        allEvents.value = (await response.json()) as EventResponse[]
       } else {
-        events.value = []
+        allEvents.value = []
       }
     } catch {
-      events.value = []
+      allEvents.value = []
+    } finally {
+      eventsLoaded.value = true
     }
-  }
-
-  const initializeEvents = async () => {
-    const allEvents = await fetchAllEvents()
-    computeMinMax(allEvents)
-    filterStart.value = minTimestamp.value
-    filterEnd.value = maxTimestamp.value
-    await fetchEvents(filterStart.value ?? undefined, filterEnd.value ?? undefined)
   }
 
   return {
@@ -179,12 +157,10 @@ export const useEventStore = defineStore('event-store', () => {
     wikiInfo,
     wikiLoading,
     getInfo,
-    events,
+    allEvents,
+    eventsLoaded,
     minTimestamp,
     maxTimestamp,
-    filterStart,
-    filterEnd,
-    fetchEvents,
-    initializeEvents,
+    loadAllEvents,
   }
 })
