@@ -1,11 +1,6 @@
----
-trigger: always_on
----
-
 ## Miscellany
 
 - When asked to write a plan, make a file named "plan.md" and put it in the top level directory. go ahead and write the plan to the file, even before and questions or concerns are addressed.
-- Unless asked not to, when you finish a task, run '/home/sprite/notify-app Task Finished' as long as '/home/sprite/notify-app' exists.
 
 ## Typescript
 

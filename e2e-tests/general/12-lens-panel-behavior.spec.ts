@@ -20,7 +20,9 @@ test.afterEach(async () => {
   await clearDatabase()
 })
 
-const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => {
+const signInAndGoHome = async (
+  page: Parameters<typeof submitSignInForm>[0]
+) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
   await page.goto(`${BASE_URLS.HOME}/ui/`)
@@ -30,24 +32,36 @@ const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => 
 test('adding a lens creates a trailing timeline panel', async ({ page }) => {
   await signInAndGoHome(page)
 
-  await expect(page.locator('h2.card-title', { hasText: 'Timeline' })).toHaveCount(1)
-  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(0)
+  await expect(
+    page.locator('h2.card-title', { hasText: 'Timeline' })
+  ).toHaveCount(1)
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(
+    0
+  )
 
-  await page.getByTestId('add-lens-panel-button').click()
+  await page.getByTestId('add-lens-panel-action').click()
 
-  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(1)
-  await expect(page.locator('h2.card-title', { hasText: 'Timeline' })).toHaveCount(2)
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(
+    1
+  )
+  await expect(
+    page.locator('h2.card-title', { hasText: 'Timeline' })
+  ).toHaveCount(2)
 
   const titles = page.locator('h2.card-title')
   const allTitles = await titles.allTextContents()
-  const panelTitles = allTitles.map(title => title.trim()).filter(title => title !== 'Home')
+  const panelTitles = allTitles
+    .map((title) => title.trim())
+    .filter((title) => title !== 'Home')
   expect(panelTitles.slice(0, 3)).toEqual(['Timeline', 'Lens', 'Timeline'])
 })
 
 test('lens panel does not show add timeline action', async ({ page }) => {
   await signInAndGoHome(page)
 
-  await page.getByTestId('add-lens-panel-button').click()
+  await page.getByTestId('add-lens-panel-action').click()
 
-  await expect(page.locator('[data-testid="add-timeline-panel-button"]')).toHaveCount(0)
+  await expect(
+    page.locator('[data-testid="add-timeline-panel-button"]')
+  ).toHaveCount(0)
 })

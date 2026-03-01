@@ -414,7 +414,7 @@ const endDescription = (evt: EventResponse): string => {
       class="btn btn-circle btn-secondary flex-shrink-0"
       @click="panelStore.addLensPanel()"
       title="Add Lens Panel"
-      data-testid="add-lens-panel-button"
+      data-testid="add-lens-panel-action"
     >
       +
     </button>

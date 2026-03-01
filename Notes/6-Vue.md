@@ -1,7 +1,3 @@
----
-trigger: always_on
----
-
 # Vue.js Project - Project Guidelines
 
 ## Project Overview
@@ -61,7 +57,7 @@ Built with Vue 3 using Composition API and following Vue's best practices and co
 
 #### Testing Requirements
 
-- Vitest for unit testing
+- bun test for unit testing
 - Vue Test Utils for component testing
 - playwright for E2E testing
 - Test files must be named `*.spec.ts`
@@ -89,11 +85,9 @@ Core dependencies:
 
 Environment variables are defined in:
 
-- `.env` for default values
-- `.env.development` for development
-- `.env.production` for production
+- `.dev.vars.all` for default values
 
-Reference `.env.example` for required variables.
+Reference `.dev.vars.all.template` for required variables.
 
 ### Component Guidelines
 
