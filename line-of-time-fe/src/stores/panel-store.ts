@@ -45,7 +45,10 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
     eventMap,
     addEvent(name: string) {
       const evt = eventMap.value.get(name)
-      if (!evt) return
+      if (!evt) {
+        return
+      }
+
       if (!events.value.find((e) => e.name === name)) {
         events.value = [...events.value, evt]
       }
@@ -87,9 +90,11 @@ export const usePanelStore = defineStore('panel-store', () => {
   const addLensPanel = () => {
     const currentStructures = structures.value
     const newIndex = currentStructures.length
-    const newLens = makeLensStore(newIndex, firstLens)
+    const lastLens =
+      [...currentStructures].reverse().find((s): s is LensStore => s.type === 'lens') ?? firstLens
+    const newLens = makeLensStore(newIndex, lastLens)
 
-    const parentEvents = firstLens.events.value
+    const parentEvents = lastLens.events.value
     newLens.eventMap.value = new Map(parentEvents.map((e) => [e.name, e]))
 
     const newTimeline = makeTimelineStore(newIndex + 1, newLens)

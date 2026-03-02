@@ -253,10 +253,3 @@ test('year-only and year-month inputs default missing values on apply', async ({
   await expect(page.getByTestId('filter-max-day')).toHaveValue('1')
 })
 
-test('filter controls do not appear when not signed in', async ({ page }) => {
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForTimeout(500)
-
-  const filterControls = page.getByTestId('filter-controls')
-  await expect(filterControls).not.toBeVisible()
-})

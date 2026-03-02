@@ -1,31 +1,28 @@
-# Plan: Lens/Timeline Layout + Max-Date Behavior
+# Plan: Timeline Visibility + Lens Inheritance Fix
 
 ## Assumptions
 
 - No database schema changes are needed.
-- "Lens creation" means clicking the Timeline panel's add-lens action.
-- Existing Playwright tests will be updated/extended for coverage.
+- "Timeline display" and "filter controls" should be visible to all users (signed in or not).
+- Only the "Add a new event" button should be gated by sign-in status.
+- When creating a new lens from a parent lens, the child lens should only show events selected in the parent lens (not all events).
 
 ## Answer
 
-Update panel behavior so adding a Lens also creates a following Timeline, make Lens width one-quarter of the screen and remove its add-timeline "+" action, render min/max controls in a CSS grid with label/input spacing, and hide death/end rows beyond the current max date.
+1. Remove tests asserting filter controls are hidden for non-signed-in users (those tests are wrong per the new requirement).
+2. If `TimelineDisplay.vue` or `HomeView.vue` hide filter controls based on sign-in, remove that gate.
+3. Fix `panel-store.ts` `addLensPanel()` so new lens uses the last lens's selected events as its available events (not `firstLens`).
+4. Run all tests and document failures in `Notes/Failed-Tests.md`.
 
 ## Plan
 
-1. Add/adjust E2E coverage first (Red) for:
-   - Lens has no add-timeline button.
-   - Adding a lens creates both a Lens and a trailing Timeline.
-2. Update panel store logic so `addLensPanel()` appends Lens + Timeline in order.
-3. Update `LensDisplay.vue`:
-   - width to 1/4 screen.
-   - remove add-timeline "+" button UI.
-4. Update `TimelineDisplay.vue` filter controls into a grid layout and add explicit label/input spacing.
-5. Ensure timeline end/death rows are not rendered when end timestamp is greater than applied max filter.
-6. Run Red/Green iteration for affected tests, then run all tests in `e2e-tests` and `tests`.
+1. Remove sign-in-gated filter-control tests from:
+   - `e2e-tests/general/10-timeline-filter.spec.ts` (test: 'filter controls do not appear when not signed in')
+   - `e2e-tests/general/11-public-events.spec.ts` (test: 'filter controls not visible to non-signed-in users')
+2. Fix `panel-store.ts`: In `addLensPanel()`, use the last lens in the structures as the parent lens, and populate the new lens's `eventMap` from that parent's selected `events` (not `firstLens.events`).
+3. Run all tests and write `Notes/Failed-Tests.md`.
 
 ## Pitfalls
 
-- Removing lens "+" action can break any legacy test IDs/selectors.
-- Adding two panels from one action can affect ordering assumptions.
-- Filtering death/end rows only in UI must match expected max-date semantics.
-- CSS refactor can accidentally reduce mobile usability if grid is not responsive.
+- Tests in `10-timeline-filter.spec.ts` asserting filter controls ARE visible (signed-in) should remain.
+- The `panels.spec.ts` in `line-of-time-fe/e2e-tests/` has an outdated test expecting `add-timeline-panel-action` on the lens — that test needs updating too.

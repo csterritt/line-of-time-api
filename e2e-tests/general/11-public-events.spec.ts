@@ -37,14 +37,6 @@ test('timeline years visible to non-signed-in users', async ({ page }) => {
   expect(listText).toContain('1776')
 })
 
-test('filter controls not visible to non-signed-in users', async ({ page }) => {
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForTimeout(500)
-
-  const filterControls = page.getByTestId('filter-controls')
-  await expect(filterControls).not.toBeVisible()
-})
-
 test('add-event button not visible to non-signed-in users', async ({ page }) => {
   await page.goto(`${BASE_URLS.HOME}/ui/`)
   await page.waitForTimeout(500)
