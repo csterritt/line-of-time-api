@@ -10,8 +10,9 @@ const userInfo = useUserInfoStore()
 const eventStore = useEventStore()
 const panelStore = usePanelStore()
 
-onMounted(() => {
-  eventStore.initializeEvents()
+onMounted(async () => {
+  await eventStore.loadAllEvents()
+  panelStore.setAllEvents(eventStore.allEvents)
 })
 </script>
 
@@ -21,7 +22,7 @@ onMounted(() => {
       <div class="card-body py-4">
         <div class="flex justify-between items-center">
           <h2 class="card-title text-2xl">Home</h2>
-          
+
           <div>
             <p v-if="userInfo.isSignedIn" data-testid="welcome-message">Welcome {{ userInfo.name }}</p>
             <p v-else data-testid="sign-in-prompt">Sign in for more options</p>
@@ -60,14 +61,14 @@ onMounted(() => {
     <!-- Horizontal scrolling panel container -->
     <div class="flex-grow overflow-x-auto overflow-y-hidden">
       <div class="flex flex-row gap-8 items-start h-full pb-4 px-2 min-w-max">
-        <template v-for="(panel, index) in panelStore.displayList" :key="index">
-          <TimelineDisplay 
-            v-if="panel.type === 'timeline'" 
-            :panel="panel" 
+        <template v-for="(structure, index) in panelStore.structures" :key="index">
+          <TimelineDisplay
+            v-if="structure.type === 'timeline'"
+            :store="structure"
           />
-          <LensDisplay 
-            v-else-if="panel.type === 'lens'" 
-            :panel="panel" 
+          <LensDisplay
+            v-else-if="structure.type === 'lens' && structure.index > 0"
+            :store="structure"
           />
         </template>
       </div>

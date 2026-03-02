@@ -1,33 +1,29 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-import { type LensPanel } from '@/stores/panel-store'
-import { useEventStore } from '@/stores/event-store'
+import { type LensStore } from '@/stores/panel-store'
 
 const props = defineProps<{
-  panel: LensPanel
+  store: LensStore
 }>()
-
-const eventStore = useEventStore()
 
 const newEventName = ref('')
 
 const availableEvents = computed(() => {
-  return eventStore.events.filter((e) => !props.panel.eventNames.includes(e.name))
+  return Array.from(props.store.eventMap.value.keys()).filter(
+    (name) => !props.store.events.value.find((e) => e.name === name),
+  )
 })
 
 const addEvent = () => {
-  if (newEventName.value && !props.panel.eventNames.includes(newEventName.value)) {
-    props.panel.eventNames.push(newEventName.value)
+  if (newEventName.value) {
+    props.store.addEvent(newEventName.value)
     newEventName.value = ''
   }
 }
 
 const removeEvent = (name: string) => {
-  const index = props.panel.eventNames.indexOf(name)
-  if (index > -1) {
-    props.panel.eventNames.splice(index, 1)
-  }
+  props.store.removeEvent(name)
 }
 </script>
 
@@ -39,15 +35,15 @@ const removeEvent = (name: string) => {
 
         <ul class="list-none p-0 m-0 mb-4" data-testid="lens-event-list">
           <li
-            v-for="name in panel.eventNames"
-            :key="name"
+            v-for="evt in store.events.value"
+            :key="evt.name"
             class="flex justify-between items-center mb-2 p-2 bg-base-200 rounded"
             data-testid="lens-event-item"
           >
-            <span>{{ name }}</span>
+            <span>{{ evt.name }}</span>
             <button
               class="btn btn-sm btn-ghost btn-circle text-error"
-              @click="removeEvent(name)"
+              @click="removeEvent(evt.name)"
               title="Remove Event"
               data-testid="remove-event-action"
             >
@@ -68,7 +64,7 @@ const removeEvent = (name: string) => {
               @keyup.enter="addEvent"
             />
             <datalist id="available-events">
-              <option v-for="evt in availableEvents" :key="evt.id" :value="evt.name" />
+              <option v-for="name in availableEvents" :key="name" :value="name" />
             </datalist>
             <button
               class="btn btn-primary"

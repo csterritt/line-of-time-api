@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 
 import type { EventResponse } from '@/stores/event-store'
-import { usePanelStore, type TimelinePanel } from '@/stores/panel-store'
+import { usePanelStore, type TimelineStore } from '@/stores/panel-store'
 import {
   dateInputToTimestamp,
   timestampToDateInput,
@@ -12,17 +12,10 @@ import {
 } from '@/utils/timestamp'
 
 const props = defineProps<{
-  panel: TimelinePanel
+  store: TimelineStore
 }>()
 
 const panelStore = usePanelStore()
-
-const PANEL_DEFAULT_MIN = -99999999999
-const PANEL_DEFAULT_MAX = 99999999999
-
-const localEvents = ref<EventResponse[]>([])
-const originalStart = ref(props.panel.startTimestamp)
-const originalEnd = ref(props.panel.endTimestamp)
 
 type FilterInputs = {
   year: string
@@ -32,11 +25,7 @@ type FilterInputs = {
 
 const timestampToFilterInputs = (timestamp: number): FilterInputs => {
   const [year = '', month = '', day = ''] = timestampToDateInput(timestamp).split('-')
-  return {
-    year,
-    month,
-    day,
-  }
+  return { year, month, day }
 }
 
 const parsePositiveInteger = (value: string): number | null => {
@@ -51,7 +40,7 @@ const parsePositiveInteger = (value: string): number | null => {
 }
 
 const toTimestampWithDefaults = (
-  inputs: FilterInputs
+  inputs: FilterInputs,
 ): { timestamp: number; normalized: FilterInputs } | null => {
   const year = parsePositiveInteger(inputs.year)
   if (year == null) {
@@ -82,13 +71,8 @@ const toTimestampWithDefaults = (
   }
 }
 
-const filterStartInputs = ref<FilterInputs>(timestampToFilterInputs(props.panel.startTimestamp))
-const filterEndInputs = ref<FilterInputs>(timestampToFilterInputs(props.panel.endTimestamp))
-const appliedStart = ref(props.panel.startTimestamp)
-const appliedEnd = ref(props.panel.endTimestamp)
-
 const computeEventMinMax = (
-  events: EventResponse[]
+  events: EventResponse[],
 ): { minTimestamp: number | null; maxTimestamp: number | null } => {
   if (events.length === 0) {
     return { minTimestamp: null, maxTimestamp: null }
@@ -110,80 +94,39 @@ const computeEventMinMax = (
   return { minTimestamp, maxTimestamp }
 }
 
-const fetchEventsForPanel = async () => {
-  const s = appliedStart.value
-  const e = appliedEnd.value
-  try {
-    const response = await fetch(`/time-info/events/${s}/${e}`)
-    if (response.ok) {
-      localEvents.value = (await response.json()) as EventResponse[]
-    } else {
-      localEvents.value = []
-    }
-  } catch {
-    localEvents.value = []
-  }
-}
+const parentEvents = computed(() => props.store.parentLens.events.value)
 
-const initializeFilterBounds = async () => {
-  const panelUsesDefaultBounds =
-    props.panel.startTimestamp === PANEL_DEFAULT_MIN &&
-    props.panel.endTimestamp === PANEL_DEFAULT_MAX
+const originalStart = ref(props.store.startTimestamp.value)
+const originalEnd = ref(props.store.endTimestamp.value)
+const filterStartInputs = ref<FilterInputs>(timestampToFilterInputs(props.store.startTimestamp.value))
+const filterEndInputs = ref<FilterInputs>(timestampToFilterInputs(props.store.endTimestamp.value))
+const appliedStart = ref(props.store.startTimestamp.value)
+const appliedEnd = ref(props.store.endTimestamp.value)
 
-  if (!panelUsesDefaultBounds) {
-    await fetchEventsForPanel()
+const initializeFilterBounds = () => {
+  const events = parentEvents.value
+  if (events.length === 0) {
     return
   }
-
-  try {
-    const response = await fetch(`/time-info/events/${PANEL_DEFAULT_MIN}/${PANEL_DEFAULT_MAX}`)
-    if (!response.ok) {
-      await fetchEventsForPanel()
-      return
-    }
-
-    const allEvents = (await response.json()) as EventResponse[]
-    const { minTimestamp, maxTimestamp } = computeEventMinMax(allEvents)
-
-    if (minTimestamp == null || maxTimestamp == null) {
-      await fetchEventsForPanel()
-      return
-    }
-
-    originalStart.value = minTimestamp
-    originalEnd.value = maxTimestamp
-    appliedStart.value = minTimestamp
-    appliedEnd.value = maxTimestamp
-    filterStartInputs.value = timestampToFilterInputs(minTimestamp)
-    filterEndInputs.value = timestampToFilterInputs(maxTimestamp)
-    await fetchEventsForPanel()
-  } catch {
-    await fetchEventsForPanel()
+  const { minTimestamp, maxTimestamp } = computeEventMinMax(events)
+  if (minTimestamp == null || maxTimestamp == null) {
+    return
   }
+  originalStart.value = minTimestamp
+  originalEnd.value = maxTimestamp
+  appliedStart.value = minTimestamp
+  appliedEnd.value = maxTimestamp
+  filterStartInputs.value = timestampToFilterInputs(minTimestamp)
+  filterEndInputs.value = timestampToFilterInputs(maxTimestamp)
 }
 
 onMounted(() => {
   initializeFilterBounds()
 })
 
-watch(() => props.panel, fetchEventsForPanel, { deep: true })
-
-watch(
-  () => [props.panel.startTimestamp, props.panel.endTimestamp],
-  ([nextStart, nextEnd]) => {
-    if (nextStart === PANEL_DEFAULT_MIN && nextEnd === PANEL_DEFAULT_MAX) {
-      return
-    }
-
-    originalStart.value = nextStart
-    originalEnd.value = nextEnd
-    appliedStart.value = nextStart
-    appliedEnd.value = nextEnd
-    filterStartInputs.value = timestampToFilterInputs(nextStart)
-    filterEndInputs.value = timestampToFilterInputs(nextEnd)
-    fetchEventsForPanel()
-  }
-)
+watch(parentEvents, () => {
+  initializeFilterBounds()
+})
 
 const rangeIsMoreThanOneYear = computed(() => {
   return appliedEnd.value - appliedStart.value > DAYS_PER_YEAR
@@ -196,7 +139,7 @@ const applyMinFilter = () => {
   }
   appliedStart.value = parsed.timestamp
   filterStartInputs.value = parsed.normalized
-  fetchEventsForPanel()
+  props.store.startTimestamp.value = parsed.timestamp
 }
 
 const applyMaxFilter = () => {
@@ -206,19 +149,19 @@ const applyMaxFilter = () => {
   }
   appliedEnd.value = parsed.timestamp
   filterEndInputs.value = parsed.normalized
-  fetchEventsForPanel()
+  props.store.endTimestamp.value = parsed.timestamp
 }
 
 const resetMin = () => {
   appliedStart.value = originalStart.value
   filterStartInputs.value = timestampToFilterInputs(originalStart.value)
-  fetchEventsForPanel()
+  props.store.startTimestamp.value = originalStart.value
 }
 
 const resetMax = () => {
   appliedEnd.value = originalEnd.value
   filterEndInputs.value = timestampToFilterInputs(originalEnd.value)
-  fetchEventsForPanel()
+  props.store.endTimestamp.value = originalEnd.value
 }
 
 const formatEventDate = (timestamp: number): string => {
@@ -239,10 +182,17 @@ type TimelineRow = TimelineEntry & {
   isFirstInGroup: boolean
 }
 
+const filteredEvents = computed(() => {
+  return parentEvents.value.filter(
+    (evt) =>
+      evt.startTimestamp >= appliedStart.value && evt.startTimestamp <= appliedEnd.value,
+  )
+})
+
 const timelineRows = computed((): TimelineRow[] => {
   const entries: TimelineEntry[] = []
 
-  for (const evt of localEvents.value) {
+  for (const evt of filteredEvents.value) {
     entries.push({
       timestamp: evt.startTimestamp,
       dateLabel: formatEventDate(evt.startTimestamp),

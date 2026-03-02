@@ -1,51 +1,106 @@
-import { ref } from 'vue'
+import { ref, shallowRef, markRaw, type Ref } from 'vue'
 import { defineStore } from 'pinia'
+import { dateInputToTimestamp } from '../utils/timestamp'
+import type { EventResponse } from '../stores/event-store'
 
-export type TimelinePanel = {
-  type: 'timeline'
-  startTimestamp: number
-  endTimestamp: number
-}
-
-export type LensPanel = {
+export type LensStore = {
   type: 'lens'
-  eventNames: string[]
+  index: number
+  parentLens: LensStore | null
+  childTimeline: TimelineStore | null
+  events: Ref<EventResponse[]>
+  eventMap: Ref<Map<string, EventResponse>>
+  addEvent: (name: string) => void
+  removeEvent: (name: string) => void
 }
 
-export type Panel = TimelinePanel | LensPanel
+export type TimelineStore = {
+  type: 'timeline'
+  index: number
+  parentLens: LensStore
+  startTimestamp: Ref<number>
+  endTimestamp: Ref<number>
+}
+
+type Structure = LensStore | TimelineStore
+
+const todayTimestamp = (): number => {
+  const now = new Date()
+  const yyyy = now.getFullYear().toString().padStart(4, '0')
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  return dateInputToTimestamp(`${yyyy}-${mm}-${dd}`)
+}
+
+const makeLensStore = (index: number, parentLens: LensStore | null): LensStore => {
+  const events = ref<EventResponse[]>([])
+  const eventMap = ref<Map<string, EventResponse>>(new Map())
+
+  const store: LensStore = markRaw({
+    type: 'lens',
+    index,
+    parentLens,
+    childTimeline: null,
+    events,
+    eventMap,
+    addEvent(name: string) {
+      const evt = eventMap.value.get(name)
+      if (!evt) return
+      if (!events.value.find((e) => e.name === name)) {
+        events.value = [...events.value, evt]
+      }
+    },
+    removeEvent(name: string) {
+      events.value = events.value.filter((e) => e.name !== name)
+    },
+  })
+
+  return store
+}
+
+const makeTimelineStore = (index: number, parentLens: LensStore): TimelineStore => {
+  const isFirst = index === 1
+  const startTimestamp = ref(isFirst ? -99999999999 : todayTimestamp())
+  const endTimestamp = ref(isFirst ? 99999999999 : todayTimestamp())
+
+  return markRaw({
+    type: 'timeline',
+    index,
+    parentLens,
+    startTimestamp,
+    endTimestamp,
+  })
+}
 
 export const usePanelStore = defineStore('panel-store', () => {
-  const displayList = ref<Panel[]>([
-    {
-      type: 'timeline',
-      startTimestamp: -99999999999,
-      endTimestamp: 99999999999,
-    },
-  ])
+  const firstLens = makeLensStore(0, null)
+  const firstTimeline = makeTimelineStore(1, firstLens)
+  firstLens.childTimeline = firstTimeline
 
-  const addTimelinePanel = () => {
-    displayList.value.push({
-      type: 'timeline',
-      startTimestamp: -99999999999,
-      endTimestamp: 99999999999,
-    })
+  const structures = shallowRef<Structure[]>([firstLens, firstTimeline])
+
+  const setAllEvents = (allEvents: EventResponse[]) => {
+    firstLens.events.value = allEvents
+    firstLens.eventMap.value = new Map(allEvents.map((e) => [e.name, e]))
   }
 
   const addLensPanel = () => {
-    displayList.value.push({
-      type: 'lens',
-      eventNames: [],
-    })
-    displayList.value.push({
-      type: 'timeline',
-      startTimestamp: -99999999999,
-      endTimestamp: 99999999999,
-    })
+    const currentStructures = structures.value
+    const newIndex = currentStructures.length
+    const newLens = makeLensStore(newIndex, firstLens)
+
+    const parentEvents = firstLens.events.value
+    newLens.eventMap.value = new Map(parentEvents.map((e) => [e.name, e]))
+
+    const newTimeline = makeTimelineStore(newIndex + 1, newLens)
+    newLens.childTimeline = newTimeline
+
+    structures.value = [...currentStructures, newLens, newTimeline]
   }
 
   return {
-    displayList,
-    addTimelinePanel,
+    structures,
+    setAllEvents,
     addLensPanel,
   }
 })
