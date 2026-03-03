@@ -10,6 +10,7 @@ export type LensStore = {
   childTimeline: TimelineStore | null
   events: Ref<EventResponse[]>
   eventMap: Ref<Map<string, EventResponse>>
+  nameList: Ref<string[]>
   addEvent: (name: string) => void
   removeEvent: (name: string) => void
 }
@@ -35,6 +36,13 @@ const todayTimestamp = (): number => {
 const makeLensStore = (index: number, parentLens: LensStore | null): LensStore => {
   const events = ref<EventResponse[]>([])
   const eventMap = ref<Map<string, EventResponse>>(new Map())
+  const nameList = ref<string[]>([])
+
+  if (parentLens != null) {
+    const parentEvents = parentLens.events.value
+    nameList.value = parentEvents.map((e) => e.name) ?? []
+    eventMap.value = new Map(parentEvents.map((e) => [e.name, e]))
+  }
 
   const store: LensStore = markRaw({
     type: 'lens',
@@ -43,6 +51,7 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
     childTimeline: null,
     events,
     eventMap,
+    nameList,
     addEvent(name: string) {
       const evt = eventMap.value.get(name)
       if (!evt) {
@@ -52,9 +61,11 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
       if (!events.value.find((e) => e.name === name)) {
         events.value = [...events.value, evt]
       }
+      nameList.value = nameList.value.filter((n) => n !== name)
     },
     removeEvent(name: string) {
       events.value = events.value.filter((e) => e.name !== name)
+      nameList.value = nameList.value.filter((n) => n !== name)
     },
   })
 
@@ -93,9 +104,6 @@ export const usePanelStore = defineStore('panel-store', () => {
     const lastLens =
       [...currentStructures].reverse().find((s): s is LensStore => s.type === 'lens') ?? firstLens
     const newLens = makeLensStore(newIndex, lastLens)
-
-    const parentEvents = lastLens.events.value
-    newLens.eventMap.value = new Map(parentEvents.map((e) => [e.name, e]))
 
     const newTimeline = makeTimelineStore(newIndex + 1, newLens)
     newLens.childTimeline = newTimeline

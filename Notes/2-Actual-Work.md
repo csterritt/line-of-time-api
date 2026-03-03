@@ -1,12 +1,10 @@
-First of all, please remove any tests that show that the Timeline display grid is only visible when
-a user is signed in. The only control that should only be visible when a user is signed in is the
-"Add a new event" button. The rest of the Timeline and Lens display should be visible whether or
-not a user is signed in.
+Please change the implementation of the panel-store.ts file to work in the following way.
 
-Second, the behavior of the Lenses is wrong. The first lens should consider every event selected.
-Assume that the first lens has events A, B, C, D, E, and F.
-Then, if user uses the second lens to select events B, C, and D, and then creates a third lens,
-the third lens should only show events B, C, and D. It should not show A, E, or F.
-
-Finally, give a concise description of what the problem is for each test that is failing.
-Write this to the file "Notes/Failed-Tests.md".
+1. There should be a 'nameList' variable in each LensStore that is an array of strings.
+2. The 'nameList' should be built from the parent lens's events.
+3. The 'nameList' should be updated when the parent lens's events are updated.
+4. The 'events' should start out empty for all LensStores past the first.
+5. The 'events' should be updated when the user adds an event to the lens.
+6. The 'events' should be updated when the user removes an event from the lens.
+7. The 'nameList' should be used instead of the computed 'availableEvents' in the
+    LensDisplay.vue file.

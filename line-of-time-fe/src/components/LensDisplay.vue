@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 import { type LensStore } from '@/stores/panel-store'
 
@@ -8,12 +8,6 @@ const props = defineProps<{
 }>()
 
 const newEventName = ref('')
-
-const availableEvents = computed(() => {
-  return Array.from(props.store.eventMap.value.keys()).filter(
-    (name) => !props.store.events.value.find((e) => e.name === name),
-  )
-})
 
 const addEvent = () => {
   if (newEventName.value) {
@@ -57,14 +51,14 @@ const removeEvent = (name: string) => {
             <input
               v-model="newEventName"
               type="text"
-              list="available-events"
+              :list="'available-events-' + props.store.index"
               placeholder="Add event..."
               class="input input-bordered w-full"
               data-testid="lens-event-input"
               @keyup.enter="addEvent"
             />
-            <datalist id="available-events">
-              <option v-for="name in availableEvents" :key="name" :value="name" />
+            <datalist :id="'available-events-' + props.store.index">
+              <option v-for="name in props.store.nameList.value" :key="name" :value="name" />
             </datalist>
             <button
               class="btn btn-primary"

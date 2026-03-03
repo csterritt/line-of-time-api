@@ -255,6 +255,86 @@ describe('LensStore addEvent and removeEvent', () => {
   })
 })
 
+describe('LensStore nameList', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('first LensStore starts with empty nameList', () => {
+    const store = usePanelStore()
+    const lens = store.structures[0]!
+    expect(lens.type).toBe('lens')
+    if (lens.type === 'lens') {
+      expect(lens.nameList.value).toEqual([])
+    }
+  })
+
+  it('first LensStore nameList contains all event names after setAllEvents', () => {
+    const store = usePanelStore()
+    const events = [makeEvent('Battle of Hastings', 100), makeEvent('Moon Landing', 200)]
+    store.setAllEvents(events)
+    const lens = store.structures[0]!
+    expect(lens.type).toBe('lens')
+    if (lens.type === 'lens') {
+      expect(lens.nameList.value).toEqual(['Battle of Hastings', 'Moon Landing'])
+    }
+  })
+
+  it('new LensStore nameList is built from parent events', () => {
+    const store = usePanelStore()
+    const events = [makeEvent('Battle of Hastings', 100), makeEvent('Moon Landing', 200)]
+    store.setAllEvents(events)
+    store.addLensPanel()
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      expect(newLens.nameList.value).toEqual(['Battle of Hastings', 'Moon Landing'])
+    }
+  })
+
+  it('nameList removes event name when addEvent is called', () => {
+    const store = usePanelStore()
+    const events = [makeEvent('Battle of Hastings', 100), makeEvent('Moon Landing', 200)]
+    store.setAllEvents(events)
+    store.addLensPanel()
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      newLens.addEvent('Battle of Hastings')
+      expect(newLens.nameList.value).toEqual(['Moon Landing'])
+    }
+  })
+
+  it('nameList adds event name back when removeEvent is called', () => {
+    const store = usePanelStore()
+    const events = [makeEvent('Battle of Hastings', 100), makeEvent('Moon Landing', 200)]
+    store.setAllEvents(events)
+    store.addLensPanel()
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      newLens.addEvent('Battle of Hastings')
+      newLens.removeEvent('Battle of Hastings')
+      expect(newLens.nameList.value).toEqual(['Battle of Hastings', 'Moon Landing'])
+    }
+  })
+
+  it('nameList updates when parent lens events change', () => {
+    const store = usePanelStore()
+    const events = [makeEvent('Battle of Hastings', 100), makeEvent('Moon Landing', 200)]
+    store.setAllEvents(events)
+    store.addLensPanel()
+    const firstLens = store.structures[0]!
+    const newLens = store.structures[2]!
+    expect(firstLens.type).toBe('lens')
+    expect(newLens.type).toBe('lens')
+    if (firstLens.type === 'lens' && newLens.type === 'lens') {
+      firstLens.addEvent('Battle of Hastings')
+      expect(newLens.nameList.value).toEqual(['Battle of Hastings', 'Moon Landing'])
+    }
+  })
+})
+
 describe('TimelineStore timestamps', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Vue.js Project - Project Guidelines
 
 ## Project Overview
@@ -85,9 +89,11 @@ Core dependencies:
 
 Environment variables are defined in:
 
-- `.dev.vars.all` for default values
+- `.env` for default values
+- `.env.development` for development
+- `.env.production` for production
 
-Reference `.dev.vars.all.template` for required variables.
+Reference `.env.example` for required variables.
 
 ### Component Guidelines
 
