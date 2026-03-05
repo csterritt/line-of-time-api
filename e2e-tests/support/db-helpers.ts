@@ -5,11 +5,74 @@
 const transientStatuses = new Set([502, 503, 504])
 const retryAttempts = 3
 const retryDelayMs = 500
+const eventCountPollAttempts = 10
+const eventCountPollDelayMs = 300
+const eventsApiUrl = 'http://localhost:3000/time-info/events/-99999999999/99999999999'
 
 const sleep = async (ms: number): Promise<void> => {
   await new Promise((resolve) => {
     setTimeout(resolve, ms)
   })
+}
+
+const waitForEventCount = async (expectedCount: number): Promise<void> => {
+  for (let attempt = 1; attempt <= eventCountPollAttempts; attempt++) {
+    const response = await fetchWithRetry(
+      'http://localhost:3000/test/database/event-count',
+      {
+        method: 'GET',
+      },
+      'waitForEventCount'
+    )
+
+    const result = (await response.json()) as {
+      success: boolean
+      count: number
+      error?: string
+    }
+
+    if (result.success && result.count === expectedCount) {
+      return
+    }
+
+    if (attempt === eventCountPollAttempts) {
+      throw new Error(
+        `Expected event count ${expectedCount}, received ${result.count}`
+      )
+    }
+
+    await sleep(eventCountPollDelayMs * attempt)
+  }
+}
+
+const waitForSeededEventsApi = async (expectedCount: number): Promise<void> => {
+  for (let attempt = 1; attempt <= eventCountPollAttempts; attempt++) {
+    const response = await fetchWithRetry(
+      eventsApiUrl,
+      {
+        method: 'GET',
+      },
+      'waitForSeededEventsApi'
+    )
+
+    const result = (await response.json()) as Array<{ id: string }>
+
+    if (
+      Array.isArray(result) &&
+      result.length === expectedCount &&
+      result.some((event) => event.id === 'test-event-1')
+    ) {
+      return
+    }
+
+    if (attempt === eventCountPollAttempts) {
+      throw new Error(
+        `Expected seeded events API to return ${expectedCount} events including test-event-1, received ${JSON.stringify(result)}`
+      )
+    }
+
+    await sleep(eventCountPollDelayMs * attempt)
+  }
 }
 
 const fetchWithRetry = async (
@@ -191,14 +254,11 @@ export const seedDatabase = async (): Promise<void> => {
  */
 export const clearEvents = async (): Promise<void> => {
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       'http://localhost:3000/test/database/clear-events',
-      { method: 'DELETE' }
+      { method: 'DELETE' },
+      'clearEvents'
     )
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
 
     const result = (await response.json()) as {
       success: boolean
@@ -221,17 +281,14 @@ export const clearEvents = async (): Promise<void> => {
  */
 export const seedEvents = async (): Promise<void> => {
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       'http://localhost:3000/test/database/seed-events',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-      }
+      },
+      'seedEvents'
     )
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
 
     const result = (await response.json()) as {
       success: boolean
@@ -242,6 +299,9 @@ export const seedEvents = async (): Promise<void> => {
     if (!result.success) {
       throw new Error(result.error || 'Failed to seed events')
     }
+
+    await waitForEventCount(result.eventsCreated ?? 4)
+    await waitForSeededEventsApi(result.eventsCreated ?? 4)
 
     console.log(`Events seeded successfully: ${result.eventsCreated} events`)
   } catch (error) {

@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 import {
   clearDatabase,
   seedDatabase,
-  clearEvents,
   seedEvents,
   setAiMock,
   resetAiMock,
@@ -24,9 +23,46 @@ test.beforeEach(async () => {
 
 test.afterEach(async () => {
   await resetAiMock()
-  await clearEvents()
   await clearDatabase()
 })
+
+const signInReadyTimeoutMs = 15000
+const wikipediaReadyTimeoutMs = 30000
+
+const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+  await page.waitForURL(/\/ui/)
+  await expect(page.getByTestId('sign-out-action')).toBeVisible({
+    timeout: signInReadyTimeoutMs,
+  })
+  await expect(page.getByTestId('welcome-message')).toBeVisible({
+    timeout: signInReadyTimeoutMs,
+  })
+}
+
+const signInAndOpenSearch = async (page: Parameters<typeof submitSignInForm>[0]) => {
+  await signInAndGoHome(page)
+  await page.goto(`${BASE_URLS.HOME}/ui/search`)
+  await page.waitForURL(/\/ui\/search/)
+  await expect(page.getByTestId('name-input')).toBeVisible({
+    timeout: signInReadyTimeoutMs,
+  })
+  await expect(page.getByTestId('name-input')).toBeEditable({
+    timeout: signInReadyTimeoutMs,
+  })
+}
+
+const waitForWikipediaNewEventPage = async (
+  page: Parameters<typeof submitSignInForm>[0]
+) => {
+  await page.waitForSelector('[data-testid="basic-description-input"]', {
+    timeout: wikipediaReadyTimeoutMs,
+  })
+  await page.waitForSelector('[data-testid="wiki-page"]', {
+    timeout: wikipediaReadyTimeoutMs,
+  })
+}
 
 test('"Add a new event" button not visible when not signed in', async ({
   page,
@@ -38,26 +74,14 @@ test('"Add a new event" button not visible when not signed in', async ({
 })
 
 test('"Add a new event" button visible when signed in', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-
-  await page.waitForSelector('[data-testid="welcome-message"]')
+  await signInAndGoHome(page)
   expect(await isElementVisible(page, 'add-event-action')).toBe(true)
 })
 
 test('clicking "Add a new event" navigates to search page with only name and search button', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="add-event-action"]')
-  await clickLink(page, 'add-event-action')
-
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
   expect(await isElementVisible(page, 'name-input')).toBe(true)
   expect(await isElementVisible(page, 'search-wikipedia-action')).toBe(true)
   expect(await isElementVisible(page, 'basic-description-input')).toBe(false)
@@ -69,18 +93,12 @@ test('clicking "Add a new event" navigates to search page with only name and sea
 test('searching Wikipedia for a known term redirects to new-event page with pre-filled fields', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 30000,
-  })
+  await waitForWikipediaNewEventPage(page)
   expect(page.url()).toContain('/ui/new-event')
   expect(await isElementVisible(page, 'basic-description-input')).toBe(true)
   expect(await isElementVisible(page, 'start-timestamp-input')).toBe(true)
@@ -116,18 +134,12 @@ test('searching Wikipedia for gibberish shows nothing found error on search page
 test('pressing Enter in name field triggers Wikipedia search', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await page.getByTestId('name-input').press('Enter')
 
-  await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 30000,
-  })
+  await waitForWikipediaNewEventPage(page)
   expect(page.url()).toContain('/ui/new-event')
   expect(await isElementVisible(page, 'basic-description-input')).toBe(true)
 })
@@ -135,18 +147,12 @@ test('pressing Enter in name field triggers Wikipedia search', async ({
 test('name is displayed as non-editable text and reference URL is read-only on new-event page', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 15000,
-  })
+  await waitForWikipediaNewEventPage(page)
   const nameDisplay = page.getByTestId('name-display')
   const refUrlInput = page.getByTestId('reference-url-input')
 
@@ -158,11 +164,7 @@ test('name is displayed as non-editable text and reference URL is read-only on n
 test('"Search again" button navigates back to search page with empty fields', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -182,18 +184,12 @@ test('"Search again" button navigates back to search page with empty fields', as
 test('Related Links section is scrollable and Wikipedia Page has no height restriction', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="wiki-page"]', {
-    timeout: 15000,
-  })
+  await waitForWikipediaNewEventPage(page)
 
   const linksOverflow = await page
     .getByTestId('wiki-links-list')
@@ -209,11 +205,7 @@ test('Related Links section is scrollable and Wikipedia Page has no height restr
 test('"Search again" button text says "Search again" not "Search Wikipedia"', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -228,11 +220,7 @@ test('"Search again" button text says "Search again" not "Search Wikipedia"', as
 test('related links in new-event page are clickable anchor tags', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -254,11 +242,7 @@ test('clicking a related link searches and navigates to new-event page', async (
 }) => {
   test.slow()
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -283,18 +267,12 @@ test('clicking a related link searches and navigates to new-event page', async (
 })
 
 test('Wikipedia Page section contains HTML content', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="wiki-page"]', {
-    timeout: 15000,
-  })
+  await waitForWikipediaNewEventPage(page)
 
   const wikiContent = page.getByTestId('wiki-page').locator('.wiki-content')
   const innerHTML = await wikiContent.innerHTML()
@@ -305,18 +283,12 @@ test('Wikipedia Page section contains HTML content', async ({ page }) => {
 test('Related Links section appears before Wikipedia Page section', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="wiki-page"]', {
-    timeout: 15000,
-  })
+  await waitForWikipediaNewEventPage(page)
 
   const linksTop = await page
     .getByTestId('wiki-links-list')
@@ -330,11 +302,7 @@ test('Related Links section appears before Wikipedia Page section', async ({
 test('successfully creating an event redirects to home with success message and event in list', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -366,13 +334,15 @@ test('creating event without signing in shows error', async ({ page }) => {
   await clickLink(page, 'search-wikipedia-action')
 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
-    timeout: 15000,
+    timeout: 30000,
   })
   await fillInput(page, 'start-timestamp-input', '2026-06-15')
 
   await clickLink(page, 'create-event-action')
 
-  await page.waitForSelector('[data-testid="error-message"]')
+  await page.waitForSelector('[data-testid="error-message"]', {
+    timeout: 15000,
+  })
   expect(await isElementVisible(page, 'error-message')).toBe(true)
 })
 
@@ -381,8 +351,7 @@ test('navigating directly to /ui/new-event without search redirects to search pa
 }) => {
   test.slow()
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+  await signInAndGoHome(page)
 
   await page.goto(`${BASE_URLS.HOME}/ui/new-event`)
   await page.waitForSelector('[data-testid="name-input"]')
@@ -392,10 +361,7 @@ test('navigating directly to /ui/new-event without search redirects to search pa
 test('event list shows seeded events when signed in', async ({ page }) => {
   await seedEvents()
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
+  await signInAndGoHome(page)
   await page.waitForSelector('[data-testid="event-list"]')
   expect(await isElementVisible(page, 'event-list')).toBe(true)
 
@@ -414,10 +380,7 @@ test('event list shown to non-signed-in users', async ({ page }) => {
 test('shows "No events yet" when signed in with no events', async ({
   page,
 }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
+  await signInAndGoHome(page)
   await page.waitForSelector('[data-testid="no-events-message"]')
   expect(await getElementText(page, 'no-events-message')).toContain(
     'No events yet'
@@ -433,11 +396,7 @@ test('person categorization displays type and prefills birth/death dates', async
     'death-date': '1799-12-14',
   })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'George Washington')
   await clickLink(page, 'search-wikipedia-action')
@@ -463,11 +422,7 @@ test('person categorization without death date leaves end date empty', async ({
     'birth-date': '1946-08-19',
   })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Bill Clinton')
   await clickLink(page, 'search-wikipedia-action')
@@ -491,11 +446,7 @@ test('one-time-event categorization prefills start date only', async ({
     'start-date': '1969-07-20',
   })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Moon landing')
   await clickLink(page, 'search-wikipedia-action')
@@ -520,11 +471,7 @@ test('bounded-event categorization prefills start and end dates', async ({
     'end-date': '1748-10-18',
   })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -545,11 +492,7 @@ test('bounded-event categorization prefills start and end dates', async ({
 test('other categorization leaves dates empty', async ({ page }) => {
   await setAiMock({ type: 'other' })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -568,11 +511,7 @@ test('redirect categorization auto-navigates to first link search', async ({
 }) => {
   await setAiMock({ type: 'redirect' })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
@@ -600,11 +539,7 @@ test('type display shows categorization type next to name', async ({
     'death-date': '1799-12-14',
   })
 
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/search`)
-  await page.waitForSelector('[data-testid="name-input"]')
+  await signInAndOpenSearch(page)
 
   await fillInput(page, 'name-input', 'George Washington')
   await clickLink(page, 'search-wikipedia-action')

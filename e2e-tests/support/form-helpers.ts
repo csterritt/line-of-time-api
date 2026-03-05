@@ -32,10 +32,18 @@ export const submitSignUpForm = async (
   page: Page,
   user: UserCredentials = TEST_USERS.NEW_USER
 ) => {
+  const signUpResponsePromise = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      response.url().includes('/auth/sign-up')
+    )
+  })
+
   await fillInput(page, 'signup-name-input', user.name)
   await fillInput(page, 'signup-email-input', user.email)
   await fillInput(page, 'signup-password-input', user.password)
-  await clickLink(page, 'signup-action')
+  await Promise.all([signUpResponsePromise, clickLink(page, 'signup-action')])
+  await page.waitForLoadState('networkidle')
 }
 
 /**
@@ -45,11 +53,22 @@ export const submitGatedSignUpForm = async (
   page: Page,
   data: GatedSignUpData
 ) => {
+  const gatedSignUpResponsePromise = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      response.url().includes('/auth/sign-up')
+    )
+  })
+
   await fillInput(page, 'gated-signup-code-input', data.code)
   await fillInput(page, 'gated-signup-name-input', data.name)
   await fillInput(page, 'gated-signup-email-input', data.email)
   await fillInput(page, 'gated-signup-password-input', data.password)
-  await clickLink(page, 'gated-signup-action')
+  await Promise.all([
+    gatedSignUpResponsePromise,
+    clickLink(page, 'gated-signup-action'),
+  ])
+  await page.waitForLoadState('networkidle')
 }
 
 /**
@@ -59,9 +78,17 @@ export const submitSignInForm = async (
   page: Page,
   user: SignInData = TEST_USERS.KNOWN_USER
 ) => {
+  const signInResponsePromise = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/auth/sign-in/email')
+    )
+  })
+
   await fillInput(page, 'email-input', user.email)
   await fillInput(page, 'password-input', user.password)
-  await clickLink(page, 'submit')
+  await Promise.all([signInResponsePromise, clickLink(page, 'submit')])
+  await page.waitForLoadState('networkidle')
 }
 
 /**
@@ -82,8 +109,19 @@ export const submitForgotPasswordForm = async (
   page: Page,
   email: string = TEST_USERS.KNOWN_USER.email
 ) => {
+  const forgotPasswordResponsePromise = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      response.url().includes('/auth/forgot-password')
+    )
+  })
+
   await fillInput(page, 'forgot-email-input', email)
-  await clickLink(page, 'forgot-password-action')
+  await Promise.all([
+    forgotPasswordResponsePromise,
+    clickLink(page, 'forgot-password-action'),
+  ])
+  await page.waitForLoadState('networkidle')
 }
 
 /**

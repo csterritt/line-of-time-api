@@ -2,11 +2,9 @@ import { expect, test } from '@playwright/test'
 import {
   clearDatabase,
   seedDatabase,
-  clearEvents,
   seedEvents,
 } from '../support/db-helpers'
-import { submitSignInForm } from '../support/form-helpers'
-import { BASE_URLS, TEST_USERS } from '../support/test-data'
+import { signInAndWaitForSeededTimeline } from '../support/workflow-helpers'
 
 test.beforeEach(async () => {
   await clearDatabase()
@@ -15,16 +13,53 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await clearEvents()
   await clearDatabase()
 })
 
-test('date labels show in yyyy format when range is more than 1 year', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+const expectedTimelineBounds = {
+  minYear: '1732',
+  minMonth: '01',
+  minDay: '01',
+  maxYear: '1969',
+  maxMonth: '07',
+  maxDay: '20',
+}
 
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+const signInReadyTimeoutMs = 30000
+
+const signInAndGoHome = async (page: Parameters<typeof signInAndWaitForSeededTimeline>[0]) => {
+  await signInAndWaitForSeededTimeline(page)
+  await expect(page.getByTestId('filter-min-year')).toHaveValue(
+    expectedTimelineBounds.minYear,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-min-month')).toHaveValue(
+    expectedTimelineBounds.minMonth,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-min-day')).toHaveValue(
+    expectedTimelineBounds.minDay,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-year')).toHaveValue(
+    expectedTimelineBounds.maxYear,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-month')).toHaveValue(
+    expectedTimelineBounds.maxMonth,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-day')).toHaveValue(
+    expectedTimelineBounds.maxDay,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('event-list')).toBeVisible({
+    timeout: signInReadyTimeoutMs,
+  })
+}
+
+test('date labels show in yyyy format when range is more than 1 year', async ({ page }) => {
+  await signInAndGoHome(page)
 
   const dateCells = page.locator('[data-testid="timeline-date-cell"]').filter({ hasText: /\d/ })
   const count = await dateCells.count()
@@ -37,11 +72,7 @@ test('date labels show in yyyy format when range is more than 1 year', async ({ 
 })
 
 test('timeline shows correct years for seeded events', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const listText = await page.getByTestId('event-list').textContent()
   expect(listText).toContain('1969')
@@ -51,11 +82,7 @@ test('timeline shows correct years for seeded events', async ({ page }) => {
 })
 
 test('event with end timestamp shows "End of X" end row', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const endDescriptions = page.locator('[data-testid="event-end-description"]')
   const count = await endDescriptions.count()
@@ -67,22 +94,14 @@ test('event with end timestamp shows "End of X" end row', async ({ page }) => {
 })
 
 test('person event with end timestamp shows "Death of X" end row', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const listText = await page.getByTestId('event-list').textContent()
   expect(listText).toContain('Death of George Washington')
 })
 
 test('end descriptions are italicized', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const endDescriptions = page.locator('[data-testid="event-end-description"]')
   const count = await endDescriptions.count()
@@ -95,11 +114,7 @@ test('end descriptions are italicized', async ({ page }) => {
 })
 
 test('event name is bold', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const names = page.locator('[data-testid="event-name"]')
   const count = await names.count()
@@ -112,11 +127,7 @@ test('event name is bold', async ({ page }) => {
 })
 
 test('event description has truncate class and title attribute', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const descriptions = page.locator('[data-testid="event-description"]')
   const count = await descriptions.count()
@@ -135,11 +146,7 @@ test('event description has truncate class and title attribute', async ({ page }
 })
 
 test('vertical dividers exist for each timeline row', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const rows = page.locator('[data-testid="timeline-row"]')
   const rowCount = await rows.count()
@@ -150,22 +157,14 @@ test('vertical dividers exist for each timeline row', async ({ page }) => {
 })
 
 test('WWII event shows correct end year', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const listText = await page.getByTestId('event-list').textContent()
   expect(listText).toContain('1945')
 })
 
 test('date shown once when multiple events on same date', async ({ page }) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndGoHome(page)
 
   const dateCells = page.locator('[data-testid="timeline-date-cell"]').filter({ hasText: /\d/ })
   const allDates = await dateCells.allTextContents()

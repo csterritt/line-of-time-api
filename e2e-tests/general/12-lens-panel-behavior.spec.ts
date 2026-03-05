@@ -6,27 +6,23 @@ import {
   clearEvents,
   seedEvents,
 } from '../support/db-helpers'
-import { submitSignInForm } from '../support/form-helpers'
-import { BASE_URLS, TEST_USERS } from '../support/test-data'
+import { signInAndWaitForSeededTimeline } from '../support/workflow-helpers'
 
-test.beforeEach(async () => {
+test.beforeAll(async () => {
   await clearDatabase()
   await seedDatabase()
   await seedEvents()
 })
 
-test.afterEach(async () => {
+test.afterAll(async () => {
   await clearEvents()
   await clearDatabase()
 })
 
 const signInAndGoHome = async (
-  page: Parameters<typeof submitSignInForm>[0]
+  page: Parameters<typeof signInAndWaitForSeededTimeline>[0]
 ) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
+  await signInAndWaitForSeededTimeline(page)
 }
 
 test('adding a lens creates a trailing timeline panel', async ({ page }) => {

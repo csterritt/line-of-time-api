@@ -1,36 +1,18 @@
-# Plan: Add nameList to LensStore
-
 ## Assumptions
 
-- No database schema changes are needed.
-- `nameList` is derived from the parent lens's events (i.e. the events available to pick from, not the ones already selected).
-- For the first LensStore (no parent), `nameList` is built from `setAllEvents` data.
-- `nameList` replaces the computed `availableEvents` in `LensDisplay.vue`.
-
-## Answer
-
-Add a reactive `nameList: Ref<string[]>` to each `LensStore` that stays in sync with the parent lens's events minus the events already selected in this lens. Replace the computed `availableEvents` in `LensDisplay.vue` with `store.nameList.value`.
+- The current failures can be fixed without changing the database schema.
+- The root `e2e-tests` failures are flaky and may require repeated focused runs to reproduce reliably.
+- The behavior of the current application is correct, and the tests under `line-of-time-fe/e2e-tests` should be updated to match it.
 
 ## Plan
 
-1. **Red**: Add failing unit tests for `nameList` behavior:
-   - First lens `nameList` starts empty.
-   - After `setAllEvents`, first lens `nameList` contains all event names.
-   - New lens `nameList` is built from parent events.
-   - `nameList` updates when an event is added to the lens (removes from nameList).
-   - `nameList` updates when an event is removed from the lens (adds back to nameList).
-2. **Green**: Implement in `panel-store.ts`:
-   - Add `nameList: Ref<string[]>` to `LensStore` type.
-   - In `makeLensStore`, compute `nameList` reactively as parent events names minus current lens events.
-   - In `setAllEvents`, update first lens `nameList`.
-   - In `addLensPanel`, seed new lens `nameList` from parent's events.
-   - Keep `nameList` in sync via `addEvent`/`removeEvent`.
-3. **Refactor**: Update `LensDisplay.vue` to use `store.nameList.value` in the datalist instead of computed `availableEvents`.
-4. Run all unit tests (`bun test`).
-5. Run all e2e tests (`npx playwright test`).
+1. Reproduce the flaky root `e2e-tests` failures from `Notes/Failed-Tests.md` using focused Playwright runs and stop at the first live failure.
+2. Inspect the related app code, E2E specs, and `e2e-tests/support` helpers to identify and fix the underlying source of flakiness using Red/Green TDD.
+3. Review `line-of-time-fe/e2e-tests` against the current app behavior and rewrite outdated tests so they match the application rather than changing the application to satisfy stale tests.
+4. Re-run the affected tests, then make sure all tests under both the `e2e-tests` and `tests` directories pass.
 
 ## Pitfalls
 
-- `nameList` must stay reactive; use `watchEffect` or compute it inside `addEvent`/`removeEvent`.
-- First lens has no parent, so its `nameList` must be seeded from `setAllEvents`.
-- When parent lens events change (user adds/removes), child lens `nameList` must also update.
+- Intermittent auth, redirect, or seeded-state races may require repeated runs to expose a consistent failure mode.
+- The frontend E2E tests may be broadly outdated, so the smallest correct fix may still involve rewriting whole specs.
+- If any fix appears to require a schema change, stop and ask for permission immediately.

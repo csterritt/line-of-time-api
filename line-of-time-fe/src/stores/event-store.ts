@@ -39,9 +39,23 @@ export type EventResponse = {
   updatedAt: string
 }
 
+const transientStatuses = new Set([502, 503, 504])
+const loadAllEventsAttempts = 6
+const loadAllEventsRetryDelayMs = 500
+const getInfoAttempts = 3
+const getInfoRetryDelayMs = 300
+
+const sleep = async (ms: number): Promise<void> => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 export const useEventStore = defineStore('event-store', () => {
   const successMessage = ref('')
   const errorMessage = ref('')
+  const allEvents = ref<EventResponse[]>([])
+  const eventsLoaded = ref(false)
 
   const clearMessages = () => {
     successMessage.value = ''
@@ -59,6 +73,7 @@ export const useEventStore = defineStore('event-store', () => {
 
       if (response.status === 201) {
         successMessage.value = 'Event created successfully!'
+        eventsLoaded.value = false
         return true
       }
 
@@ -85,21 +100,43 @@ export const useEventStore = defineStore('event-store', () => {
     wikiInfo.value = null
     wikiLoading.value = true
     try {
-      const response = await fetch('/time-info/initial-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      })
+      for (let attempt = 1; attempt <= getInfoAttempts; attempt++) {
+        try {
+          const response = await fetch('/time-info/initial-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name }),
+          })
 
-      if (!response.ok) {
-        const data = await response.json()
-        errorMessage.value = typeof data.error === 'string' ? data.error : 'Search failed.'
-        return null
+          if (response.ok) {
+            const data = (await response.json()) as WikiInfo
+            wikiInfo.value = data
+            return data
+          }
+
+          if (
+            transientStatuses.has(response.status) &&
+            attempt < getInfoAttempts
+          ) {
+            await sleep(getInfoRetryDelayMs * attempt)
+            continue
+          }
+
+          const data = await response.json()
+          errorMessage.value = typeof data.error === 'string' ? data.error : 'Search failed.'
+          return null
+        } catch {
+          if (attempt === getInfoAttempts) {
+            errorMessage.value = 'Network error. Please try again.'
+            return null
+          }
+        }
+
+        await sleep(getInfoRetryDelayMs * attempt)
       }
 
-      const data = (await response.json()) as WikiInfo
-      wikiInfo.value = data
-      return data
+      errorMessage.value = 'Search failed.'
+      return null
     } catch {
       errorMessage.value = 'Network error. Please try again.'
       return null
@@ -107,9 +144,6 @@ export const useEventStore = defineStore('event-store', () => {
       wikiLoading.value = false
     }
   }
-
-  const allEvents = ref<EventResponse[]>([])
-  const eventsLoaded = ref(false)
 
   const minTimestamp = computed((): number | null => {
     if (allEvents.value.length === 0) {
@@ -135,12 +169,41 @@ export const useEventStore = defineStore('event-store', () => {
     if (eventsLoaded.value) {
       return
     }
+
     try {
-      const response = await fetch('/time-info/events/-99999999999/99999999999')
-      if (response.ok) {
-        allEvents.value = (await response.json()) as EventResponse[]
-      } else {
-        allEvents.value = []
+      for (let attempt = 1; attempt <= loadAllEventsAttempts; attempt++) {
+        try {
+          const response = await fetch('/time-info/events/-99999999999/99999999999', {
+            cache: 'no-store',
+          })
+
+          if (response.ok) {
+            const events = (await response.json()) as EventResponse[]
+
+            if (events.length > 0 || attempt === loadAllEventsAttempts) {
+              allEvents.value = events
+              return
+            }
+
+            await sleep(loadAllEventsRetryDelayMs * attempt)
+            continue
+          }
+
+          if (
+            !transientStatuses.has(response.status) ||
+            attempt === loadAllEventsAttempts
+          ) {
+            allEvents.value = []
+            return
+          }
+        } catch {
+          if (attempt === loadAllEventsAttempts) {
+            allEvents.value = []
+            return
+          }
+        }
+
+        await sleep(loadAllEventsRetryDelayMs * attempt)
       }
     } catch {
       allEvents.value = []

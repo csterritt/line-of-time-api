@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test'
 
 import { verifyAlert, clickLink, fillInput } from '../support/finders'
 import { testWithDatabase } from '../support/test-helpers'
-import { verifyOnForgotPasswordPage } from '../support/page-verifiers'
+import {
+  verifyOnForgotPasswordPage,
+  verifyOnWaitingForResetPage,
+} from '../support/page-verifiers'
 import { navigateToForgotPassword } from '../support/navigation-helpers'
 import { submitForgotPasswordForm } from '../support/form-helpers'
 import { TEST_USERS, ERROR_MESSAGES, BASE_URLS } from '../support/test-data'
@@ -17,10 +20,11 @@ test(
     await submitForgotPasswordForm(page, TEST_USERS.KNOWN_USER.email)
 
     // Should be redirected to waiting for reset page
-    expect(page.url()).toContain('/auth/waiting-for-reset')
+    await verifyOnWaitingForResetPage(page)
 
-    // Navigate back to forgot password page for second attempt
-    await navigateToForgotPassword(page)
+    // Navigate back to forgot password page for second attempt using the built-in action
+    await clickLink(page, 'try-again-action')
+    await verifyOnForgotPasswordPage(page)
 
     // Second password reset request immediately - should be rate limited
     await submitForgotPasswordForm(page, TEST_USERS.KNOWN_USER.email)
@@ -53,7 +57,7 @@ test(
     await clickLink(page, 'forgot-password-action')
 
     // Should be redirected to waiting for reset page
-    expect(page.url()).toContain('/auth/waiting-for-reset')
+    await verifyOnWaitingForResetPage(page)
 
     // Wait for the rate limit period to expire (3 seconds in development + buffer)
     await page.waitForTimeout(4000)
@@ -89,7 +93,7 @@ test(
     await clickLink(page, 'forgot-password-action')
 
     // Should be redirected to waiting for reset page (same as valid email)
-    expect(page.url()).toContain('/auth/waiting-for-reset')
+    await verifyOnWaitingForResetPage(page)
 
     // Navigate back to forgot password page
     await page.goto(BASE_URLS.FORGOT_PASSWORD)
@@ -102,6 +106,6 @@ test(
     // Should still redirect to waiting page (don't reveal that user doesn't exist)
     // Note: For non-existent users, we don't apply rate limiting since we don't have
     // an account record to track timestamps, but we still don't reveal the user doesn't exist
-    expect(page.url()).toContain('/auth/waiting-for-reset')
+    await verifyOnWaitingForResetPage(page)
   })
 )

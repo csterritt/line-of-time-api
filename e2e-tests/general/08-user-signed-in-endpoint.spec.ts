@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test'
 
+import { signOutAndVerify } from '../support/auth-helpers'
 import { navigateToHome } from '../support/navigation-helpers'
 import { completeSignInFlow } from '../support/workflow-helpers'
-import { testWithDatabase } from '../support/test-helpers'
+import { getWithRetry, testWithDatabase } from '../support/test-helpers'
 import { TEST_USERS, BASE_URLS } from '../support/test-data'
 
 /**
@@ -45,7 +46,8 @@ test(
 
     // Call the endpoint with the authenticated context
     // The session cookies should be automatically included
-    const response = await page.request.get(
+    const response = await getWithRetry(
+      page.request,
       `${BASE_URLS.HOME}/auth/user-signed-in`
     )
 
@@ -72,7 +74,8 @@ test(
     await completeSignInFlow(page, TEST_USERS.KNOWN_USER)
 
     // Verify signed in
-    let response = await page.request.get(
+    let response = await getWithRetry(
+      page.request,
       `${BASE_URLS.HOME}/auth/user-signed-in`
     )
     let json = await response.json()
@@ -82,14 +85,13 @@ test(
     })
 
     // Sign out by navigating to sign-out page and clicking sign-out
-    await page.goto(`${BASE_URLS.SIGN_OUT}`)
-    await page.click('[data-testid="sign-out-action"]')
-
-    // Wait for sign-out to complete
-    await page.waitForURL('**/auth/sign-out')
+    await signOutAndVerify(page)
 
     // Call the endpoint again
-    response = await page.request.get(`${BASE_URLS.HOME}/auth/user-signed-in`)
+    response = await getWithRetry(
+      page.request,
+      `${BASE_URLS.HOME}/auth/user-signed-in`
+    )
 
     // Verify response shows not signed in
     expect(response.ok()).toBe(true)

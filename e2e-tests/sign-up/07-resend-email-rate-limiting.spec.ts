@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test'
-import {} from '../support/finders'
+import { test, expect, Page } from '@playwright/test'
 import {
   verifyOnSignUpPage,
   verifyOnAwaitVerificationPage,
@@ -8,6 +7,18 @@ import { testWithDatabase } from '../support/test-helpers'
 import { skipIfNotMode } from '../support/mode-helpers'
 import { navigateToSignUp } from '../support/navigation-helpers'
 import { submitSignUpForm } from '../support/form-helpers'
+
+const submitResendEmail = async (page: Page) => {
+  const resendResponsePromise = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      response.url().includes('/auth/resend-email')
+    )
+  })
+
+  await Promise.all([resendResponsePromise, page.getByTestId('resend-email-action').click()])
+  await page.waitForLoadState('networkidle')
+}
 
 test(
   'resend email button enforces rate limiting from first attempt',
@@ -36,9 +47,8 @@ test(
     await expect(resendButton).toBeVisible()
 
     // Click resend email button for the first time (should now be rate limited since initial email was just sent)
-    await resendButton.click()
+    await submitResendEmail(page)
 
-    // Should get rate limiting message on first attempt since we now track initial email send time
     const alertElement = page.getByRole('alert')
     await expect(alertElement).toContainText('Please wait')
     await expect(alertElement).toContainText('second')
@@ -50,7 +60,7 @@ test(
     await verifyOnAwaitVerificationPage(page)
 
     // Try to click resend button again immediately (should still be rate limited)
-    await resendButton.click()
+    await submitResendEmail(page)
 
     // Should still get rate limiting message
     await expect(alertElement).toContainText('Please wait')

@@ -111,6 +111,13 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
               MESSAGES.GENERIC_ERROR_TRY_AGAIN
             )
           }
+
+          await auth.api.sendVerificationEmail({
+            body: {
+              email,
+              callbackURL: `${new URL(c.req.url).origin}${PATHS.AUTH.SIGN_IN}/true`,
+            },
+          })
         } catch (apiError: unknown) {
           return handleSignUpApiError(c, apiError, email, PATHS.AUTH.SIGN_IN)
         }

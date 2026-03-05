@@ -7,13 +7,13 @@ import {
 } from '../support/db-helpers'
 import { BASE_URLS } from '../support/test-data'
 
-test.beforeEach(async () => {
+test.beforeAll(async () => {
   await clearDatabase()
   await seedDatabase()
   await seedEvents()
 })
 
-test.afterEach(async () => {
+test.afterAll(async () => {
   await clearEvents()
   await clearDatabase()
 })

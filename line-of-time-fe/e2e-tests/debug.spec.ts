@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test'
 
-test('debug page content', async ({ page }) => {
+test('new lens panel shows empty controls without add timeline action', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
-  const html = await page.content()
-  console.log('PAGE HTML:', html.substring(0, 2000))
+
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.getByTestId('lens-event-list')).toHaveCount(1)
+  await expect(page.getByTestId('lens-event-item')).toHaveCount(0)
+  await expect(page.getByTestId('lens-event-input')).toBeVisible()
+  await expect(page.getByTestId('add-event-action')).toHaveCount(1)
+  await expect(page.locator('[data-testid="add-timeline-panel-button"]')).toHaveCount(0)
 })

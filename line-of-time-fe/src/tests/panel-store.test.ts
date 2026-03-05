@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from 'bun:test'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePanelStore } from '../stores/panel-store'
 import type { EventResponse } from '../stores/event-store'
+import { dateInputToTimestamp } from '../utils/timestamp'
 
 const makeEvent = (name: string, startTimestamp = 0): EventResponse => ({
   id: name,
@@ -350,6 +351,24 @@ describe('TimelineStore timestamps', () => {
     }
   })
 
+  it('first TimelineStore resets start and end timestamps to today when events are empty', () => {
+    const store = usePanelStore()
+    store.setAllEvents([])
+    const timeline = store.structures[1]!
+    expect(timeline.type).toBe('timeline')
+    if (timeline.type === 'timeline') {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const todayTs = dateInputToTimestamp(
+        `${String(year).padStart(4, '0')}-${month}-${day}`
+      )
+      expect(timeline.startTimestamp.value).toBe(todayTs)
+      expect(timeline.endTimestamp.value).toBe(todayTs)
+    }
+  })
+
   it('new TimelineStore start and end timestamps are set to today', async () => {
     const store = usePanelStore()
     store.addLensPanel()
@@ -363,7 +382,6 @@ describe('TimelineStore timestamps', () => {
       const year = now.getFullYear()
       const month = String(now.getMonth() + 1).padStart(2, '0')
       const day = String(now.getDate()).padStart(2, '0')
-      const { dateInputToTimestamp } = await import('../utils/timestamp')
       const todayTs = dateInputToTimestamp(`${String(year).padStart(4, '0')}-${month}-${day}`)
       expect(start).toBe(todayTs)
     }

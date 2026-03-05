@@ -18,10 +18,48 @@ import { submitSignUpForm, submitSignInForm } from '../support/form-helpers'
 // Helper function to get the latest email from Mailpit
 const getLatestEmailFromMailpit = async () => {
   const response = await fetch('http://localhost:8025/api/v1/message/latest')
+  if (response.status === 404) {
+    return null
+  }
   if (!response.ok) {
     throw new Error(`Failed to fetch latest email: ${response.status}`)
   }
   return await response.json()
+}
+
+const clearAllEmailsFromMailpit = async () => {
+  try {
+    const response = await fetch('http://localhost:8025/api/v1/messages', {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      console.warn(`Failed to clear emails: ${response.status}`)
+    }
+  } catch (error) {
+    console.warn('Could not clear emails from Mailpit:', error)
+  }
+}
+
+const waitForEmailForRecipient = async (email: string) => {
+  const attempts = 10
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const emailData = await getLatestEmailFromMailpit()
+
+    if (
+      emailData != null &&
+      emailData.To.some((recipient: any) => recipient.Address === email)
+    ) {
+      return emailData
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, attempt * 500)
+    })
+  }
+
+  throw new Error(`Timed out waiting for Mailpit email for ${email}`)
 }
 
 // Helper function to extract verification link from email HTML
@@ -42,6 +80,8 @@ test(
   'can validate email and sign in successfully',
   testWithDatabase(async ({ page }) => {
     await skipIfNotMode('OPEN_SIGN_UP')
+    await clearAllEmailsFromMailpit()
+
     // Navigate to sign-up and submit form
     await navigateToSignUp(page)
     await verifyOnSignUpPage(page)
@@ -60,11 +100,8 @@ test(
     // Should be redirected to await verification page
     await verifyOnAwaitVerificationPage(page)
 
-    // Wait a moment for the email to be sent
-    await page.waitForTimeout(2000)
-
     // Retrieve the verification email from Mailpit
-    const emailData: any = await getLatestEmailFromMailpit()
+    const emailData: any = await waitForEmailForRecipient(newEmail)
     expect(
       emailData.To.some((recipient: any) => recipient.Address === newEmail)
     ).toBe(true)

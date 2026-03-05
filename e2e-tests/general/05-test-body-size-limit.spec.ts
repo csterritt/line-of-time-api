@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-import { signOutAndVerify, signInUser } from '../support/auth-helpers'
-import { navigateToHome } from '../support/navigation-helpers'
 import { testWithDatabase } from '../support/test-helpers'
-import { TEST_USERS } from '../support/test-data'
 import { HTML_STATUS } from '../../src/constants'
 
 test.describe('Body size limit', () => {
@@ -11,17 +8,7 @@ test.describe('Body size limit', () => {
 
   test(
     'returns 413 status when JSON payload exceeds size limit',
-    testWithDatabase(async ({ page, request }) => {
-      // First sign in to get a valid session
-      await navigateToHome(page)
-
-      // Sign in with known email and password
-      await signInUser(
-        page,
-        TEST_USERS.KNOWN_USER.email,
-        TEST_USERS.KNOWN_USER.password
-      )
-
+    testWithDatabase(async ({ request }) => {
       // Create a large payload (5KB) - exceeds the 4KB body limit
       const largePayload = { search: 'X'.repeat(5000) }
 
@@ -45,25 +32,12 @@ test.describe('Body size limit', () => {
       // Verify the response contains the overflow error message
       const responseText = await response.text()
       expect(responseText).toContain('overflow :(')
-
-      // Sign out to clean up the authenticated session
-      await signOutAndVerify(page)
     })
   )
 
   test(
     'returns 413 status when form data payload exceeds size limit',
-    testWithDatabase(async ({ page, request }) => {
-      // First sign in to get a valid session
-      await navigateToHome(page)
-
-      // Sign in with known email and password
-      await signInUser(
-        page,
-        TEST_USERS.KNOWN_USER.email,
-        TEST_USERS.KNOWN_USER.password
-      )
-
+    testWithDatabase(async ({ request }) => {
       // Create form data with a large value (5KB) - exceeds the 4KB body limit
       // Using forgot password endpoint which accepts form data
       const formData = {
@@ -89,25 +63,12 @@ test.describe('Body size limit', () => {
       // Verify the response contains the overflow error message
       const responseText = await response.text()
       expect(responseText).toContain('overflow :(')
-
-      // Sign out to clean up the authenticated session
-      await signOutAndVerify(page)
     })
   )
 
   test(
     'correctly handles payloads at the size limit boundary',
-    testWithDatabase(async ({ page, request }) => {
-      // First sign in to get a valid session
-      await navigateToHome(page)
-
-      // Sign in with known email and password
-      await signInUser(
-        page,
-        TEST_USERS.KNOWN_USER.email,
-        TEST_USERS.KNOWN_USER.password
-      )
-
+    testWithDatabase(async ({ request }) => {
       // Create a payload just under the search endpoint's 50-byte limit
       const validSearchPayload = { search: 'X'.repeat(40) } // Well under 50 bytes
 
@@ -145,9 +106,6 @@ test.describe('Body size limit', () => {
 
       // This should fail with 400 Bad Request (search validation error, not body size error)
       expect(tooLongSearchResponse.status()).toBe(400)
-
-      // Sign out to clean up the authenticated session
-      await signOutAndVerify(page)
     })
   )
 })

@@ -2,11 +2,9 @@ import { expect, test } from '@playwright/test'
 import {
   clearDatabase,
   seedDatabase,
-  clearEvents,
   seedEvents,
 } from '../support/db-helpers'
-import { submitSignInForm } from '../support/form-helpers'
-import { BASE_URLS, TEST_USERS } from '../support/test-data'
+import { signInAndWaitForSeededTimeline } from '../support/workflow-helpers'
 
 test.beforeEach(async () => {
   await clearDatabase()
@@ -15,16 +13,46 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await clearEvents()
   await clearDatabase()
 })
 
-const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => {
-  await page.goto(BASE_URLS.SIGN_IN)
-  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
-  await page.goto(`${BASE_URLS.HOME}/ui/`)
-  await page.waitForSelector('[data-testid="event-list"]')
-  await page.waitForSelector('[data-testid="filter-controls"]')
+const expectedTimelineBounds = {
+  minYear: '1732',
+  minMonth: '01',
+  minDay: '01',
+  maxYear: '1969',
+  maxMonth: '07',
+  maxDay: '20',
+}
+
+const signInReadyTimeoutMs = 30000
+
+const signInAndGoHome = async (page: Parameters<typeof signInAndWaitForSeededTimeline>[0]) => {
+  await signInAndWaitForSeededTimeline(page)
+  await expect(page.getByTestId('filter-min-year')).toHaveValue(
+    expectedTimelineBounds.minYear,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-min-month')).toHaveValue(
+    expectedTimelineBounds.minMonth,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-min-day')).toHaveValue(
+    expectedTimelineBounds.minDay,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-year')).toHaveValue(
+    expectedTimelineBounds.maxYear,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-month')).toHaveValue(
+    expectedTimelineBounds.maxMonth,
+    { timeout: signInReadyTimeoutMs }
+  )
+  await expect(page.getByTestId('filter-max-day')).toHaveValue(
+    expectedTimelineBounds.maxDay,
+    { timeout: signInReadyTimeoutMs }
+  )
 }
 
 test('filter controls appear when signed in with events', async ({ page }) => {

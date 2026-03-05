@@ -1,10 +1,8 @@
-Please change the implementation of the panel-store.ts file to work in the following way.
+The analysis looks good, but the problem with the end-to-end tests is that they are flaky.
+Sometimes they run fine, and sometimes they fail. The ones named in Notes/Failed-Tests.md
+are some that have been found to fail.
 
-1. There should be a 'nameList' variable in each LensStore that is an array of strings.
-2. The 'nameList' should be built from the parent lens's events.
-3. The 'nameList' should be updated when the parent lens's events are updated.
-4. The 'events' should start out empty for all LensStores past the first.
-5. The 'events' should be updated when the user adds an event to the lens.
-6. The 'events' should be updated when the user removes an event from the lens.
-7. The 'nameList' should be used instead of the computed 'availableEvents' in the
-    LensDisplay.vue file.
+Also, the tests under line-of-time-fe/e2e-tests are out of date; they were written for an
+older version of the app and need to be rewritten most likely, as they don't match the
+current state of the app. The application behavior is correct, the tests should mirror this
+behavior. Don't rewrite the code to match the tests.

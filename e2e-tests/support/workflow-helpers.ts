@@ -22,7 +22,7 @@ import {
 } from './page-verifiers'
 import { startSignIn } from './auth-helpers'
 import { verifyAlert } from './finders'
-import { TEST_USERS, GATED_CODES, ERROR_MESSAGES } from './test-data'
+import { TEST_USERS, GATED_CODES, ERROR_MESSAGES, BASE_URLS } from './test-data'
 
 /**
  * Workflow helpers for complete multi-step processes
@@ -82,6 +82,64 @@ export const completeSignInFlow = async (
     timeout: 15000,
   })
 }
+
+const seededTimelineLoadAttempts = 3
+const seededTimelineAttemptTimeoutMs = 5000
+const seededTimelinePollDelayMs = 250
+
+export const signInAndWaitForSeededTimeline = async (
+  page: Page,
+  expectedEventName: string = 'George Washington'
+) => {
+  await page.goto(BASE_URLS.SIGN_IN)
+  await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+  await page.waitForURL(/\/ui/)
+
+  let lastError: unknown = null
+
+  for (let attempt = 1; attempt <= seededTimelineLoadAttempts; attempt++) {
+    const attemptDeadline = Date.now() + seededTimelineAttemptTimeoutMs
+
+    while (Date.now() < attemptDeadline) {
+      const signOutAction = page.getByTestId('sign-out-action')
+      const filterControls = page.getByTestId('filter-controls')
+      const eventList = page.getByTestId('event-list')
+      const noEventsMessage = page.getByTestId('no-events-message')
+
+      const hasSignedInChrome =
+        (await signOutAction.count()) > 0 &&
+        (await filterControls.count()) > 0
+
+      if (hasSignedInChrome && (await eventList.count()) > 0) {
+        const listText = await eventList.textContent()
+        if (listText?.includes(expectedEventName)) {
+          return
+        }
+      }
+
+      if (
+        hasSignedInChrome &&
+        (await noEventsMessage.count()) > 0
+      ) {
+        break
+      }
+
+      await page.waitForTimeout(seededTimelinePollDelayMs)
+    }
+
+    lastError = new Error(`Seeded timeline did not load on attempt ${attempt}`)
+
+    if (attempt === seededTimelineLoadAttempts) {
+      break
+    }
+
+    await page.reload({ waitUntil: 'networkidle' })
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Seeded timeline events did not load')
+ }
 
 /**
  * Complete forgot password workflow

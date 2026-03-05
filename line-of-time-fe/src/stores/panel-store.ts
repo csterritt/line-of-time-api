@@ -33,6 +33,32 @@ const todayTimestamp = (): number => {
   return dateInputToTimestamp(`${yyyy}-${mm}-${dd}`)
 }
 
+const getEventBounds = (
+  allEvents: EventResponse[],
+): { minTimestamp: number | null; maxTimestamp: number | null } => {
+  if (allEvents.length === 0) {
+    return { minTimestamp: null, maxTimestamp: null }
+  }
+
+  return allEvents.reduce(
+    (bounds, event) => {
+      const eventMax = event.endTimestamp ?? event.startTimestamp
+
+      return {
+        minTimestamp:
+          event.startTimestamp < bounds.minTimestamp
+            ? event.startTimestamp
+            : bounds.minTimestamp,
+        maxTimestamp: eventMax > bounds.maxTimestamp ? eventMax : bounds.maxTimestamp,
+      }
+    },
+    {
+      minTimestamp: allEvents[0]!.startTimestamp,
+      maxTimestamp: allEvents[0]!.endTimestamp ?? allEvents[0]!.startTimestamp,
+    },
+  )
+}
+
 const makeLensStore = (index: number, parentLens: LensStore | null): LensStore => {
   const events = ref<EventResponse[]>([])
   const eventMap = ref<Map<string, EventResponse>>(new Map())
@@ -94,8 +120,22 @@ export const usePanelStore = defineStore('panel-store', () => {
   const structures = shallowRef<Structure[]>([firstLens, firstTimeline])
 
   const setAllEvents = (allEvents: EventResponse[]) => {
-    firstLens.events.value = allEvents
-    firstLens.eventMap.value = new Map(allEvents.map((e) => [e.name, e]))
+    const nextEvents = [...allEvents]
+    firstLens.events.value = nextEvents
+    firstLens.eventMap.value = new Map(nextEvents.map((e) => [e.name, e]))
+    firstLens.nameList.value = nextEvents.map((e) => e.name)
+
+    const { minTimestamp, maxTimestamp } = getEventBounds(nextEvents)
+
+    if (minTimestamp == null || maxTimestamp == null) {
+      const emptyStateTimestamp = todayTimestamp()
+      firstTimeline.startTimestamp.value = emptyStateTimestamp
+      firstTimeline.endTimestamp.value = emptyStateTimestamp
+      return
+    }
+
+    firstTimeline.startTimestamp.value = minTimestamp
+    firstTimeline.endTimestamp.value = maxTimestamp
   }
 
   const addLensPanel = () => {

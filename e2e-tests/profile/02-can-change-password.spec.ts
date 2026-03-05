@@ -1,6 +1,7 @@
 import { test } from '@playwright/test'
 
 import { clickLink, verifyAlert } from '../support/finders'
+import { signOutAndVerify } from '../support/auth-helpers'
 import {
   verifyOnSignInPage,
   verifyOnProfilePage,
@@ -13,6 +14,7 @@ import {
   submitSignInForm,
 } from '../support/form-helpers'
 import { TEST_USERS, BASE_URLS } from '../support/test-data'
+import { completeSignInFlow } from '../support/workflow-helpers'
 
 test(
   'can successfully change password',
@@ -21,8 +23,7 @@ test(
     const newPassword = 'my-brand-new-password-123'
 
     // Sign in first
-    await page.goto(BASE_URLS.SIGN_IN)
-    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await completeSignInFlow(page, TEST_USERS.KNOWN_USER)
 
     // Navigate to profile
     await navigateToProfile(page)
@@ -35,8 +36,7 @@ test(
     await verifyAlert(page, 'Your password has been successfully changed.')
 
     // Sign out
-    await clickLink(page, 'sign-out-action')
-    await page.waitForTimeout(1000)
+    await signOutAndVerify(page)
 
     // Try to sign in with new password
     await page.goto(BASE_URLS.SIGN_IN)
@@ -50,8 +50,7 @@ test(
     await verifyAlert(page, 'Welcome! You have been signed in successfully.')
 
     // Sign out again
-    await clickLink(page, 'sign-out-action')
-    await page.waitForTimeout(1000)
+    await signOutAndVerify(page)
 
     // Verify old password no longer works
     await page.goto(BASE_URLS.SIGN_IN)
