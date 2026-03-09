@@ -61,3 +61,29 @@ test('lens panel does not show add timeline action', async ({ page }) => {
     page.locator('[data-testid="add-timeline-panel-button"]')
   ).toHaveCount(0)
 })
+
+test('lens panel has a close button', async ({ page }) => {
+  await signInAndGoHome(page)
+
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.getByTestId('close-lens-panel-action')).toHaveCount(1)
+})
+
+test('clicking close button on lens panel removes lens and its child timeline', async ({ page }) => {
+  await signInAndGoHome(page)
+
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(1)
+  await expect(
+    page.locator('h2.card-title', { hasText: 'Timeline' })
+  ).toHaveCount(2)
+
+  await page.getByTestId('close-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(0)
+  await expect(
+    page.locator('h2.card-title', { hasText: 'Timeline' })
+  ).toHaveCount(1)
+})

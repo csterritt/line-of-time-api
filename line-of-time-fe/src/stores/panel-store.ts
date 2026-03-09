@@ -91,7 +91,13 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
     },
     removeEvent(name: string) {
       events.value = events.value.filter((e) => e.name !== name)
-      nameList.value = nameList.value.filter((n) => n !== name)
+      if (eventMap.value.has(name) && !nameList.value.includes(name)) {
+        const allNames = [...eventMap.value.keys()]
+        const updated = allNames.filter(
+          (n) => nameList.value.includes(n) || n === name,
+        )
+        nameList.value = updated
+      }
     },
   })
 
@@ -151,9 +157,25 @@ export const usePanelStore = defineStore('panel-store', () => {
     structures.value = [...currentStructures, newLens, newTimeline]
   }
 
+  const removeLensPanel = (lensIndex: number) => {
+    if (lensIndex === 0) {
+      return
+    }
+    structures.value = structures.value.filter((s) => {
+      if (s.type === 'lens' && s.index === lensIndex) {
+        return false
+      }
+      if (s.type === 'timeline' && s.parentLens.index === lensIndex) {
+        return false
+      }
+      return true
+    })
+  }
+
   return {
     structures,
     setAllEvents,
     addLensPanel,
+    removeLensPanel,
   }
 })

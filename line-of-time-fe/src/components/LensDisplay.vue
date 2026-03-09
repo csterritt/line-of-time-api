@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { type LensStore } from '@/stores/panel-store'
+import { usePanelStore, type LensStore } from '@/stores/panel-store'
 
 const props = defineProps<{
   store: LensStore
 }>()
+
+const panelStore = usePanelStore()
 
 const newEventName = ref('')
 
@@ -25,7 +27,17 @@ const removeEvent = (name: string) => {
   <div class="w-[25vw] shrink-0">
     <div class="card bg-base-100 shadow-xl h-full overflow-y-auto max-h-[calc(100vh-8rem)]">
       <div class="card-body">
-        <h2 class="card-title mb-4">Lens</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="card-title">Lens</h2>
+          <button
+            class="btn btn-sm btn-ghost btn-circle text-error"
+            @click="panelStore.removeLensPanel(store.index)"
+            title="Close Lens Panel"
+            data-testid="close-lens-panel-action"
+          >
+            ✕
+          </button>
+        </div>
 
         <ul class="list-none p-0 m-0 mb-4" data-testid="lens-event-list">
           <li

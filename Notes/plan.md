@@ -1,18 +1,36 @@
-## Assumptions
+# Plan: Lens Panel Close Button
 
-- The current failures can be fixed without changing the database schema.
-- The root `e2e-tests` failures are flaky and may require repeated focused runs to reproduce reliably.
-- The behavior of the current application is correct, and the tests under `line-of-time-fe/e2e-tests` should be updated to match it.
+## Feature
+Add a close button to the top right corner of the Lens panel. Clicking it closes both the Lens panel and its child Timeline panel.
+
+## Assumptions
+- No database schema changes needed.
+- "Close" means removing the Lens + its child Timeline from the panel store structures array.
+- The first Timeline panel (index 1, no parent Lens) is never removed.
+- Only non-first Lens panels have a close button.
 
 ## Plan
 
-1. Reproduce the flaky root `e2e-tests` failures from `Notes/Failed-Tests.md` using focused Playwright runs and stop at the first live failure.
-2. Inspect the related app code, E2E specs, and `e2e-tests/support` helpers to identify and fix the underlying source of flakiness using Red/Green TDD.
-3. Review `line-of-time-fe/e2e-tests` against the current app behavior and rewrite outdated tests so they match the application rather than changing the application to satisfy stale tests.
-4. Re-run the affected tests, then make sure all tests under both the `e2e-tests` and `tests` directories pass.
+### 1. Plan tests (Red)
+- E2E test in `e2e-tests/general/12-lens-panel-behavior.spec.ts`: after adding a lens, clicking close button removes both lens and its timeline.
+- E2E test: close button has `data-testid="close-lens-panel-action"`.
+- Unit test in `line-of-time-fe/src/tests/panel-store.test.ts`: `removeLensPanel(index)` removes the lens and its child timeline from structures.
+
+### 2. Implement `removeLensPanel` in panel-store.ts
+- Add `removeLensPanel(lensIndex: number)` action that filters out the LensStore at the given index and its `childTimeline`.
+- Expose it from the store return value.
+
+### 3. Update LensDisplay.vue
+- Add a close button (×) in the top-right corner of the card header.
+- Use `data-testid="close-lens-panel-action"`.
+- On click, call `panelStore.removeLensPanel(store.index)`.
+- Import `usePanelStore`.
+
+### 4. Run tests (Green)
+- Run unit tests, fix failures.
+- Run E2E tests, fix failures.
 
 ## Pitfalls
+- Removing mid-array lens/timeline must not break index references for other panels.
+- The first Lens (index 0, hidden) must not be removable.
 
-- Intermittent auth, redirect, or seeded-state races may require repeated runs to expose a consistent failure mode.
-- The frontend E2E tests may be broadly outdated, so the smallest correct fix may still involve rewriting whole specs.
-- If any fix appears to require a schema change, stop and ask for permission immediately.

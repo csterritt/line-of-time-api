@@ -336,6 +336,44 @@ describe('LensStore nameList', () => {
   })
 })
 
+describe('usePanelStore removeLensPanel', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('removes both the lens and its child timeline from structures', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    expect(store.structures.length).toBe(4)
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      store.removeLensPanel(newLens.index)
+    }
+    expect(store.structures.length).toBe(2)
+  })
+
+  it('the remaining structures are the original timeline and first lens', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    const firstLens = store.structures[0]!
+    const firstTimeline = store.structures[1]!
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      store.removeLensPanel(newLens.index)
+    }
+    expect(store.structures[0]).toBe(firstLens)
+    expect(store.structures[1]).toBe(firstTimeline)
+  })
+
+  it('does not remove anything for the first lens (index 0)', () => {
+    const store = usePanelStore()
+    store.removeLensPanel(0)
+    expect(store.structures.length).toBe(2)
+  })
+})
+
 describe('TimelineStore timestamps', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
