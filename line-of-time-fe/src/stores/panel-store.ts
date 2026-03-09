@@ -6,6 +6,7 @@ import type { EventResponse } from '../stores/event-store'
 export type LensStore = {
   type: 'lens'
   index: number
+  isLast: Ref<boolean>
   parentLens: LensStore | null
   childTimeline: TimelineStore | null
   events: Ref<EventResponse[]>
@@ -63,6 +64,7 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
   const events = ref<EventResponse[]>([])
   const eventMap = ref<Map<string, EventResponse>>(new Map())
   const nameList = ref<string[]>([])
+  const isLast = ref<boolean>(false)
 
   if (parentLens != null) {
     const parentEvents = parentLens.events.value
@@ -73,6 +75,7 @@ const makeLensStore = (index: number, parentLens: LensStore | null): LensStore =
   const store: LensStore = markRaw({
     type: 'lens',
     index,
+    isLast,
     parentLens,
     childTimeline: null,
     events,
@@ -118,12 +121,21 @@ const makeTimelineStore = (index: number, parentLens: LensStore): TimelineStore 
   })
 }
 
+const updateIsLast = (structures: Structure[]) => {
+  const lenses = structures.filter((s): s is LensStore => s.type === 'lens')
+  const lastLens = lenses[lenses.length - 1] ?? null
+  lenses.forEach((lens) => {
+    lens.isLast.value = lens === lastLens
+  })
+}
+
 export const usePanelStore = defineStore('panel-store', () => {
   const firstLens = makeLensStore(0, null)
   const firstTimeline = makeTimelineStore(1, firstLens)
   firstLens.childTimeline = firstTimeline
 
   const structures = shallowRef<Structure[]>([firstLens, firstTimeline])
+  updateIsLast(structures.value)
 
   const setAllEvents = (allEvents: EventResponse[]) => {
     const nextEvents = [...allEvents]
@@ -155,6 +167,7 @@ export const usePanelStore = defineStore('panel-store', () => {
     newLens.childTimeline = newTimeline
 
     structures.value = [...currentStructures, newLens, newTimeline]
+    updateIsLast(structures.value)
   }
 
   const removeLensPanel = (lensIndex: number) => {
@@ -170,6 +183,7 @@ export const usePanelStore = defineStore('panel-store', () => {
       }
       return true
     })
+    updateIsLast(structures.value)
   }
 
   return {

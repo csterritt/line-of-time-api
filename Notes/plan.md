@@ -1,36 +1,30 @@
-# Plan: Lens Panel Close Button
+# Plan: Add `isLast` boolean to LensStore
 
-## Feature
-Add a close button to the top right corner of the Lens panel. Clicking it closes both the Lens panel and its child Timeline panel.
+## Goal
+Each `LensStore` needs a reactive `isLast` boolean that is `true` when it is the
+last lens panel in the `structures` list, and `false` otherwise.
 
 ## Assumptions
-- No database schema changes needed.
-- "Close" means removing the Lens + its child Timeline from the panel store structures array.
-- The first Timeline panel (index 1, no parent Lens) is never removed.
-- Only non-first Lens panels have a close button.
-
-## Plan
-
-### 1. Plan tests (Red)
-- E2E test in `e2e-tests/general/12-lens-panel-behavior.spec.ts`: after adding a lens, clicking close button removes both lens and its timeline.
-- E2E test: close button has `data-testid="close-lens-panel-action"`.
-- Unit test in `line-of-time-fe/src/tests/panel-store.test.ts`: `removeLensPanel(index)` removes the lens and its child timeline from structures.
-
-### 2. Implement `removeLensPanel` in panel-store.ts
-- Add `removeLensPanel(lensIndex: number)` action that filters out the LensStore at the given index and its `childTimeline`.
-- Expose it from the store return value.
-
-### 3. Update LensDisplay.vue
-- Add a close button (×) in the top-right corner of the card header.
-- Use `data-testid="close-lens-panel-action"`.
-- On click, call `panelStore.removeLensPanel(store.index)`.
-- Import `usePanelStore`.
-
-### 4. Run tests (Green)
-- Run unit tests, fix failures.
-- Run E2E tests, fix failures.
+- "last lens panel" means the `LensStore` with the highest index currently in `structures`
+- `isLast` must update reactively when panels are added or removed
+- No database schema changes required
 
 ## Pitfalls
-- Removing mid-array lens/timeline must not break index references for other panels.
-- The first Lens (index 0, hidden) must not be removable.
+- `markRaw` is used on each store object — `isLast` must be a `Ref<boolean>` so
+  it is reactive even inside a `markRaw` object
+- When `removeLensPanel` is called, the previously second-to-last lens becomes last,
+  so its `isLast` ref must be updated
 
+## Steps
+1. Add `isLast: Ref<boolean>` to the `LensStore` type
+2. Pass `isLast` into `makeLensStore` and store it as a `ref<boolean>`
+3. Write a helper `updateIsLast(structures)` that iterates structures, finds the
+   last `LensStore`, and sets `isLast.value` correctly on all lens stores
+4. Call `updateIsLast` at the end of `addLensPanel` and `removeLensPanel`, and
+   once after initial creation
+
+## Tests (Red/Green TDD)
+- initial state: first (and only) lens has `isLast === true`
+- after `addLensPanel`: first lens has `isLast === false`, new lens has `isLast === true`
+- after `removeLensPanel`: first lens has `isLast === true` again
+- with 3 lens panels: only the last one has `isLast === true`

@@ -374,6 +374,73 @@ describe('usePanelStore removeLensPanel', () => {
   })
 })
 
+describe('LensStore isLast', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('first lens isLast is true when it is the only lens', () => {
+    const store = usePanelStore()
+    const firstLens = store.structures[0]!
+    expect(firstLens.type).toBe('lens')
+    if (firstLens.type === 'lens') {
+      expect(firstLens.isLast.value).toBe(true)
+    }
+  })
+
+  it('first lens isLast becomes false after addLensPanel', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    const firstLens = store.structures[0]!
+    expect(firstLens.type).toBe('lens')
+    if (firstLens.type === 'lens') {
+      expect(firstLens.isLast.value).toBe(false)
+    }
+  })
+
+  it('new lens isLast is true after addLensPanel', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      expect(newLens.isLast.value).toBe(true)
+    }
+  })
+
+  it('first lens isLast is true again after removeLensPanel', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    const firstLens = store.structures[0]!
+    const newLens = store.structures[2]!
+    expect(newLens.type).toBe('lens')
+    if (newLens.type === 'lens') {
+      store.removeLensPanel(newLens.index)
+    }
+    expect(firstLens.type).toBe('lens')
+    if (firstLens.type === 'lens') {
+      expect(firstLens.isLast.value).toBe(true)
+    }
+  })
+
+  it('with three lenses, only the last has isLast true', () => {
+    const store = usePanelStore()
+    store.addLensPanel()
+    store.addLensPanel()
+    const firstLens = store.structures[0]!
+    const secondLens = store.structures[2]!
+    const thirdLens = store.structures[4]!
+    expect(firstLens.type).toBe('lens')
+    expect(secondLens.type).toBe('lens')
+    expect(thirdLens.type).toBe('lens')
+    if (firstLens.type === 'lens' && secondLens.type === 'lens' && thirdLens.type === 'lens') {
+      expect(firstLens.isLast.value).toBe(false)
+      expect(secondLens.isLast.value).toBe(false)
+      expect(thirdLens.isLast.value).toBe(true)
+    }
+  })
+})
+
 describe('TimelineStore timestamps', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

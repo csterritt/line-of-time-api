@@ -1,2 +1,1 @@
-The Lens panel needs to have a close button in the top right corner. It should close both
-the lens panel and the child timeline panel.
+The panel-store needs to keep track of a new thing for each lens panel. The thing is a boolean that indicates whether the lens panel is the last one in the list.
