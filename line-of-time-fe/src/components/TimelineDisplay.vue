@@ -361,6 +361,7 @@ const endDescription = (evt: EventResponse): string => {
     </div>
 
     <button
+      v-if="store.parentLens.isLast.value"
       class="btn btn-circle btn-secondary flex-shrink-0"
       @click="panelStore.addLensPanel()"
       title="Add Lens Panel"

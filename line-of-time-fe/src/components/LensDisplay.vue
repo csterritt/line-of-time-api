@@ -30,6 +30,7 @@ const removeEvent = (name: string) => {
         <div class="flex justify-between items-center mb-4">
           <h2 class="card-title">Lens</h2>
           <button
+            v-if="store.isLast.value"
             class="btn btn-sm btn-ghost btn-circle text-error"
             @click="panelStore.removeLensPanel(store.index)"
             title="Close Lens Panel"

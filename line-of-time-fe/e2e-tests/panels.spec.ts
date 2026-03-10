@@ -38,3 +38,40 @@ test('adding a lens creates a trailing timeline panel with the current layout', 
   await expect(page.getByTestId('lens-event-item')).toHaveCount(0)
   await expect(page.locator('[data-testid="add-timeline-panel-button"]')).toHaveCount(0)
 })
+
+test('only the last lens panel shows the close button', async ({ page }) => {
+  await page.goto('/')
+
+  await page.getByTestId('add-lens-panel-action').click()
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(2)
+  await expect(page.getByTestId('close-lens-panel-action')).toHaveCount(1)
+})
+
+test('only the last timeline panel shows the Add Lens Panel button', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.getByTestId('add-lens-panel-action')).toHaveCount(1)
+
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Timeline' })).toHaveCount(2)
+  await expect(page.getByTestId('add-lens-panel-action')).toHaveCount(1)
+})
+
+test('after removing the last lens, the new last timeline shows the Add Lens Panel button', async ({ page }) => {
+  await page.goto('/')
+
+  await page.getByTestId('add-lens-panel-action').click()
+  await page.getByTestId('add-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(2)
+  await expect(page.getByTestId('add-lens-panel-action')).toHaveCount(1)
+
+  await page.getByTestId('close-lens-panel-action').click()
+
+  await expect(page.locator('h2.card-title', { hasText: 'Lens' })).toHaveCount(1)
+  await expect(page.getByTestId('add-lens-panel-action')).toHaveCount(1)
+  await expect(page.getByTestId('close-lens-panel-action')).toHaveCount(1)
+})

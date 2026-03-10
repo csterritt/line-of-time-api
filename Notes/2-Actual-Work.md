@@ -1,1 +1,1 @@
-The panel-store needs to keep track of a new thing for each lens panel. The thing is a boolean that indicates whether the lens panel is the last one in the list.
+Now use the isLast property to make only the last panel deleteable, and only the last panel have an 'Add Lens Panel' button. For panels which are not the last panel, hide the delete button and the 'Add Lens Panel' button.
