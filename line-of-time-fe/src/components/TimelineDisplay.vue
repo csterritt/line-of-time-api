@@ -40,7 +40,7 @@ const parsePositiveInteger = (value: string): number | null => {
 }
 
 const toTimestampWithDefaults = (
-  inputs: FilterInputs,
+  inputs: FilterInputs
 ): { timestamp: number; normalized: FilterInputs } | null => {
   const year = parsePositiveInteger(inputs.year)
   if (year == null) {
@@ -72,7 +72,7 @@ const toTimestampWithDefaults = (
 }
 
 const computeEventMinMax = (
-  events: EventResponse[],
+  events: EventResponse[]
 ): { minTimestamp: number | null; maxTimestamp: number | null } => {
   if (events.length === 0) {
     return { minTimestamp: null, maxTimestamp: null }
@@ -98,7 +98,9 @@ const parentEvents = computed(() => props.store.parentLens.events.value)
 
 const originalStart = ref(props.store.startTimestamp.value)
 const originalEnd = ref(props.store.endTimestamp.value)
-const filterStartInputs = ref<FilterInputs>(timestampToFilterInputs(props.store.startTimestamp.value))
+const filterStartInputs = ref<FilterInputs>(
+  timestampToFilterInputs(props.store.startTimestamp.value)
+)
 const filterEndInputs = ref<FilterInputs>(timestampToFilterInputs(props.store.endTimestamp.value))
 const appliedStart = ref(props.store.startTimestamp.value)
 const appliedEnd = ref(props.store.endTimestamp.value)
@@ -184,8 +186,7 @@ type TimelineRow = TimelineEntry & {
 
 const filteredEvents = computed(() => {
   return parentEvents.value.filter(
-    (evt) =>
-      evt.startTimestamp >= appliedStart.value && evt.startTimestamp <= appliedEnd.value,
+    (evt) => evt.startTimestamp >= appliedStart.value && evt.startTimestamp <= appliedEnd.value
   )
 })
 
@@ -335,7 +336,7 @@ const endDescription = (evt: EventResponse): string => {
           data-testid="event-list"
         >
           <template v-for="(row, idx) in timelineRows" :key="`${row.event.id}-${row.type}-${idx}`">
-            <div class="font-mono text-sm self-center pr-2" data-testid="timeline-date-cell">
+            <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
               <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
             </div>
             <div class="divider divider-horizontal mx-2"></div>

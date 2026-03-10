@@ -1,1 +1,0 @@
-Now use the isLast property to make only the last panel deleteable, and only the last panel have an 'Add Lens Panel' button. For panels which are not the last panel, hide the delete button and the 'Add Lens Panel' button.

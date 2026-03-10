@@ -3,10 +3,7 @@ const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 const isLeapYear = (year: number): boolean => {
   if (year <= 0) {
     const adjustedYear = 1 - year
-    return (
-      adjustedYear % 4 === 0 &&
-      (adjustedYear % 100 !== 0 || adjustedYear % 400 === 0)
-    )
+    return adjustedYear % 4 === 0 && (adjustedYear % 100 !== 0 || adjustedYear % 400 === 0)
   }
 
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
@@ -97,7 +94,7 @@ const timestampToComponents = (timestamp: number): DateComponents => {
 
 export const timestampToYmd = (timestamp: number): string => {
   const { year, month, day } = timestampToComponents(timestamp)
-  const yStr = String(Math.abs(year)).padStart(4, '0')
+  const yStr = String(Math.abs(year))
   const mStr = String(month).padStart(2, '0')
   const dStr = String(day).padStart(2, '0')
   return `${yStr}-${mStr}-${dStr}`
@@ -105,12 +102,12 @@ export const timestampToYmd = (timestamp: number): string => {
 
 export const timestampToYear = (timestamp: number): string => {
   const { year } = timestampToComponents(timestamp)
-  return String(Math.abs(year)).padStart(4, '0')
+  return String(Math.abs(year))
 }
 
 export const timestampToYearMonth = (timestamp: number): string => {
   const { year, month } = timestampToComponents(timestamp)
-  const yStr = String(Math.abs(year)).padStart(4, '0')
+  const yStr = String(Math.abs(year))
   const mStr = String(month).padStart(2, '0')
   return `${yStr}-${mStr}`
 }
