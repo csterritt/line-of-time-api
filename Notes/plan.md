@@ -1,33 +1,30 @@
-# Plan: Replace date inputs in NewEventView.vue with separate year/month/day inputs
+# Plan: Rearrange TimelineDisplay.vue to 3-column layout
 
 ## Goal
-Replace the single `type="date"` inputs for start and end dates in `NewEventView.vue`
-with separate year/month/day text inputs, matching the pattern used in `TimelineDisplay.vue`.
+Rearrange the event list in `TimelineDisplay.vue` from its current layout to a strict
+3-column layout:
+1. **Date column** — shows the timeline date (only on first row of a date group)
+2. **Separator column** — an empty column with a left border (a thin vertical line)
+3. **Content column** — shows event name + description (or death/end description)
 
 ## Assumptions
-- Month and day are optional (can be left blank); year is required for start date
-- End date (all three fields) remains fully optional
-- The same `toTimestampWithDefaults` / `dateInputToTimestamp` utility pattern from
-  `TimelineDisplay.vue` will be reused
-- No database schema changes; only UI changes
+- The current `divider divider-horizontal` (DaisyUI) is replaced with a simple `div`
+  that has a `border-l` class (TailwindCSS left border)
+- All rows must stay properly aligned — the separator column must have consistent width
+- No database schema changes; only UI/template changes
 
 ## Pitfalls
-- Tests currently call `fillInput(page, 'start-timestamp-input', '2026-06-15')` using
-  the old single-input approach — these must be updated to fill year/month/day individually
-- Tests that call `.inputValue()` on `start-timestamp-input` / `end-timestamp-input`
-  must be updated to check individual year/month/day inputs
-- Validation: start year is required; the form submit should be blocked if year is empty
-  or invalid
+- The existing test `'vertical dividers exist for each timeline row'` checks for
+  `.divider-horizontal` class — it must be updated to check the new separator element
+  (using a `data-testid="timeline-separator"` attribute instead)
+- The separator column should have a fixed width (e.g. `w-6`) so it doesn't collapse
 
 ## Steps
 1. ✅ Write this plan
-2. Add `DateInputs` type and helper functions (`parsePositiveInteger`,
-   `toTimestampWithDefaults`, `splitDateString`) to `NewEventView.vue`
-3. Replace `startTimestamp` / `endTimestamp` string refs with `startInputs` / `endInputs`
-   object refs (year/month/day)
-4. Split `getStartDate` / `getEndDate` to return `DateInputs` objects instead of strings
-5. Update `handleSubmit` to build timestamp from year/month/day inputs
-6. Update template: replace single date inputs with year/month/day fields
-7. Update `04-new-event.spec.ts` tests to use new `start-year-input`, `start-month-input`,
-   `start-day-input`, `end-year-input`, `end-month-input`, `end-day-input` test IDs
-8. Run tests; fix any remaining failures
+2. Plan tests: identify what the existing `09-event-list-layout.spec.ts` test needs updating
+3. Update the test to use `data-testid="timeline-separator"` and check the new border class
+4. Run tests (expect red on the separator test)
+5. Update `TimelineDisplay.vue`: replace the `divider divider-horizontal` element with
+   a `div` with `data-testid="timeline-separator"` and `border-l` styling
+6. Run tests (expect green)
+7. Run all tests; fix any failures

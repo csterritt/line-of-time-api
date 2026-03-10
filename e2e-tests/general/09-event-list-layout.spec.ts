@@ -145,15 +145,15 @@ test('event description has truncate class and title attribute', async ({ page }
   }
 })
 
-test('vertical dividers exist for each timeline row', async ({ page }) => {
+test('separator column exists for each timeline row', async ({ page }) => {
   await signInAndGoHome(page)
 
   const rows = page.locator('[data-testid="timeline-row"]')
   const rowCount = await rows.count()
   expect(rowCount).toBeGreaterThan(0)
 
-  const dividers = page.getByTestId('event-list').locator('.divider-horizontal')
-  expect(await dividers.count()).toBe(rowCount)
+  const separators = page.getByTestId('event-list').locator('[data-testid="timeline-separator"]')
+  expect(await separators.count()).toBe(rowCount)
 })
 
 test('WWII event shows correct end year', async ({ page }) => {

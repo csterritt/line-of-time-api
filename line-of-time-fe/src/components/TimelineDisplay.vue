@@ -339,7 +339,7 @@ const endDescription = (evt: EventResponse): string => {
             <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
               <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
             </div>
-            <div class="divider divider-horizontal mx-2"></div>
+            <div class="w-6 border-l border-base-300 mx-2" data-testid="timeline-separator"></div>
             <div class="min-w-0 self-center" data-testid="timeline-row">
               <template v-if="row.type === 'start'">
                 <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
