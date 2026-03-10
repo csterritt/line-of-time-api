@@ -236,10 +236,8 @@ const endDescription = (evt: EventResponse): string => {
 </script>
 
 <template>
-  <div class="flex flex-row items-center gap-4 w-[66vw] shrink-0">
-    <div
-      class="card bg-base-100 shadow-xl flex-grow h-full overflow-y-auto max-h-[calc(100vh-8rem)]"
-    >
+  <div class="flex flex-row items-start gap-4 w-[66vw] shrink-0">
+    <div class="card bg-base-100 shadow-xl flex-grow h-full">
       <div class="card-body">
         <h2 class="card-title mb-4">Timeline</h2>
         <div class="mb-4 grid gap-3 lg:grid-cols-2" data-testid="filter-controls">
@@ -363,7 +361,7 @@ const endDescription = (evt: EventResponse): string => {
 
     <button
       v-if="store.parentLens.isLast.value"
-      class="btn btn-circle btn-secondary flex-shrink-0"
+      class="btn btn-circle btn-secondary flex-shrink-0 mt-2"
       @click="panelStore.addLensPanel()"
       title="Add Lens Panel"
       data-testid="add-lens-panel-action"
