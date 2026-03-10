@@ -11,24 +11,69 @@ const basicDescriptionMax = 1002
 const router = useRouter()
 const eventStore = useEventStore()
 
-const getStartDate = (cat: CategorizationResult): string => {
-  if (cat.type === 'person') {
-    return cat['birth-date']
-  }
-  if (cat.type === 'one-time-event' || cat.type === 'bounded-event') {
-    return cat['start-date']
-  }
-  return ''
+type DateInputs = {
+  year: string
+  month: string
+  day: string
 }
 
-const getEndDate = (cat: CategorizationResult): string => {
+const emptyDateInputs = (): DateInputs => ({ year: '', month: '', day: '' })
+
+const splitDateString = (dateStr: string): DateInputs => {
+  if (!dateStr) {
+    return emptyDateInputs()
+  }
+  const [year = '', month = '', day = ''] = dateStr.split('-')
+  return { year, month, day }
+}
+
+const parsePositiveInteger = (value: string): number | null => {
+  if (!/^\d+$/.test(value)) {
+    return null
+  }
+  const parsed = parseInt(value, 10)
+  if (parsed <= 0) {
+    return null
+  }
+  return parsed
+}
+
+const dateInputsToTimestamp = (inputs: DateInputs): number | null => {
+  const year = parsePositiveInteger(inputs.year)
+  if (year == null) {
+    return null
+  }
+  const month = inputs.month.trim() === '' ? 1 : parsePositiveInteger(inputs.month)
+  if (month == null || month > 12) {
+    return null
+  }
+  const day = inputs.day.trim() === '' ? 1 : parsePositiveInteger(inputs.day)
+  if (day == null || day > 31) {
+    return null
+  }
+  const monthStr = String(month).padStart(2, '0')
+  const dayStr = String(day).padStart(2, '0')
+  return dateInputToTimestamp(`${inputs.year.padStart(4, '0')}-${monthStr}-${dayStr}`)
+}
+
+const getStartDate = (cat: CategorizationResult): DateInputs => {
+  if (cat.type === 'person') {
+    return splitDateString(cat['birth-date'])
+  }
+  if (cat.type === 'one-time-event' || cat.type === 'bounded-event') {
+    return splitDateString(cat['start-date'])
+  }
+  return emptyDateInputs()
+}
+
+const getEndDate = (cat: CategorizationResult): DateInputs => {
   if (cat.type === 'person' && cat['death-date']) {
-    return cat['death-date']
+    return splitDateString(cat['death-date'])
   }
   if (cat.type === 'bounded-event') {
-    return cat['end-date']
+    return splitDateString(cat['end-date'])
   }
-  return ''
+  return emptyDateInputs()
 }
 
 onMounted(() => {
@@ -57,8 +102,10 @@ const referenceUrl = computed(() =>
 
 const categorization = eventStore.wikiInfo?.categorization
 const basicDescription = ref(eventStore.wikiInfo?.extract ?? '')
-const startTimestamp = ref(categorization ? getStartDate(categorization) : '')
-const endTimestamp = ref(categorization ? getEndDate(categorization) : '')
+const startInputs = ref<DateInputs>(
+  categorization ? getStartDate(categorization) : emptyDateInputs()
+)
+const endInputs = ref<DateInputs>(categorization ? getEndDate(categorization) : emptyDateInputs())
 
 const handleSearchAgain = () => {
   eventStore.wikiInfo = null
@@ -69,19 +116,25 @@ const handleSearchAgain = () => {
 const handleSubmit = async () => {
   eventStore.clearMessages()
 
+  const startTimestamp = dateInputsToTimestamp(startInputs.value)
+  if (startTimestamp == null) {
+    return
+  }
+
   const cat = eventStore.wikiInfo?.categorization
   const eventType = cat?.type === 'person' ? 'person' : 'event'
 
   const eventData: EventInput = {
     name: name.value,
     basicDescription: basicDescription.value,
-    startTimestamp: dateInputToTimestamp(startTimestamp.value),
+    startTimestamp,
     referenceUrl: referenceUrl.value,
     eventType,
   }
 
-  if (endTimestamp.value) {
-    eventData.endTimestamp = dateInputToTimestamp(endTimestamp.value)
+  const endTimestamp = dateInputsToTimestamp(endInputs.value)
+  if (endTimestamp != null) {
+    eventData.endTimestamp = endTimestamp
   }
 
   const success = await eventStore.createNewEvent(eventData)
@@ -149,30 +202,86 @@ const handleSubmit = async () => {
         </div>
 
         <div class="form-control">
-          <label class="label" for="start-timestamp-input">
-            <span class="label-text">Start Date</span>
+          <label class="label">
+            <span class="label-text">Start Date (year required)</span>
           </label>
-          <input
-            id="start-timestamp-input"
-            v-model="startTimestamp"
-            type="date"
-            class="input input-bordered w-full"
-            required
-            data-testid="start-timestamp-input"
-          />
+          <div class="flex flex-row gap-2 items-end" data-testid="start-timestamp-input">
+            <label class="form-control mr-2">
+              <span class="label-text text-xs mb-1 mr-2">Year</span>
+              <input
+                v-model="startInputs.year"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-20"
+                required
+                data-testid="start-year-input"
+              />
+            </label>
+            <label class="form-control mr-2">
+              <span class="label-text text-xs mb-1 mr-2">Month</span>
+              <input
+                v-model="startInputs.month"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="start-month-input"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs mb-1 mr-2">Day</span>
+              <input
+                v-model="startInputs.day"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="start-day-input"
+              />
+            </label>
+          </div>
         </div>
 
         <div class="form-control">
-          <label class="label" for="end-timestamp-input">
+          <label class="label">
             <span class="label-text">End Date (optional)</span>
           </label>
-          <input
-            id="end-timestamp-input"
-            v-model="endTimestamp"
-            type="date"
-            class="input input-bordered w-full"
-            data-testid="end-timestamp-input"
-          />
+          <div class="flex flex-row gap-2 items-end" data-testid="end-timestamp-input">
+            <label class="form-control mr-2">
+              <span class="label-text text-xs mb-1 mr-2">Year</span>
+              <input
+                v-model="endInputs.year"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-20"
+                data-testid="end-year-input"
+              />
+            </label>
+            <label class="form-control mr-2">
+              <span class="label-text text-xs mb-1 mr-2">Month</span>
+              <input
+                v-model="endInputs.month"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="end-month-input"
+              />
+            </label>
+            <label class="form-control">
+              <span class="label-text text-xs mb-1 mr-2">Day</span>
+              <input
+                v-model="endInputs.day"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input input-bordered input-sm w-16"
+                data-testid="end-day-input"
+              />
+            </label>
+          </div>
         </div>
 
         <div class="form-control">

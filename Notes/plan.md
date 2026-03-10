@@ -1,30 +1,33 @@
-# Plan: Add `isLast` boolean to LensStore
+# Plan: Replace date inputs in NewEventView.vue with separate year/month/day inputs
 
 ## Goal
-Each `LensStore` needs a reactive `isLast` boolean that is `true` when it is the
-last lens panel in the `structures` list, and `false` otherwise.
+Replace the single `type="date"` inputs for start and end dates in `NewEventView.vue`
+with separate year/month/day text inputs, matching the pattern used in `TimelineDisplay.vue`.
 
 ## Assumptions
-- "last lens panel" means the `LensStore` with the highest index currently in `structures`
-- `isLast` must update reactively when panels are added or removed
-- No database schema changes required
+- Month and day are optional (can be left blank); year is required for start date
+- End date (all three fields) remains fully optional
+- The same `toTimestampWithDefaults` / `dateInputToTimestamp` utility pattern from
+  `TimelineDisplay.vue` will be reused
+- No database schema changes; only UI changes
 
 ## Pitfalls
-- `markRaw` is used on each store object — `isLast` must be a `Ref<boolean>` so
-  it is reactive even inside a `markRaw` object
-- When `removeLensPanel` is called, the previously second-to-last lens becomes last,
-  so its `isLast` ref must be updated
+- Tests currently call `fillInput(page, 'start-timestamp-input', '2026-06-15')` using
+  the old single-input approach — these must be updated to fill year/month/day individually
+- Tests that call `.inputValue()` on `start-timestamp-input` / `end-timestamp-input`
+  must be updated to check individual year/month/day inputs
+- Validation: start year is required; the form submit should be blocked if year is empty
+  or invalid
 
 ## Steps
-1. Add `isLast: Ref<boolean>` to the `LensStore` type
-2. Pass `isLast` into `makeLensStore` and store it as a `ref<boolean>`
-3. Write a helper `updateIsLast(structures)` that iterates structures, finds the
-   last `LensStore`, and sets `isLast.value` correctly on all lens stores
-4. Call `updateIsLast` at the end of `addLensPanel` and `removeLensPanel`, and
-   once after initial creation
-
-## Tests (Red/Green TDD)
-- initial state: first (and only) lens has `isLast === true`
-- after `addLensPanel`: first lens has `isLast === false`, new lens has `isLast === true`
-- after `removeLensPanel`: first lens has `isLast === true` again
-- with 3 lens panels: only the last one has `isLast === true`
+1. ✅ Write this plan
+2. Add `DateInputs` type and helper functions (`parsePositiveInteger`,
+   `toTimestampWithDefaults`, `splitDateString`) to `NewEventView.vue`
+3. Replace `startTimestamp` / `endTimestamp` string refs with `startInputs` / `endInputs`
+   object refs (year/month/day)
+4. Split `getStartDate` / `getEndDate` to return `DateInputs` objects instead of strings
+5. Update `handleSubmit` to build timestamp from year/month/day inputs
+6. Update template: replace single date inputs with year/month/day fields
+7. Update `04-new-event.spec.ts` tests to use new `start-year-input`, `start-month-input`,
+   `start-day-input`, `end-year-input`, `end-month-input`, `end-day-input` test IDs
+8. Run tests; fix any remaining failures

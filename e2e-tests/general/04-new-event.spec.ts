@@ -310,7 +310,9 @@ test('successfully creating an event redirects to home with success message and 
   await page.waitForSelector('[data-testid="basic-description-input"]', {
     timeout: 15000,
   })
-  await fillInput(page, 'start-timestamp-input', '2026-06-15')
+  await fillInput(page, 'start-year-input', '2026')
+  await fillInput(page, 'start-month-input', '06')
+  await fillInput(page, 'start-day-input', '15')
 
   await clickLink(page, 'create-event-action')
 
@@ -336,7 +338,9 @@ test('creating event without signing in shows error', async ({ page }) => {
   await page.waitForSelector('[data-testid="basic-description-input"]', {
     timeout: 30000,
   })
-  await fillInput(page, 'start-timestamp-input', '2026-06-15')
+  await fillInput(page, 'start-year-input', '2026')
+  await fillInput(page, 'start-month-input', '06')
+  await fillInput(page, 'start-day-input', '15')
 
   await clickLink(page, 'create-event-action')
 
@@ -406,12 +410,12 @@ test('person categorization displays type and prefills birth/death dates', async
   })
 
   expect(await getElementText(page, 'type-display')).toBe('person')
-  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
-    '1732-02-22'
-  )
-  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe(
-    '1799-12-14'
-  )
+  expect(await page.getByTestId('start-year-input').inputValue()).toBe('1732')
+  expect(await page.getByTestId('start-month-input').inputValue()).toBe('02')
+  expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
+  expect(await page.getByTestId('end-year-input').inputValue()).toBe('1799')
+  expect(await page.getByTestId('end-month-input').inputValue()).toBe('12')
+  expect(await page.getByTestId('end-day-input').inputValue()).toBe('14')
 })
 
 test('person categorization without death date leaves end date empty', async ({
@@ -432,10 +436,12 @@ test('person categorization without death date leaves end date empty', async ({
   })
 
   expect(await getElementText(page, 'type-display')).toBe('person')
-  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
-    '1946-08-19'
-  )
-  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+  expect(await page.getByTestId('start-year-input').inputValue()).toBe('1946')
+  expect(await page.getByTestId('start-month-input').inputValue()).toBe('08')
+  expect(await page.getByTestId('start-day-input').inputValue()).toBe('19')
+  expect(await page.getByTestId('end-year-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-month-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-day-input').inputValue()).toBe('')
 })
 
 test('one-time-event categorization prefills start date only', async ({
@@ -456,10 +462,12 @@ test('one-time-event categorization prefills start date only', async ({
   })
 
   expect(await getElementText(page, 'type-display')).toBe('one-time-event')
-  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
-    '1969-07-20'
-  )
-  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+  expect(await page.getByTestId('start-year-input').inputValue()).toBe('1969')
+  expect(await page.getByTestId('start-month-input').inputValue()).toBe('07')
+  expect(await page.getByTestId('start-day-input').inputValue()).toBe('20')
+  expect(await page.getByTestId('end-year-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-month-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-day-input').inputValue()).toBe('')
 })
 
 test('bounded-event categorization prefills start and end dates', async ({
@@ -481,12 +489,12 @@ test('bounded-event categorization prefills start and end dates', async ({
   })
 
   expect(await getElementText(page, 'type-display')).toBe('bounded-event')
-  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe(
-    '1739-10-22'
-  )
-  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe(
-    '1748-10-18'
-  )
+  expect(await page.getByTestId('start-year-input').inputValue()).toBe('1739')
+  expect(await page.getByTestId('start-month-input').inputValue()).toBe('10')
+  expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
+  expect(await page.getByTestId('end-year-input').inputValue()).toBe('1748')
+  expect(await page.getByTestId('end-month-input').inputValue()).toBe('10')
+  expect(await page.getByTestId('end-day-input').inputValue()).toBe('18')
 })
 
 test('other categorization leaves dates empty', async ({ page }) => {
@@ -502,8 +510,12 @@ test('other categorization leaves dates empty', async ({ page }) => {
   })
 
   expect(await getElementText(page, 'type-display')).toBe('other')
-  expect(await page.getByTestId('start-timestamp-input').inputValue()).toBe('')
-  expect(await page.getByTestId('end-timestamp-input').inputValue()).toBe('')
+  expect(await page.getByTestId('start-year-input').inputValue()).toBe('')
+  expect(await page.getByTestId('start-month-input').inputValue()).toBe('')
+  expect(await page.getByTestId('start-day-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-year-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-month-input').inputValue()).toBe('')
+  expect(await page.getByTestId('end-day-input').inputValue()).toBe('')
 })
 
 test('redirect categorization auto-navigates to first link search', async ({
