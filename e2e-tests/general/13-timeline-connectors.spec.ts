@@ -54,6 +54,20 @@ test('connector line count matches events with end timestamps (2 events = 6 line
   expect(count).toBe(6)
 })
 
+test('connector lines have stroke-width of 4', async ({ page }) => {
+  await signInAndGoHome(page)
+
+  await expect(page.getByTestId('connector-svg')).toBeVisible({ timeout: 10000 })
+  const lines = page.locator('[data-testid="connector-line"]')
+  const count = await lines.count()
+  expect(count).toBeGreaterThan(0)
+
+  for (let i = 0; i < count; i++) {
+    const strokeWidth = await lines.nth(i).getAttribute('stroke-width')
+    expect(strokeWidth).toBe('4')
+  }
+})
+
 test('connector lines use pastel colors with oklch format', async ({ page }) => {
   await signInAndGoHome(page)
 

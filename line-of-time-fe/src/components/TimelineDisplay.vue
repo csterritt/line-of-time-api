@@ -240,8 +240,7 @@ type ConnectorInfo = {
 
 const eventsWithConnectors = computed(() => {
   return filteredEvents.value.filter(
-    (evt) =>
-      evt.endTimestamp != null && evt.endTimestamp <= appliedEnd.value
+    (evt) => evt.endTimestamp != null && evt.endTimestamp <= appliedEnd.value
   )
 })
 
@@ -251,12 +250,8 @@ const connectorMap = computed((): ConnectorInfo[] => {
   let colorIndex = 0
 
   for (const evt of eventsWithConnectors.value) {
-    const startIdx = rows.findIndex(
-      (r) => r.event.id === evt.id && r.type === 'start'
-    )
-    const endIdx = rows.findIndex(
-      (r) => r.event.id === evt.id && r.type === 'end'
-    )
+    const startIdx = rows.findIndex((r) => r.event.id === evt.id && r.type === 'start')
+    const endIdx = rows.findIndex((r) => r.event.id === evt.id && r.type === 'end')
     if (startIdx >= 0 && endIdx >= 0) {
       result.push({
         eventId: evt.id,
@@ -286,27 +281,31 @@ const svgHeight = ref(0)
 const gridRef = ref<HTMLElement | null>(null)
 const gridWrapperRef = ref<HTMLElement | null>(null)
 
-const computeOverlapOffsets = (
-  connectors: ConnectorInfo[]
-): Map<string, number> => {
-  const offsets = new Map<string, number>()
-  const sorted = [...connectors].sort(
-    (a, b) => a.startRowIndex - b.startRowIndex
-  )
+const computeLaneAssignments = (connectors: ConnectorInfo[]): Map<string, number> => {
+  const lanes = new Map<string, number>()
+  const sorted = [...connectors].sort((a, b) => a.startRowIndex - b.startRowIndex)
 
-  for (let i = 0; i < sorted.length; i++) {
-    let offset = 0
-    for (let j = 0; j < i; j++) {
-      const prev = sorted[j]!
-      const curr = sorted[i]!
-      if (prev.endRowIndex > curr.startRowIndex) {
-        offset++
+  const activeLaneEnds: number[] = []
+
+  for (const conn of sorted) {
+    let assignedLane = -1
+    for (let i = 0; i < activeLaneEnds.length; i++) {
+      if (activeLaneEnds[i]! <= conn.startRowIndex) {
+        assignedLane = i
+        break
       }
     }
-    offsets.set(sorted[i]!.eventId, offset)
+
+    if (assignedLane === -1) {
+      assignedLane = activeLaneEnds.length
+      activeLaneEnds.push(0)
+    }
+
+    activeLaneEnds[assignedLane] = conn.endRowIndex
+    lanes.set(conn.eventId, assignedLane)
   }
 
-  return offsets
+  return lanes
 }
 
 const drawConnectors = () => {
@@ -326,7 +325,7 @@ const drawConnectors = () => {
   svgWidth.value = grid.scrollWidth
   svgHeight.value = grid.scrollHeight
 
-  const overlapOffsets = computeOverlapOffsets(connectors)
+  const laneAssignments = computeLaneAssignments(connectors)
   const separatorWidth = 24
   const offsetStep = 5
   const lines: ConnectorLine[] = []
@@ -347,15 +346,13 @@ const drawConnectors = () => {
     const startRect = startSep.getBoundingClientRect()
     const endRect = endSep.getBoundingClientRect()
 
-    const overlap = overlapOffsets.get(conn.eventId) ?? 0
-    const xOffset = separatorWidth - 4 - overlap * offsetStep
+    const lane = laneAssignments.get(conn.eventId) ?? 0
+    const xOffset = separatorWidth - 4 - lane * offsetStep
     const xMid = startRect.left - gridRect.left + Math.max(xOffset, 4)
     const xRight = startRect.right - gridRect.left - 2
 
-    const yStartCenter =
-      startRect.top - gridRect.top + startRect.height / 2
-    const yEndCenter =
-      endRect.top - gridRect.top + endRect.height / 2
+    const yStartCenter = startRect.top - gridRect.top + startRect.height / 2
+    const yEndCenter = endRect.top - gridRect.top + endRect.height / 2
 
     const color = connectorColor(conn.colorIndex)
 
@@ -521,12 +518,15 @@ watch(timelineRows, () => {
             class="grid grid-cols-[auto_auto_1fr] gap-y-2"
             data-testid="event-list"
           >
-            <template v-for="(row, idx) in timelineRows" :key="`${row.event.id}-${row.type}-${idx}`">
+            <template
+              v-for="(row, idx) in timelineRows"
+              :key="`${row.event.id}-${row.type}-${idx}`"
+            >
               <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
                 <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
               </div>
               <div
-                class="w-6 border-l border-base-300 mx-2"
+                class="w-8 border-l border-base-300 mx-2"
                 data-testid="timeline-separator"
                 :data-connector-id="`${row.type}-${row.event.id}`"
               ></div>
@@ -562,7 +562,7 @@ watch(timelineRows, () => {
               :x2="line.endX"
               :y2="line.endY"
               :stroke="line.color"
-              stroke-width="2"
+              stroke-width="4"
               :data-connector-event="line.eventId"
               data-testid="connector-line"
             />
