@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 
 import type { EventResponse } from '@/stores/event-store'
 import { usePanelStore, type TimelineStore } from '@/stores/panel-store'
@@ -10,6 +10,7 @@ import {
   timestampToYearMonth,
   DAYS_PER_YEAR,
 } from '@/utils/timestamp'
+import { connectorColor } from '@/utils/pastel-colors'
 
 const props = defineProps<{
   store: TimelineStore
@@ -122,10 +123,6 @@ const initializeFilterBounds = () => {
   filterEndInputs.value = timestampToFilterInputs(maxTimestamp)
 }
 
-onMounted(() => {
-  initializeFilterBounds()
-})
-
 watch(parentEvents, () => {
   initializeFilterBounds()
 })
@@ -233,6 +230,196 @@ const timelineRows = computed((): TimelineRow[] => {
 const endDescription = (evt: EventResponse): string => {
   return evt.eventType === 'person' ? `Death of ${evt.name}` : `End of ${evt.name}`
 }
+
+type ConnectorInfo = {
+  eventId: string
+  colorIndex: number
+  startRowIndex: number
+  endRowIndex: number
+}
+
+const eventsWithConnectors = computed(() => {
+  return filteredEvents.value.filter(
+    (evt) =>
+      evt.endTimestamp != null && evt.endTimestamp <= appliedEnd.value
+  )
+})
+
+const connectorMap = computed((): ConnectorInfo[] => {
+  const rows = timelineRows.value
+  const result: ConnectorInfo[] = []
+  let colorIndex = 0
+
+  for (const evt of eventsWithConnectors.value) {
+    const startIdx = rows.findIndex(
+      (r) => r.event.id === evt.id && r.type === 'start'
+    )
+    const endIdx = rows.findIndex(
+      (r) => r.event.id === evt.id && r.type === 'end'
+    )
+    if (startIdx >= 0 && endIdx >= 0) {
+      result.push({
+        eventId: evt.id,
+        colorIndex,
+        startRowIndex: startIdx,
+        endRowIndex: endIdx,
+      })
+      colorIndex++
+    }
+  }
+
+  return result
+})
+
+type ConnectorLine = {
+  eventId: string
+  color: string
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+}
+
+const connectorLines = ref<ConnectorLine[]>([])
+const svgWidth = ref(0)
+const svgHeight = ref(0)
+const gridRef = ref<HTMLElement | null>(null)
+const gridWrapperRef = ref<HTMLElement | null>(null)
+
+const computeOverlapOffsets = (
+  connectors: ConnectorInfo[]
+): Map<string, number> => {
+  const offsets = new Map<string, number>()
+  const sorted = [...connectors].sort(
+    (a, b) => a.startRowIndex - b.startRowIndex
+  )
+
+  for (let i = 0; i < sorted.length; i++) {
+    let offset = 0
+    for (let j = 0; j < i; j++) {
+      const prev = sorted[j]!
+      const curr = sorted[i]!
+      if (prev.endRowIndex > curr.startRowIndex) {
+        offset++
+      }
+    }
+    offsets.set(sorted[i]!.eventId, offset)
+  }
+
+  return offsets
+}
+
+const drawConnectors = () => {
+  const grid = gridRef.value
+  if (!grid) {
+    return
+  }
+
+  const connectors = connectorMap.value
+  if (connectors.length === 0) {
+    connectorLines.value = []
+    svgWidth.value = 0
+    svgHeight.value = 0
+    return
+  }
+
+  svgWidth.value = grid.scrollWidth
+  svgHeight.value = grid.scrollHeight
+
+  const overlapOffsets = computeOverlapOffsets(connectors)
+  const separatorWidth = 24
+  const offsetStep = 5
+  const lines: ConnectorLine[] = []
+
+  for (const conn of connectors) {
+    const startSep = grid.querySelector(
+      `[data-connector-id="start-${conn.eventId}"]`
+    ) as HTMLElement | null
+    const endSep = grid.querySelector(
+      `[data-connector-id="end-${conn.eventId}"]`
+    ) as HTMLElement | null
+
+    if (!startSep || !endSep) {
+      continue
+    }
+
+    const gridRect = grid.getBoundingClientRect()
+    const startRect = startSep.getBoundingClientRect()
+    const endRect = endSep.getBoundingClientRect()
+
+    const overlap = overlapOffsets.get(conn.eventId) ?? 0
+    const xOffset = separatorWidth - 4 - overlap * offsetStep
+    const xMid = startRect.left - gridRect.left + Math.max(xOffset, 4)
+    const xRight = startRect.right - gridRect.left - 2
+
+    const yStartCenter =
+      startRect.top - gridRect.top + startRect.height / 2
+    const yEndCenter =
+      endRect.top - gridRect.top + endRect.height / 2
+
+    const color = connectorColor(conn.colorIndex)
+
+    lines.push({
+      eventId: conn.eventId,
+      color,
+      startX: xMid,
+      startY: yStartCenter,
+      endX: xRight,
+      endY: yStartCenter,
+    })
+
+    lines.push({
+      eventId: conn.eventId,
+      color,
+      startX: xMid,
+      startY: yStartCenter,
+      endX: xMid,
+      endY: yEndCenter,
+    })
+
+    lines.push({
+      eventId: conn.eventId,
+      color,
+      startX: xMid,
+      startY: yEndCenter,
+      endX: xRight,
+      endY: yEndCenter,
+    })
+  }
+
+  connectorLines.value = lines
+}
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  initializeFilterBounds()
+
+  nextTick(() => {
+    drawConnectors()
+  })
+
+  const wrapper = gridWrapperRef.value
+  if (wrapper) {
+    resizeObserver = new ResizeObserver(() => {
+      drawConnectors()
+    })
+    resizeObserver.observe(wrapper)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+})
+
+watch(timelineRows, () => {
+  nextTick(() => {
+    drawConnectors()
+  })
+})
 </script>
 
 <template>
@@ -328,32 +515,58 @@ const endDescription = (evt: EventResponse): string => {
             </button>
           </div>
         </div>
-        <div
-          v-if="timelineRows.length > 0"
-          class="grid grid-cols-[auto_auto_1fr] gap-y-2"
-          data-testid="event-list"
-        >
-          <template v-for="(row, idx) in timelineRows" :key="`${row.event.id}-${row.type}-${idx}`">
-            <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
-              <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
-            </div>
-            <div class="w-6 border-l border-base-300 mx-2" data-testid="timeline-separator"></div>
-            <div class="min-w-0 self-center" data-testid="timeline-row">
-              <template v-if="row.type === 'start'">
-                <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
-                <div
-                  class="truncate text-sm"
-                  :title="row.event.basicDescription"
-                  data-testid="event-description"
-                >
-                  {{ row.event.basicDescription }}
-                </div>
-              </template>
-              <template v-else>
-                <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
-              </template>
-            </div>
-          </template>
+        <div v-if="timelineRows.length > 0" ref="gridWrapperRef" class="relative">
+          <div
+            ref="gridRef"
+            class="grid grid-cols-[auto_auto_1fr] gap-y-2"
+            data-testid="event-list"
+          >
+            <template v-for="(row, idx) in timelineRows" :key="`${row.event.id}-${row.type}-${idx}`">
+              <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
+                <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
+              </div>
+              <div
+                class="w-6 border-l border-base-300 mx-2"
+                data-testid="timeline-separator"
+                :data-connector-id="`${row.type}-${row.event.id}`"
+              ></div>
+              <div class="min-w-0 self-center" data-testid="timeline-row">
+                <template v-if="row.type === 'start'">
+                  <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
+                  <div
+                    class="truncate text-sm"
+                    :title="row.event.basicDescription"
+                    data-testid="event-description"
+                  >
+                    {{ row.event.basicDescription }}
+                  </div>
+                </template>
+                <template v-else>
+                  <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
+                </template>
+              </div>
+            </template>
+          </div>
+          <svg
+            v-if="connectorLines.length > 0"
+            :width="svgWidth"
+            :height="svgHeight"
+            class="absolute top-0 left-0 pointer-events-none"
+            data-testid="connector-svg"
+          >
+            <line
+              v-for="(line, lineIdx) in connectorLines"
+              :key="lineIdx"
+              :x1="line.startX"
+              :y1="line.startY"
+              :x2="line.endX"
+              :y2="line.endY"
+              :stroke="line.color"
+              stroke-width="2"
+              :data-connector-event="line.eventId"
+              data-testid="connector-line"
+            />
+          </svg>
         </div>
         <p v-else data-testid="no-events-message">No events yet</p>
       </div>
