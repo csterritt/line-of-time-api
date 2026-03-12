@@ -2,10 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 
 import { usePanelStore, type TimelineStore } from '@/stores/panel-store'
-import {
-  useTimelineDisplay,
-  endDescription,
-} from '@/composables/useTimelineDisplay'
+import { useTimelineDisplay, endDescription } from '@/composables/useTimelineDisplay'
 import TimelineFilterControls from './TimelineFilterControls.vue'
 
 const props = defineProps<{
@@ -23,7 +20,6 @@ const {
   resetMin,
   resetMax,
   timelineRows,
-  connectorMap,
   connectorLines,
   svgWidth,
   svgHeight,

@@ -151,8 +151,8 @@ export const getWikipediaEvent = async (
     // PRODUCTION:REMOVE
     queryData = wikiMock.query as WikiQueryResponse // PRODUCTION:REMOVE
     console.log('Using wiki mock query data for:', trimmedName) // PRODUCTION:REMOVE
+    // PRODUCTION:REMOVE-NEXT-LINE
   } else {
-    // PRODUCTION:REMOVE
     try {
       const queryUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&titles=${encodedName}`
       const queryResponse = await fetch(queryUrl, {
@@ -180,8 +180,8 @@ export const getWikipediaEvent = async (
     // PRODUCTION:REMOVE
     parseData = wikiMock.parse as WikiParseResponse // PRODUCTION:REMOVE
     console.log('Using wiki mock parse data for:', trimmedName) // PRODUCTION:REMOVE
+    // PRODUCTION:REMOVE-NEXT-LINE
   } else {
-    // PRODUCTION:REMOVE
     try {
       const parseUrl = `https://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text|links&page=${encodedName}`
       const parseResponse = await fetch(parseUrl, {

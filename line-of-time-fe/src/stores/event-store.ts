@@ -51,6 +51,15 @@ const sleep = async (ms: number): Promise<void> => {
   })
 }
 
+const cleanUninterestingLinks = (wikiInfo: WikiInfo | null) => {
+  if (!wikiInfo) {
+    return
+  }
+  wikiInfo.links = wikiInfo.links.filter((link) => {
+    return !link.startsWith('Wiki')
+  })
+}
+
 export const useEventStore = defineStore('event-store', () => {
   const successMessage = ref('')
   const errorMessage = ref('')
@@ -111,13 +120,11 @@ export const useEventStore = defineStore('event-store', () => {
           if (response.ok) {
             const data = (await response.json()) as WikiInfo
             wikiInfo.value = data
+            cleanUninterestingLinks(wikiInfo.value)
             return data
           }
 
-          if (
-            transientStatuses.has(response.status) &&
-            attempt < getInfoAttempts
-          ) {
+          if (transientStatuses.has(response.status) && attempt < getInfoAttempts) {
             await sleep(getInfoRetryDelayMs * attempt)
             continue
           }
@@ -151,7 +158,7 @@ export const useEventStore = defineStore('event-store', () => {
     }
     return allEvents.value.reduce(
       (min, evt) => (evt.startTimestamp < min ? evt.startTimestamp : min),
-      allEvents.value[0]!.startTimestamp,
+      allEvents.value[0]!.startTimestamp
     )
   })
 
@@ -189,10 +196,7 @@ export const useEventStore = defineStore('event-store', () => {
             continue
           }
 
-          if (
-            !transientStatuses.has(response.status) ||
-            attempt === loadAllEventsAttempts
-          ) {
+          if (!transientStatuses.has(response.status) || attempt === loadAllEventsAttempts) {
             allEvents.value = []
             return
           }

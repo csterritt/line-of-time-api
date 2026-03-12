@@ -73,13 +73,10 @@ export const aiCategorizationAndSearch = async (
       const result = JSON.parse(text)
       return result?.result || OTHER_FALLBACK
     } catch (error) {
-      console.error(
-        'Error parsing response from https://bap.cls.cloud/pipe:',
-        error
-      )
+      console.error('Error parsing response from https://bap.cls.cloud:', error)
     }
   } catch (error) {
-    console.error('Error calling https://bap.cls.cloud/pipe:', error)
+    console.error('Error calling https://bap.cls.cloud:', error)
   }
 
   return OTHER_FALLBACK
