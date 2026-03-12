@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { env } from 'cloudflare:workers'
-import { Hono } from 'hono'
+import { Hono, Context } from 'hono'
 import { logger } from 'hono/logger'
 import { csrf } from 'hono/csrf'
 import { secureHeaders } from 'hono/secure-headers'
@@ -250,9 +250,8 @@ app.get('/ui/assets/*', async (c) => {
   })
 })
 
-// SPA catch-all: serve /ui/index.html for all /ui/* routes
-app.get('/ui', (c) => c.redirect('/ui/'))
-app.get('/ui/*', async (c) => {
+// SPA catch-all: serve /ui/index.html for /ui and all /ui/* routes
+const serveSpa = async (c: Context<{ Bindings: Bindings }>) => {
   const message = retrieveCookie(c, COOKIES.MESSAGE_FOUND)
   const error = retrieveCookie(c, COOKIES.ERROR_FOUND)
   if (message) {
@@ -273,7 +272,9 @@ app.get('/ui/*', async (c) => {
   }
 
   return c.html(html)
-})
+}
+app.get('/ui', serveSpa)
+app.get('/ui/*', serveSpa)
 
 // this MUST be the last route declared!
 build404(app)

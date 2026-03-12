@@ -55,6 +55,14 @@ export const setupBetterAuthMiddleware = (
   app: Hono<{ Bindings: Bindings }>
 ): void => {
   app.use('*', async (c: AppContext, next: Next) => {
+    // Skip auth for static assets — no session needed
+    if (c.req.path.startsWith('/ui/assets/')) {
+      c.set('user', null)
+      c.set('session', null)
+      c.set('authSession', null)
+      return next()
+    }
+
     try {
       const auth = createAuth(c.env)
       const session = await auth.api.getSession({
