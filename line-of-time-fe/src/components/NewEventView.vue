@@ -6,7 +6,7 @@ import type { EventInput, CategorizationResult } from '@/stores/event-store'
 import { dateInputToTimestamp } from '@/utils/timestamp'
 
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
-const basicDescriptionMax = 1002
+const basicDescriptionMax = 1002 // PRODUCTION:REMOVE
 
 const router = useRouter()
 const eventStore = useEventStore()

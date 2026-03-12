@@ -86,12 +86,7 @@ export const createAuth = (env: Bindings) => {
         maxAge: DURATIONS.FIVE_MINUTES_IN_SECONDS, // 5 minutes
       },
     },
-    // Using better-auth's default ID generation
-    // advanced: {
-    //   database: {
-    //     generateId: // use default
-    //   },
-    // },
+
     trustedOrigins: [
       'http://localhost:3000', // PRODUCTION:REMOVE
       'http://127.0.0.1:3000', // PRODUCTION:REMOVE

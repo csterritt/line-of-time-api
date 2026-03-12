@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 
 // const nameMax = 500 // PRODUCTION:UNCOMMENT
-const nameMax = 502
+const nameMax = 502 // PRODUCTION:REMOVE
 
 const router = useRouter()
 const route = useRoute()
