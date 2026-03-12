@@ -34,7 +34,7 @@ const todayTimestamp = (): number => {
   return dateInputToTimestamp(`${yyyy}-${mm}-${dd}`)
 }
 
-const getEventBounds = (
+export const getEventBounds = (
   allEvents: EventResponse[],
 ): { minTimestamp: number | null; maxTimestamp: number | null } => {
   if (allEvents.length === 0) {

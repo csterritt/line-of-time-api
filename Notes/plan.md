@@ -1,25 +1,64 @@
-# Plan: Connector Line & Lane Assignment Changes
+# Refactoring Plan for TimelineDisplay.vue
+
+## Analysis
+
+TimelineDisplay.vue is ~586 lines. The `<script>` section (~420 lines) contains:
+
+- **Pure utility functions**: `timestampToFilterInputs`, `parsePositiveInteger`, `toTimestampWithDefaults`, `computeEventMinMax` (near-duplicate of `getEventBounds` in panel-store), `computeLaneAssignments`, `endDescription`
+- **Per-instance filter state**: `originalStart/End`, `filterStartInputs/EndInputs`, `appliedStart/End`
+- **Filter actions**: `initializeFilterBounds`, `applyMinFilter`, `applyMaxFilter`, `resetMin`, `resetMax`
+- **Computed data**: `filteredEvents`, `timelineRows`, `eventsWithConnectors`, `connectorMap`, `rangeIsMoreThanOneYear`, `formatEventDate`
+- **DOM-dependent connector drawing**: `drawConnectors`, ResizeObserver lifecycle, `connectorLines`, `svgWidth/Height`, template refs
+- **Types**: `FilterInputs`, `TimelineEntry`, `TimelineRow`, `ConnectorInfo`, `ConnectorLine`
+
+The `<template>` section (~165 lines) contains:
+- Filter controls (min/max year/month/day forms with Go/Reset buttons)
+- Timeline grid (date cells, separators, event rows)
+- SVG connector overlay
+- "Add Lens Panel" button
+
+## Plan
+
+### Step 1: Export `getEventBounds` from panel-store.ts
+
+Consolidate `computeEventMinMax` (from TimelineDisplay.vue) with the existing `getEventBounds` (in panel-store.ts) by exporting `getEventBounds`.
+
+### Step 2: Create `useTimelineDisplay` composable
+
+Create `src/composables/useTimelineDisplay.ts` with all pure logic and per-instance state:
+- Types: `FilterInputs`, `TimelineEntry`, `TimelineRow`, `ConnectorInfo`
+- Pure functions: `timestampToFilterInputs`, `parsePositiveInteger`, `toTimestampWithDefaults`, `computeLaneAssignments`
+- State refs: `originalStart`, `originalEnd`, `filterStartInputs`, `filterEndInputs`, `appliedStart`, `appliedEnd`
+- Computed: `rangeIsMoreThanOneYear`, `filteredEvents`, `timelineRows`, `eventsWithConnectors`, `connectorMap`, `formatEventDate`
+- Actions: `initializeFilterBounds`, `applyMinFilter`, `applyMaxFilter`, `resetMin`, `resetMax`
+- Helper: `endDescription`
+- Reuse exported `getEventBounds` from panel-store
+
+### Step 3: Extract TimelineFilterControls.vue
+
+New component for the min/max date filter forms. Receives filter state and actions from the composable via props/emits.
+
+### Step 4: Slim down TimelineDisplay.vue
+
+Reduce to a component that:
+- Uses `useTimelineDisplay` composable
+- Composes `TimelineFilterControls` for the filter UI
+- Keeps the grid + connector SVG + "Add Lens Panel" button
+
+### Step 5: Tests
+
+- Unit tests for `useTimelineDisplay` composable (filter logic, row computation, connector map)
+- All existing e2e tests must still pass (no behavioral changes)
 
 ## Assumptions
-1. "Units" for separator width = Tailwind px (w-5=20px, w-6=24px). Code already has `w-6` and `separatorWidth=24` — appears already done.
-2. "Four units wide instead of two" = `stroke-width="4"` instead of `stroke-width="2"`.
-3. No database schema changes needed — all work is front-end in `TimelineDisplay.vue`.
-4. Lane assignment replaces current `computeOverlapOffsets` with proper first-available-lane algorithm.
 
-## Steps
-1. Change `stroke-width` from `"2"` to `"4"` on connector `<line>` elements.
-2. Confirm separator column is already at 24 (`w-6` class + `separatorWidth = 24` constant).
-3. Replace `computeOverlapOffsets` with a lane-assignment algorithm:
-   - Process connectors sorted by `startRowIndex`.
-   - Track active lanes (each lane holds the `endRowIndex` of its current occupant).
-   - Assign new connectors to the first lane whose previous occupant has ended (`endRowIndex <= startRowIndex`).
-   - If no lane is free, allocate a new lane.
-   - When all lanes would exceed the separator width, allow overlap (clamped via existing `Math.max(xOffset, 4)`).
-4. Add e2e test asserting `stroke-width="4"` on connector lines.
-5. Run all tests (`tests/` via `bun test`, `e2e-tests/` via `npx playwright test`) and fix any failures.
-6. Notify via `/home/chris/notify-app`.
+- No database schema changes needed (this is purely frontend refactoring)
+- The refactoring is behavior-preserving — no UI or functionality changes
+- `computeEventMinMax` can be consolidated with `getEventBounds` since they do the same thing
 
 ## Pitfalls
-- Current seed data has 2 connectors (George Washington & WWII) that don't overlap, so lane reuse won't be directly visible in e2e tests. The algorithm still needs to be correct for future overlapping cases.
-- The `offsetStep` (5px) and `separatorWidth` (24px) allow ~4 lanes before clamping kicks in.
-- Existing connector count tests (6 lines total, 3 after filter) should pass unchanged since the lane algorithm doesn't change which connectors are drawn.
+
+- **Per-instance state**: Filter state must be per-timeline, not global. Expanding `TimelineStore` handles this correctly.
+- **DOM coupling**: Connector drawing requires `getBoundingClientRect` — must stay in a component, not the store.
+- **Reactivity**: Moving refs into `markRaw` objects (like `TimelineStore`) means we need to be careful that Vue tracks changes properly. The existing pattern already uses `Ref` inside `markRaw` objects, so this should work.
+- **data-testid stability**: All existing `data-testid` attributes must remain on the same elements to avoid breaking e2e tests.
