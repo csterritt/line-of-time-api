@@ -13,3 +13,4 @@ NODE_ENV=development
 BETTER_AUTH_SECRET='set-your-per-site-secret-here'
 ENABLE_TEST_ROUTES=true
 BENT_AI_CONNECTION_SECRET='set-your-bent-ai-connection-secret-here'
+UPLOAD_SECRET='test-upload-secret-token'

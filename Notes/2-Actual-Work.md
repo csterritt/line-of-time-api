@@ -1,4 +1,7 @@
-When you visit the http://localhost:3000/ page for this app, it comes up quickly. Clicking the
-'See the timeline' button brings up the timeline page, but it takes several seconds
-to get there. It would be good to understand why this takes so long - nothing in the
-chain appears to be slow.
+Change the bulk upload so it is not gated to authenticated users.
+Instead, it should be gated by a secret token that is passed as part of the
+JSON, which should now look like:
+
+{ "token": "your-secret-token", "events": [...] }
+
+The secret token value for comparison is stored in the environment variable UPLOAD_SECRET.

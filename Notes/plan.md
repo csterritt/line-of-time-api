@@ -1,20 +1,41 @@
-# Plan: Fix Slow Timeline Page Load
+# Bulk Event Upload Implementation Plan
+
+## Overview
+Add POST `/api/time-info/bulk-events` endpoint to upload multiple events in one request.
+
+## Implementation Steps
+
+1. **Create bulk event validator** (`src/validators/bulk-event-validator.ts`)
+   - Validate array structure
+   - Validate each event using existing `validateEventInput`
+   - Check for duplicate `referenceUrl` within batch
+   - Return detailed error messages with event indices
+
+2. **Create bulk insert DB function** (`src/lib/db-access.ts`)
+   - Add `insertBulkEvents` function with transaction support
+   - Check for existing `referenceUrl` conflicts in DB
+   - Insert all events atomically (all-or-nothing)
+
+3. **Create bulk events route** (`src/routes/time-info/bulk-events.ts`)
+   - POST endpoint requiring authentication
+   - Accept array of events with snake_case fields
+   - Transform to camelCase for validation
+   - Call bulk insert
+   - Return success with count or detailed errors
+
+4. **Register route** in main router
+
+5. **Write tests**
+   - Valid bulk upload
+   - Invalid events in batch
+   - Duplicate referenceUrl within batch
+   - Duplicate referenceUrl in DB
+   - Empty array
+   - Non-array input
+   - Batch size limits
 
 ## Assumptions
-- No database schema changes are needed.
-- The slowness is cumulative: each request in the load chain runs through the Better Auth middleware, which creates a new `betterAuth()` instance and does a `getSession()` DB lookup — even for static assets that never need auth.
-- Individual requests appear fast, but 4-6 serial auth-checked requests compound to several seconds.
-
-## Answer
-The `setupBetterAuthMiddleware` in `src/routes/auth/better-auth-handler.ts` runs `createAuth()` + `auth.api.getSession()` on **every** request via `app.use('*', ...)`, including static asset requests (`/ui/assets/*`). Additionally, `/ui` redirects to `/ui/` causing an extra round trip through the middleware. Fixing these two issues eliminates the unnecessary auth overhead.
-
-## Plan
-1. Plan/update tests for the performance fix (Red/Green TDD).
-2. Modify `setupBetterAuthMiddleware` to skip auth for static asset paths (`/ui/assets/*`).
-3. Eliminate the `/ui` → `/ui/` redirect in `src/index.ts` — serve `index.html` directly for `/ui`.
-4. Run all tests in `e2e-tests` and `tests` directories.
-
-## Pitfalls
-- Skipping auth middleware for asset paths must not inadvertently skip auth for API paths that need it.
-- Removing the redirect must not break SPA routing (Vue Router uses `base: '/ui/'`).
-- Any tests that depend on the redirect behavior may need updating.
+- All-or-nothing transaction (if any event fails, none are inserted)
+- Max batch size: 1000 events
+- Duplicate `referenceUrl` fails entire batch
+- Input uses snake_case (as shown in example), output uses camelCase

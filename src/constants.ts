@@ -79,6 +79,7 @@ export const PATHS = {
     EVENTS: '/time-info/events',
     EVENT: '/time-info/event',
     NEW_EVENT: '/time-info/new-event',
+    BULK_EVENTS: '/time-info/bulk-events',
     SEARCH: '/time-info/search',
     INITIAL_SEARCH: '/time-info/initial-search',
   },

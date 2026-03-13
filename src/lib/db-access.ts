@@ -575,3 +575,50 @@ const getEventByReferenceUrlActual = async (
     return Result.err(e instanceof Error ? e : new Error(String(e)))
   }
 }
+
+/**
+ * Insert multiple events in a transaction
+ * @param db - Database instance
+ * @param events - Array of events to insert
+ * @returns Promise<Result<number, Error>> - Number of events inserted
+ */
+export const insertBulkEvents = (
+  db: DrizzleClient,
+  events: NewEvent[]
+): Promise<Result<number, Error>> =>
+  withRetry('insertBulkEvents', () => insertBulkEventsActual(db, events))
+
+const insertBulkEventsActual = async (
+  db: DrizzleClient,
+  events: NewEvent[]
+): Promise<Result<number, Error>> => {
+  try {
+    const referenceUrls = events.map((e) => e.referenceUrl)
+    
+    const existingEvents = await db
+      .select({ referenceUrl: event.referenceUrl })
+      .from(event)
+      .where(
+        sql`${event.referenceUrl} IN (${sql.join(
+          referenceUrls.map((url) => sql`${url}`),
+          sql`, `
+        )})`
+      )
+
+    if (existingEvents.length > 0) {
+      return Result.err(
+        new Error(
+          `Duplicate reference_url found in database: ${existingEvents[0].referenceUrl}`
+        )
+      )
+    }
+
+    for (const eventData of events) {
+      await db.insert(event).values(eventData)
+    }
+
+    return Result.ok(events.length)
+  } catch (e) {
+    return Result.err(e instanceof Error ? e : new Error(String(e)))
+  }
+}
