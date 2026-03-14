@@ -32,10 +32,6 @@ bulkEventsRouter.post('/', async (c) => {
     return c.json({ error: 'Server configuration error' }, 500)
   }
 
-  console.log('Received token:', JSON.stringify(validation.token))
-  console.log('Expected token:', JSON.stringify(uploadSecret))
-  console.log('Match:', validation.token === uploadSecret)
-
   if (validation.token !== uploadSecret) {
     return c.json({ error: 'Invalid token' }, 401)
   }
