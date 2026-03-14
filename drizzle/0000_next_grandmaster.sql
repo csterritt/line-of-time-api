@@ -61,6 +61,7 @@ CREATE TABLE `user` (
 	`name` text NOT NULL,
 	`email` text NOT NULL,
 	`emailVerified` integer DEFAULT false NOT NULL,
+	`isAdmin` integer DEFAULT false NOT NULL,
 	`image` text,
 	`createdAt` integer NOT NULL,
 	`updatedAt` integer NOT NULL

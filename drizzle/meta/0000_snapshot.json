@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1739231e-9295-4fe8-8c4c-753207940bd9",
+  "id": "7e0da7a8-2344-4072-8469-58c3b4b26a9d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -398,6 +398,14 @@
         },
         "emailVerified": {
           "name": "emailVerified",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "isAdmin": {
+          "name": "isAdmin",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

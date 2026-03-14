@@ -18,6 +18,7 @@ export const user = sqliteTable('user', {
   emailVerified: integer('emailVerified', { mode: 'boolean' })
     .default(false)
     .notNull(),
+  isAdmin: integer('isAdmin', { mode: 'boolean' }).default(false).notNull(),
   image: text('image'),
   createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull(),

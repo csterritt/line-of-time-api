@@ -21,18 +21,18 @@ CREATE TABLE IF NOT EXISTS `event` (
 	`end_timestamp` integer,
 	`name` text NOT NULL,
 	`basic_description` text NOT NULL,
-	`longer_description` text,
-	`reference_urls` text NOT NULL,
+	`reference_url` text NOT NULL,
 	`related_event_ids` text,
+	`event_type` text,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `event_reference_url_unique` ON `event` (`reference_url`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `startTimestamp_idx` ON `event` (`start_timestamp`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `endTimestamp_idx` ON `event` (`end_timestamp`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `name_idx` ON `event` (`name`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `basic_description_idx` ON `event` (`basic_description`);--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS `longer_description_idx` ON `event` (`longer_description`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `interestedEmail` (
 	`email` text PRIMARY KEY NOT NULL
 );
@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 	`name` text NOT NULL,
 	`email` text NOT NULL,
 	`emailVerified` integer DEFAULT false NOT NULL,
+	`isAdmin` integer DEFAULT false NOT NULL,
 	`image` text,
 	`createdAt` integer NOT NULL,
 	`updatedAt` integer NOT NULL
