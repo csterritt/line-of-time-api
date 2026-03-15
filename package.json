@@ -1,5 +1,5 @@
 {
-  "name": "line-of-time-api",
+  "name": "line-of-time",
   "type": "module",
   "scripts": {
     "dev-open-sign-up": "./run-dev.sh open-sign-up",

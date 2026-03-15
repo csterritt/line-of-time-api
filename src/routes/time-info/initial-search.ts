@@ -107,7 +107,7 @@ const trimToMaxWords = (text: string, maxLength: number): string => {
 
 const WIKI_FETCH_HEADERS = {
   'User-Agent':
-    'LineOfTimeApp/1.0 (https://line-of-time-api.cls.cloud; contact-wiki-search@cls.cloud)',
+    'LineOfTimeApp/1.0 (https://line-of-time.cls.cloud; contact-wiki-search@cls.cloud)',
 }
 
 export const getWikipediaEvent = async (
