@@ -1,41 +1,40 @@
-# Bulk Event Upload Implementation Plan
+# Timestamp Validation Audit Plan
 
 ## Overview
-Add POST `/api/time-info/bulk-events` endpoint to upload multiple events in one request.
+
+Verify that no path allows creation or update of an event whose `startTimestamp` is after its `endTimestamp`, and add regression tests to ensure this stays true.
+
+## Investigation Findings
+
+All three event creation/update paths are **properly protected** by `validateEventInput` in `src/validators/event-validator.ts` (lines 51-61), which rejects `endTimestamp < startTimestamp`.
+
+- **POST /time-info/new-event** — calls `validateEventInput(body)` ✓
+- **PUT /time-info/event/:id** — calls `validateEventInput(body)` ✓
+- **POST /time-info/bulk-events** — `validateBulkEvents` calls `validateEventInput` per event ✓
+
+No database-level CHECK constraint exists, but application-level validation is comprehensive.
+
+**No code changes needed.** The only gap is missing test coverage for this case.
 
 ## Implementation Steps
 
-1. **Create bulk event validator** (`src/validators/bulk-event-validator.ts`)
-   - Validate array structure
-   - Validate each event using existing `validateEventInput`
-   - Check for duplicate `referenceUrl` within batch
-   - Return detailed error messages with event indices
+1. **Add unit test** in `tests/event-validator.test.ts`
+   - Test: reject event where `endTimestamp < startTimestamp`
+   - Test: accept event where `endTimestamp === startTimestamp`
 
-2. **Create bulk insert DB function** (`src/lib/db-access.ts`)
-   - Add `insertBulkEvents` function with transaction support
-   - Check for existing `referenceUrl` conflicts in DB
-   - Insert all events atomically (all-or-nothing)
+2. **Add e2e test** in `e2e-tests/time-info/03-create-event.spec.ts`
+   - Test: POST returns 400 when `startTimestamp > endTimestamp`
 
-3. **Create bulk events route** (`src/routes/time-info/bulk-events.ts`)
-   - POST endpoint requiring authentication
-   - Accept array of events with snake_case fields
-   - Transform to camelCase for validation
-   - Call bulk insert
-   - Return success with count or detailed errors
+3. **Add e2e test** in `e2e-tests/time-info/04-update-event.spec.ts`
+   - Test: PUT returns 400 when `startTimestamp > endTimestamp`
 
-4. **Register route** in main router
+4. **Add e2e test** in `e2e-tests/time-info/10-bulk-events.spec.ts`
+   - Test: POST returns 400 when a bulk event has `startTimestamp > endTimestamp`
 
-5. **Write tests**
-   - Valid bulk upload
-   - Invalid events in batch
-   - Duplicate referenceUrl within batch
-   - Duplicate referenceUrl in DB
-   - Empty array
-   - Non-array input
-   - Batch size limits
+5. **Run all tests** to confirm they pass
 
 ## Assumptions
-- All-or-nothing transaction (if any event fails, none are inserted)
-- Max batch size: 1000 events
-- Duplicate `referenceUrl` fails entire batch
-- Input uses snake_case (as shown in example), output uses camelCase
+
+- No database schema changes required
+- No code changes required — only adding tests
+- `endTimestamp === startTimestamp` is valid (point-in-time events)

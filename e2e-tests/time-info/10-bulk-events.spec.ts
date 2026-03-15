@@ -52,9 +52,12 @@ test.describe('POST /time-info/bulk-events', () => {
   })
 
   test('returns 401 for missing token', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { events: validBulkEvents },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { events: validBulkEvents },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -62,19 +65,27 @@ test.describe('POST /time-info/bulk-events', () => {
   })
 
   test('returns 401 for invalid token', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: 'wrong-token', events: validBulkEvents },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: 'wrong-token', events: validBulkEvents },
+      }
+    )
 
     expect(response.status()).toBe(401)
     const result = await response.json()
     expect(result.error).toBe('Invalid token')
   })
 
-  test('successfully inserts valid bulk events with correct token', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: validBulkEvents },
-    })
+  test('successfully inserts valid bulk events with correct token', async ({
+    request,
+  }) => {
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: validBulkEvents },
+      }
+    )
 
     if (response.status() !== 201) {
       const errorBody = await response.json()
@@ -92,9 +103,12 @@ test.describe('POST /time-info/bulk-events', () => {
   })
 
   test('returns 400 for missing events field', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -102,9 +116,12 @@ test.describe('POST /time-info/bulk-events', () => {
   })
 
   test('returns 400 for non-array events', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: 'not-an-array' },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: 'not-an-array' },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -112,9 +129,12 @@ test.describe('POST /time-info/bulk-events', () => {
   })
 
   test('returns 400 for empty array', async ({ request }) => {
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: [] },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: [] },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -130,9 +150,12 @@ test.describe('POST /time-info/bulk-events', () => {
       },
     ]
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: invalidBulk },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: invalidBulk },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -143,7 +166,9 @@ test.describe('POST /time-info/bulk-events', () => {
     expect(count).toBe(0)
   })
 
-  test('returns 400 for duplicate reference_url within batch', async ({ request }) => {
+  test('returns 400 for duplicate reference_url within batch', async ({
+    request,
+  }) => {
     const duplicateBulk = [
       validBulkEvents[0],
       {
@@ -152,9 +177,12 @@ test.describe('POST /time-info/bulk-events', () => {
       },
     ]
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: duplicateBulk },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: duplicateBulk },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -164,14 +192,19 @@ test.describe('POST /time-info/bulk-events', () => {
     expect(count).toBe(0)
   })
 
-  test('returns 400 when reference_url already exists in database', async ({ request }) => {
+  test('returns 400 when reference_url already exists in database', async ({
+    request,
+  }) => {
     await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
       data: { token: TEST_TOKEN, events: [validBulkEvents[0]] },
     })
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: validBulkEvents },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: validBulkEvents },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()
@@ -181,16 +214,21 @@ test.describe('POST /time-info/bulk-events', () => {
     expect(count).toBe(1)
   })
 
-  test('returns 413 for batch exceeding body size limit', async ({ request }) => {
+  test('returns 413 for batch exceeding body size limit', async ({
+    request,
+  }) => {
     const largeBulk = Array.from({ length: 1001 }, (_, i) => ({
       ...validBulkEvents[0],
       id: `event-${i}`,
       reference_url: `https://example.com/event-${i}`,
     }))
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: largeBulk },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: largeBulk },
+      }
+    )
 
     expect(response.status()).toBe(413)
 
@@ -206,9 +244,12 @@ test.describe('POST /time-info/bulk-events', () => {
       },
     ]
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: eventsWithRelated },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: eventsWithRelated },
+      }
+    )
 
     expect(response.status()).toBe(201)
     const result = await response.json()
@@ -224,9 +265,12 @@ test.describe('POST /time-info/bulk-events', () => {
       },
     ]
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: eventsWithNullEnd },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: eventsWithNullEnd },
+      }
+    )
 
     expect(response.status()).toBe(201)
     const result = await response.json()
@@ -234,7 +278,37 @@ test.describe('POST /time-info/bulk-events', () => {
     expect(result.count).toBe(1)
   })
 
-  test('validates each event with proper error messages', async ({ request }) => {
+  test('returns 400 when a bulk event has startTimestamp after endTimestamp', async ({
+    request,
+  }) => {
+    const invalidTimestampBulk = [
+      {
+        ...validBulkEvents[0],
+        end_timestamp: 635084,
+      },
+    ]
+
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: invalidTimestampBulk },
+      }
+    )
+
+    expect(response.status()).toBe(400)
+    const result = await response.json()
+    expect(result.error).toBeDefined()
+    expect(result.error).toContain(
+      'endTimestamp must be greater than or equal to startTimestamp'
+    )
+
+    const count = await getEventCount()
+    expect(count).toBe(0)
+  })
+
+  test('validates each event with proper error messages', async ({
+    request,
+  }) => {
     const invalidBulk = [
       validBulkEvents[0],
       {
@@ -243,9 +317,12 @@ test.describe('POST /time-info/bulk-events', () => {
       },
     ]
 
-    const response = await request.post(`${BASE_URLS.HOME}/time-info/bulk-events`, {
-      data: { token: TEST_TOKEN, events: invalidBulk },
-    })
+    const response = await request.post(
+      `${BASE_URLS.HOME}/time-info/bulk-events`,
+      {
+        data: { token: TEST_TOKEN, events: invalidBulk },
+      }
+    )
 
     expect(response.status()).toBe(400)
     const result = await response.json()

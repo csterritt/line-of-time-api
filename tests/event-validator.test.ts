@@ -192,6 +192,30 @@ describe('validateEventInput', () => {
       ).toBe(true)
     })
 
+    it('should reject endTimestamp less than startTimestamp', () => {
+      const result = validateEventInput({
+        ...validEvent,
+        endTimestamp: 738533,
+      })
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some((e) =>
+          e.includes(
+            'endTimestamp must be greater than or equal to startTimestamp'
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('should accept endTimestamp equal to startTimestamp', () => {
+      const result = validateEventInput({
+        ...validEvent,
+        endTimestamp: 738534,
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
+    })
+
     it('should collect multiple errors', () => {
       const result = validateEventInput({
         startTimestamp: 'invalid',

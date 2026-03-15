@@ -110,6 +110,37 @@ test.describe('PUT /time-info/event/:id', () => {
     expect(body.error).toBe('Event not found')
   })
 
+  test('returns 400 when startTimestamp is after endTimestamp', async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const response = await request.put(
+      `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
+      {
+        data: { ...updatedEvent, endTimestamp: 719163 },
+        headers: { Cookie: cookieHeader },
+      }
+    )
+
+    expect(response.status()).toBe(400)
+    const body = await response.json()
+    expect(body.error).toBeDefined()
+    expect(
+      body.error.some((e: string) =>
+        e.includes(
+          'endTimestamp must be greater than or equal to startTimestamp'
+        )
+      )
+    ).toBe(true)
+  })
+
   test('returns 400 for invalid input', async ({ page, request }) => {
     await page.goto(BASE_URLS.SIGN_IN)
     await submitSignInForm(page, TEST_USERS.KNOWN_USER)

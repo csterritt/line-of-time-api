@@ -141,6 +141,37 @@ test.describe('POST /time-info/new-event', () => {
     expect(response.status()).toBe(400)
   })
 
+  test('returns 400 when startTimestamp is after endTimestamp', async ({
+    page,
+    request,
+  }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.KNOWN_USER)
+    await page.waitForURL(/\/ui/)
+
+    const cookies = await page.context().cookies()
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+
+    const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
+      data: { ...validEvent, endTimestamp: 738533 },
+      headers: { Cookie: cookieHeader },
+    })
+
+    expect(response.status()).toBe(400)
+    const body = await response.json()
+    expect(body.error).toBeDefined()
+    expect(
+      body.error.some((e: string) =>
+        e.includes(
+          'endTimestamp must be greater than or equal to startTimestamp'
+        )
+      )
+    ).toBe(true)
+
+    const count = await getEventCount()
+    expect(count).toBe(0)
+  })
+
   test("creates event with eventType 'person' and response contains that eventType", async ({
     page,
     request,
@@ -194,16 +225,21 @@ test.describe('POST /time-info/new-event', () => {
     const cookies = await page.context().cookies()
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
-    const createResponse = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
-      data: { ...validEvent, eventType: 'person' },
-      headers: { Cookie: cookieHeader },
-    })
+    const createResponse = await request.post(
+      `${BASE_URLS.TIME_INFO_NEW_EVENT}`,
+      {
+        data: { ...validEvent, eventType: 'person' },
+        headers: { Cookie: cookieHeader },
+      }
+    )
 
     expect(createResponse.status()).toBe(201)
     const created = await createResponse.json()
     expect(created.id).toBeDefined()
 
-    const getResponse = await request.get(`${BASE_URLS.TIME_INFO_EVENT}/${created.id}`)
+    const getResponse = await request.get(
+      `${BASE_URLS.TIME_INFO_EVENT}/${created.id}`
+    )
     expect(getResponse.status()).toBe(200)
     const fetched = await getResponse.json()
     expect(fetched.eventType).toBe('person')
