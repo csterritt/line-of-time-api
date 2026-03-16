@@ -29,7 +29,9 @@ test.afterEach(async () => {
 const signInReadyTimeoutMs = 15000
 const wikipediaReadyTimeoutMs = 30000
 
-const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => {
+const signInAndGoHome = async (
+  page: Parameters<typeof submitSignInForm>[0]
+) => {
   await page.goto(BASE_URLS.SIGN_IN)
   await submitSignInForm(page, TEST_USERS.KNOWN_USER)
   await page.waitForURL(/\/ui/)
@@ -41,7 +43,9 @@ const signInAndGoHome = async (page: Parameters<typeof submitSignInForm>[0]) => 
   })
 }
 
-const signInAndOpenSearch = async (page: Parameters<typeof submitSignInForm>[0]) => {
+const signInAndOpenSearch = async (
+  page: Parameters<typeof submitSignInForm>[0]
+) => {
   await signInAndGoHome(page)
   await page.goto(`${BASE_URLS.HOME}/ui/search`)
   await page.waitForURL(/\/ui\/search/)
@@ -233,7 +237,9 @@ test('related links in new-event page are clickable anchor tags', async ({
   const count = await relatedLinks.count()
   expect(count).toBeGreaterThan(0)
 
-  const firstLinkTag = await relatedLinks.first().evaluate((el) => el.tagName.toLowerCase())
+  const firstLinkTag = await relatedLinks
+    .first()
+    .evaluate((el) => el.tagName.toLowerCase())
   expect(firstLinkTag).toBe('a')
 })
 
@@ -262,7 +268,8 @@ test('clicking a related link searches and navigates to new-event page', async (
   })
   expect(page.url()).toContain('/ui/new-event')
 
-  const nameText = (await page.getByTestId('name-display').textContent())?.trim() ?? ''
+  const nameText =
+    (await page.getByTestId('name-display').textContent())?.trim() ?? ''
   expect(nameText.length).toBeGreaterThan(0)
 })
 
@@ -405,11 +412,11 @@ test('person categorization displays type and prefills birth/death dates', async
   await fillInput(page, 'name-input', 'George Washington')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-display')).toBe('person')
+  expect(await getElementText(page, 'type-select')).toBe('person')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1732')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('02')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
@@ -431,11 +438,11 @@ test('person categorization without death date leaves end date empty', async ({
   await fillInput(page, 'name-input', 'Bill Clinton')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-display')).toBe('person')
+  expect(await getElementText(page, 'type-select')).toBe('person')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1946')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('08')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('19')
@@ -457,11 +464,11 @@ test('one-time-event categorization prefills start date only', async ({
   await fillInput(page, 'name-input', 'Moon landing')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-display')).toBe('one-time-event')
+  expect(await getElementText(page, 'type-select')).toBe('one-time-event')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1969')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('07')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('20')
@@ -484,11 +491,11 @@ test('bounded-event categorization prefills start and end dates', async ({
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-display')).toBe('bounded-event')
+  expect(await getElementText(page, 'type-select')).toBe('bounded-event')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1739')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('10')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
@@ -505,11 +512,11 @@ test('other categorization leaves dates empty', async ({ page }) => {
   await fillInput(page, 'name-input', 'Mercury')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-display')).toBe('other')
+  expect(await getElementText(page, 'type-select')).toBe('other')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('')
@@ -538,7 +545,8 @@ test('redirect categorization auto-navigates to first link search', async ({
   })
   expect(page.url()).toContain('/ui/new-event')
 
-  const nameText = (await page.getByTestId('name-display').textContent())?.trim() ?? ''
+  const nameText =
+    (await page.getByTestId('name-display').textContent())?.trim() ?? ''
   expect(nameText.length).toBeGreaterThan(0)
 })
 
@@ -556,15 +564,15 @@ test('type display shows categorization type next to name', async ({
   await fillInput(page, 'name-input', 'George Washington')
   await clickLink(page, 'search-wikipedia-action')
 
-  await page.waitForSelector('[data-testid="type-display"]', {
+  await page.waitForSelector('[data-testid="type-select"]', {
     timeout: 30000,
   })
 
   expect(await isElementVisible(page, 'name-display')).toBe(true)
-  expect(await isElementVisible(page, 'type-display')).toBe(true)
+  expect(await isElementVisible(page, 'type-select')).toBe(true)
 
   const nameDisplay = page.getByTestId('name-display')
-  const typeDisplay = page.getByTestId('type-display')
+  const typeDisplay = page.getByTestId('type-select')
 
   const nameRect = await nameDisplay.boundingBox()
   const typeRect = await typeDisplay.boundingBox()

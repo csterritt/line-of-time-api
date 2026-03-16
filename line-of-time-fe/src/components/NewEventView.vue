@@ -92,8 +92,18 @@ onMounted(() => {
   }
 })
 
+const validCategorizationTypes = ['person', 'one-time-event', 'bounded-event', 'other'] as const
+type CategorizationSelectType = (typeof validCategorizationTypes)[number]
+
+const rawCategorizationType = eventStore.wikiInfo?.categorization?.type ?? 'other'
+const isTypeChangeable = rawCategorizationType !== 'redirect' && rawCategorizationType !== 'disambiguation'
+const initialCategorizationType: CategorizationSelectType =
+  validCategorizationTypes.includes(rawCategorizationType as CategorizationSelectType)
+    ? (rawCategorizationType as CategorizationSelectType)
+    : 'other'
+
 const name = computed(() => eventStore.wikiInfo?.name ?? '')
-const categorizationType = computed(() => eventStore.wikiInfo?.categorization?.type ?? 'other')
+const categorizationType = ref<CategorizationSelectType>(initialCategorizationType)
 const referenceUrl = computed(() =>
   eventStore.wikiInfo
     ? `https://en.wikipedia.org/wiki/${encodeURIComponent(eventStore.wikiInfo.name)}`
@@ -121,8 +131,7 @@ const handleSubmit = async () => {
     return
   }
 
-  const cat = eventStore.wikiInfo?.categorization
-  const eventType = cat?.type === 'person' ? 'person' : 'event'
+  const eventType = categorizationType.value === 'person' ? 'person' : 'event'
 
   const eventData: EventInput = {
     name: name.value,
@@ -180,9 +189,17 @@ const handleSubmit = async () => {
           <label class="label">
             <span class="label-text">Type</span>
           </label>
-          <div class="input input-bordered flex items-center" data-testid="type-display">
-            {{ categorizationType }}
-          </div>
+          <select
+            v-model="categorizationType"
+            class="select select-bordered"
+            data-testid="type-select"
+            :disabled="!isTypeChangeable"
+          >
+            <option value="person">person</option>
+            <option value="one-time-event">one-time-event</option>
+            <option value="bounded-event">bounded-event</option>
+            <option value="other">other</option>
+          </select>
         </div>
       </div>
 
