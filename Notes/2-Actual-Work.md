@@ -1,12 +1,2 @@
-The NewEventView.vue file contains the form for creating a new event.
-Currently, the categorizationType is just set to be whatever the categorization process
-found. This is not ideal, as the user should be able to change the categorization type.
-Please make it a simple drop-down list of the following categorization types:
-
-- person
-- one-time-event
-- bounded-event
-- other
-
-The one exception is that if the categorization process finds either a redirect or a disambiguation,
-then the categorization type should be set to other, and the user should not be able to change it.
+The NewEventView.vue file was changed so the categorization type is now a dropdown. This is the correct behavior. However, the 04-new-event.spec.ts file has tests that refer to the old data-testid="type-display" for the categorization type. These tests need to be updated to reflect the new dropdown behavior, finding the data-testid="type-select" element instead, and doing the proper comparisons of the selected value.
+Again, the code is correct, and the tests need to be updated to match the new behavior.

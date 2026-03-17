@@ -416,7 +416,7 @@ test('person categorization displays type and prefills birth/death dates', async
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-select')).toBe('person')
+  expect(await page.getByTestId('type-select').inputValue()).toBe('person')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1732')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('02')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
@@ -442,7 +442,7 @@ test('person categorization without death date leaves end date empty', async ({
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-select')).toBe('person')
+  expect(await page.getByTestId('type-select').inputValue()).toBe('person')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1946')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('08')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('19')
@@ -468,7 +468,7 @@ test('one-time-event categorization prefills start date only', async ({
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-select')).toBe('one-time-event')
+  expect(await page.getByTestId('type-select').inputValue()).toBe('one-time-event')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1969')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('07')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('20')
@@ -495,7 +495,7 @@ test('bounded-event categorization prefills start and end dates', async ({
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-select')).toBe('bounded-event')
+  expect(await page.getByTestId('type-select').inputValue()).toBe('bounded-event')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('1739')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('10')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('22')
@@ -516,7 +516,7 @@ test('other categorization leaves dates empty', async ({ page }) => {
     timeout: 30000,
   })
 
-  expect(await getElementText(page, 'type-select')).toBe('other')
+  expect(await page.getByTestId('type-select').inputValue()).toBe('other')
   expect(await page.getByTestId('start-year-input').inputValue()).toBe('')
   expect(await page.getByTestId('start-month-input').inputValue()).toBe('')
   expect(await page.getByTestId('start-day-input').inputValue()).toBe('')

@@ -1,17 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createMemoryHistory } from 'vue-router'
 import NewEventView from '../components/NewEventView.vue'
 import { useEventStore } from '../stores/event-store'
 import type { WikiInfo } from '../stores/event-store'
 
+const stubComponent = { render: () => null }
+
 const makeRouter = () =>
   createRouter({
-    history: createWebHistory(),
+    history: createMemoryHistory(),
     routes: [
-      { path: '/', component: { template: '<div />' } },
-      { path: '/search', component: { template: '<div />' } },
+      { path: '/', component: stubComponent },
+      { path: '/search', component: stubComponent },
       { path: '/new-event', component: NewEventView },
     ],
   })
