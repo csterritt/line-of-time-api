@@ -86,6 +86,15 @@ export const createAuth = (env: Bindings) => {
         maxAge: DURATIONS.FIVE_MINUTES_IN_SECONDS, // 5 minutes
       },
     },
+    user: {
+      additionalFields: {
+        isAdmin: {
+          type: 'boolean',
+          defaultValue: false,
+          required: false,
+        },
+      },
+    },
 
     trustedOrigins: [
       'http://localhost:3000', // PRODUCTION:REMOVE

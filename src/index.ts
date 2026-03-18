@@ -55,6 +55,7 @@ import { testSignUpModeRouter } from './routes/test/sign-up-mode' // PRODUCTION:
 import { testSmtpRouter } from './routes/test/smtp-config' // PRODUCTION:REMOVE
 import { testAiMockRouter } from './routes/test/ai-mock' // PRODUCTION:REMOVE
 import { testWikiMockRouter } from './routes/test/wiki-mock' // PRODUCTION:REMOVE
+import { testAdminCheckRouter } from './routes/test/admin-check' // PRODUCTION:REMOVE
 import { isTestRouteEnabled } from './lib/test-routes'
 import { eventsRouter } from './routes/time-info/events'
 import { eventRouter } from './routes/time-info/event'
@@ -239,6 +240,7 @@ if (isTestRouteEnabledFlag) {
   app.route('/test', testSmtpRouter) // PRODUCTION:REMOVE
   app.route('/test/ai-mock', testAiMockRouter) // PRODUCTION:REMOVE
   app.route('/test/wiki-mock', testWikiMockRouter) // PRODUCTION:REMOVE
+  app.route('/test/admin-check', testAdminCheckRouter) // PRODUCTION:REMOVE
 }
 
 // SPA assets: serve /ui/assets/* directly

@@ -51,6 +51,13 @@ export const TEST_USERS = {
     password: 'newpassword123',
     name: 'Reset User',
   },
+
+  // Admin user from seeded test database
+  ADMIN_USER: {
+    email: 'csterritt@gmail.com',
+    password: 'freds-clever-password',
+    name: 'Chris',
+  },
 } as const
 
 export const GATED_CODES = {

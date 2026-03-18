@@ -58,6 +58,7 @@ export interface AuthUser {
   email: string
   name: string | null
   emailVerified: boolean
+  isAdmin: boolean
   image?: string | null
   createdAt: Date
   updatedAt: Date
