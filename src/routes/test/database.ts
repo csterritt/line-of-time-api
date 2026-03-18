@@ -361,7 +361,7 @@ testDatabaseRouter.post(
       const testEvents: NewEvent[] = [
         {
           id: 'test-event-1',
-          startTimestamp: 718997,
+          startTimestamp: 2440423,
           endTimestamp: null,
           name: 'Moon Landing',
           basicDescription: 'First human on the moon',
@@ -373,8 +373,8 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-2',
-          startTimestamp: 708082,
-          endTimestamp: 710275,
+          startTimestamp: 2429508,
+          endTimestamp: 2431701,
           name: 'World War II',
           basicDescription: 'Global war from 1939 to 1945',
           referenceUrl: 'https://en.wikipedia.org/wiki/World_War_II',
@@ -385,7 +385,7 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-3',
-          startTimestamp: 648490,
+          startTimestamp: 2369916,
           endTimestamp: null,
           name: 'US Declaration of Independence',
           basicDescription: 'Declaration of Independence signed',
@@ -398,8 +398,8 @@ testDatabaseRouter.post(
         },
         {
           id: 'test-event-4',
-          startTimestamp: 632234,
-          endTimestamp: 657053,
+          startTimestamp: 2353712,
+          endTimestamp: 2378479,
           name: 'George Washington',
           basicDescription: 'First President of the United States',
           referenceUrl: 'https://en.wikipedia.org/wiki/George_Washington',

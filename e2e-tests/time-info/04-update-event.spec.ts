@@ -10,7 +10,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 import { submitSignInForm } from '../support/form-helpers'
 
 const updatedEvent = {
-  startTimestamp: 719164,
+  startTimestamp: 2451545,
   name: 'Updated Moon Landing',
   basicDescription: 'Updated description',
   referenceUrl: 'https://example.com/updated',
@@ -124,7 +124,7 @@ test.describe('PUT /time-info/event/:id', () => {
     const response = await request.put(
       `${BASE_URLS.TIME_INFO_EVENT}/test-event-1`,
       {
-        data: { ...updatedEvent, endTimestamp: 719163 },
+        data: { ...updatedEvent, endTimestamp: 2451544 },
         headers: { Cookie: cookieHeader },
       }
     )

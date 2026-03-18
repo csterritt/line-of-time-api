@@ -10,7 +10,7 @@ import { TEST_USERS, BASE_URLS } from '../support/test-data'
 import { submitSignInForm } from '../support/form-helpers'
 
 const validEvent = {
-  startTimestamp: 738534,
+  startTimestamp: 2451545,
   name: 'Test Event',
   basicDescription: 'A test event description',
   referenceUrl: 'https://example.com/reference',
@@ -52,7 +52,7 @@ test.describe('POST /time-info/new-event', () => {
     expect(response.status()).toBe(201)
     const event = await response.json()
     expect(event.name).toBe('Test Event')
-    expect(event.startTimestamp).toBe(738534)
+    expect(event.startTimestamp).toBe(2451545)
     expect(event.endTimestamp).toBeNull()
     expect(event.id).toBeDefined()
     expect(event.createdAt).toBeDefined()
@@ -71,7 +71,7 @@ test.describe('POST /time-info/new-event', () => {
 
     const fullEvent = {
       ...validEvent,
-      endTimestamp: 738535,
+      endTimestamp: 2451546,
       relatedEventIds: ['related-1', 'related-2'],
     }
 
@@ -82,7 +82,7 @@ test.describe('POST /time-info/new-event', () => {
 
     expect(response.status()).toBe(201)
     const event = await response.json()
-    expect(event.endTimestamp).toBe(738535)
+    expect(event.endTimestamp).toBe(2451546)
     expect(event.relatedEventIds).toEqual(['related-1', 'related-2'])
   })
 
@@ -153,7 +153,7 @@ test.describe('POST /time-info/new-event', () => {
     const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
     const response = await request.post(`${BASE_URLS.TIME_INFO_NEW_EVENT}`, {
-      data: { ...validEvent, endTimestamp: 738533 },
+      data: { ...validEvent, endTimestamp: 2451544 },
       headers: { Cookie: cookieHeader },
     })
 

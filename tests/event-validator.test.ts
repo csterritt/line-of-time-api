@@ -7,7 +7,7 @@ import { describe, it, expect } from 'bun:test'
 import { validateEventInput } from '../src/validators/event-validator'
 
 const validEvent = {
-  startTimestamp: 738534,
+  startTimestamp: 2451545,
   name: 'Moon Landing',
   basicDescription: 'First human on the moon',
   referenceUrl: 'https://en.wikipedia.org/wiki/Moon_landing',
@@ -24,7 +24,7 @@ describe('validateEventInput', () => {
     it('should accept a valid event with all optional fields', () => {
       const fullEvent = {
         ...validEvent,
-        endTimestamp: 738535,
+        endTimestamp: 2451546,
         relatedEventIds: ['event-1', 'event-2'],
       }
       const result = validateEventInput(fullEvent)
@@ -195,7 +195,7 @@ describe('validateEventInput', () => {
     it('should reject endTimestamp less than startTimestamp', () => {
       const result = validateEventInput({
         ...validEvent,
-        endTimestamp: 738533,
+        endTimestamp: 2451544,
       })
       expect(result.valid).toBe(false)
       expect(
@@ -210,7 +210,7 @@ describe('validateEventInput', () => {
     it('should accept endTimestamp equal to startTimestamp', () => {
       const result = validateEventInput({
         ...validEvent,
-        endTimestamp: 738534,
+        endTimestamp: 2451545,
       })
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])

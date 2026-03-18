@@ -18,8 +18,8 @@ test.afterEach(async () => {
 
 const expectedTimelineBounds = {
   minYear: '1732',
-  minMonth: '01',
-  minDay: '01',
+  minMonth: '02',
+  minDay: '22',
   maxYear: '1969',
   maxMonth: '07',
   maxDay: '20',
@@ -80,8 +80,8 @@ test('min date picker starts with the earliest event date', async ({ page }) => 
   const minMonth = await page.getByTestId('filter-min-month').inputValue()
   const minDay = await page.getByTestId('filter-min-day').inputValue()
   expect(minYear).toBe('1732')
-  expect(minMonth).toBe('01')
-  expect(minDay).toBe('01')
+  expect(minMonth).toBe('02')
+  expect(minDay).toBe('22')
 })
 
 test('max date picker starts with the latest event date', async ({ page }) => {

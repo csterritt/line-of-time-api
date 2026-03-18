@@ -53,8 +53,8 @@ test.describe('GET /time-info/event/:id', () => {
 
     expect(event).toMatchObject({
       id: 'test-event-2',
-      startTimestamp: 708082,
-      endTimestamp: 710275,
+      startTimestamp: 2429508,
+      endTimestamp: 2431701,
       name: 'World War II',
       basicDescription: 'Global war from 1939 to 1945',
     })

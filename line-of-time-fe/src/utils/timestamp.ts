@@ -17,103 +17,65 @@ const getDaysInMonth = (year: number, month: number): number => {
   return DAYS_IN_MONTH[month - 1]!
 }
 
-const getDaysInYear = (year: number): number => {
-  return isLeapYear(year) ? 366 : 365
+/**
+ * Convert year/month/day (astronomical year, 0 = 1 BC) to Julian Day Number.
+ * Uses the proleptic Gregorian calendar algorithm.
+ */
+const ymdToJDN = (year: number, month: number, day: number): number => {
+  const a = Math.floor((14 - month) / 12)
+  const y = year + 4800 - a
+  const m = month + 12 * a - 3
+  return (
+    day +
+    Math.floor((153 * m + 2) / 5) +
+    365 * y +
+    Math.floor(y / 4) -
+    Math.floor(y / 100) +
+    Math.floor(y / 400) -
+    32045
+  )
 }
 
-const countLeapYears = (fromYear: number, toYear: number): number => {
-  if (fromYear > toYear) {
-    return 0
+/**
+ * Convert Julian Day Number to year/month/day (astronomical year, 0 = 1 BC).
+ * Uses the proleptic Gregorian calendar algorithm.
+ */
+const jdnToYMD = (jdn: number): { year: number; month: number; day: number } => {
+  const a = jdn + 32044
+  const b = Math.floor((4 * a + 3) / 146097)
+  const c = a - Math.floor((146097 * b) / 4)
+  const d = Math.floor((4 * c + 3) / 1461)
+  const e = c - Math.floor((1461 * d) / 4)
+  const m = Math.floor((5 * e + 2) / 153)
+  return {
+    day: e - Math.floor((153 * m + 2) / 5) + 1,
+    month: m + 3 - 12 * Math.floor(m / 10),
+    year: 100 * b + d - 4800 + Math.floor(m / 10),
   }
-  const countUpTo = (y: number): number => {
-    if (y < 0) {
-      return 0
-    }
-    return Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400)
-  }
-  return countUpTo(toYear) - countUpTo(fromYear - 1)
 }
 
-const daysFromYear1ToYear = (year: number): number => {
-  if (year >= 1) {
-    const y = year - 1
-    return y * 365 + countLeapYears(1, y)
-  }
-
-  let totalDays = 0
-  for (let y = year; y < 1; y++) {
-    totalDays -= getDaysInYear(y)
-  }
-  return totalDays
-}
-
-type DateComponents = {
-  year: number
-  month: number
-  day: number
-}
-
-const timestampToComponents = (timestamp: number): DateComponents => {
-  let remainingDays = timestamp
-  let year: number
-
-  if (timestamp >= 0) {
-    year = Math.floor(timestamp / 365.2425) + 1
-    while (daysFromYear1ToYear(year) > timestamp) {
-      year--
-    }
-    while (daysFromYear1ToYear(year + 1) <= timestamp) {
-      year++
-    }
-    remainingDays = timestamp - daysFromYear1ToYear(year)
-  } else {
-    year = Math.floor(timestamp / 365.2425)
-    while (daysFromYear1ToYear(year) > timestamp) {
-      year--
-    }
-    while (daysFromYear1ToYear(year + 1) <= timestamp) {
-      year++
-    }
-    remainingDays = timestamp - daysFromYear1ToYear(year)
-  }
-
-  let month = 1
-  while (month <= 12) {
-    const daysInThisMonth = getDaysInMonth(year, month)
-    if (remainingDays < daysInThisMonth) {
-      break
-    }
-    remainingDays -= daysInThisMonth
-    month++
-  }
-
-  const day = remainingDays + 1
-
-  return { year, month, day }
-}
-
-export const timestampToYmd = (timestamp: number): string => {
-  const { year, month, day } = timestampToComponents(timestamp)
+export const timestampToYmd = (jdn: number): string => {
+  const { year, month, day } = jdnToYMD(jdn)
   const yStr = String(Math.abs(year))
   const mStr = String(month).padStart(2, '0')
   const dStr = String(day).padStart(2, '0')
   return `${yStr}-${mStr}-${dStr}`
 }
 
-export const timestampToYear = (timestamp: number): string => {
-  const { year } = timestampToComponents(timestamp)
+export const timestampToYear = (jdn: number): string => {
+  const { year } = jdnToYMD(jdn)
   return String(Math.abs(year))
 }
 
-export const timestampToYearMonth = (timestamp: number): string => {
-  const { year, month } = timestampToComponents(timestamp)
+export const timestampToYearMonth = (jdn: number): string => {
+  const { year, month } = jdnToYMD(jdn)
   const yStr = String(Math.abs(year))
   const mStr = String(month).padStart(2, '0')
   return `${yStr}-${mStr}`
 }
 
-export const timestampToDateInput = (timestamp: number): string => {
-  return timestampToYmd(timestamp)
+export const timestampToDateInput = (jdn: number): string => {
+  return timestampToYmd(jdn)
 }
 
 export const dateInputToTimestamp = (dateStr: string): number => {
@@ -124,15 +86,9 @@ export const dateInputToTimestamp = (dateStr: string): number => {
   const year = parseInt(parts[0]!, 10)
   const month = parseInt(parts[1]!, 10)
   const day = parseInt(parts[2]!, 10)
-  return daysFromYear1ToYear(year) + getDaysUpToMonth(year, month) + (day - 1)
-}
-
-const getDaysUpToMonth = (year: number, month: number): number => {
-  let days = 0
-  for (let m = 1; m < month; m++) {
-    days += getDaysInMonth(year, m)
-  }
-  return days
+  return ymdToJDN(year, month, day)
 }
 
 export const DAYS_PER_YEAR = 365
+
+export { getDaysInMonth }

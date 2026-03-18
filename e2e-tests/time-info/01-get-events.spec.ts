@@ -35,7 +35,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   }) => {
     await seedEvents()
 
-    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/800000`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/2300000/2500000`)
 
     expect(response.status()).toBe(200)
     const events = await response.json()
@@ -50,7 +50,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
     await seedEvents()
 
     const response = await request.get(
-      `${BASE_URLS.TIME_INFO_EVENTS}/700000/720000`
+      `${BASE_URLS.TIME_INFO_EVENTS}/2425000/2445000`
     )
 
     expect(response.status()).toBe(200)
@@ -63,7 +63,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
   test('returns events with correct structure', async ({ request }) => {
     await seedEvents()
 
-    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/0/800000`)
+    const response = await request.get(`${BASE_URLS.TIME_INFO_EVENTS}/2300000/2500000`)
 
     expect(response.status()).toBe(200)
     const events = await response.json()
@@ -73,7 +73,7 @@ test.describe('GET /time-info/events/:start/:end', () => {
 
     expect(event).toMatchObject({
       id: 'test-event-1',
-      startTimestamp: 718997,
+      startTimestamp: 2440423,
       endTimestamp: null,
       name: 'Moon Landing',
       basicDescription: 'First human on the moon',

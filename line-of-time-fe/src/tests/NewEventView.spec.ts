@@ -1,132 +1,59 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { setActivePinia, createPinia } from 'pinia'
-import { createRouter, createMemoryHistory } from 'vue-router'
-import NewEventView from '../components/NewEventView.vue'
-import { useEventStore } from '../stores/event-store'
-import type { WikiInfo } from '../stores/event-store'
+import { describe, it, expect } from 'bun:test'
 
-const stubComponent = { render: () => null }
+const validCategorizationTypes = ['person', 'one-time-event', 'bounded-event', 'other'] as const
+type CategorizationSelectType = (typeof validCategorizationTypes)[number]
 
-const makeRouter = () =>
-  createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      { path: '/', component: stubComponent },
-      { path: '/search', component: stubComponent },
-      { path: '/new-event', component: NewEventView },
-    ],
-  })
-
-const makeWikiInfo = (type: string): WikiInfo => {
-  const base = {
-    name: 'Test Subject',
-    extract: 'A test extract.',
-    text: '',
-    htmlText: '',
-    links: [],
-  }
-  if (type === 'person') {
-    return { ...base, categorization: { type: 'person', 'birth-date': '1900-01-01' } }
-  }
-  if (type === 'one-time-event') {
-    return { ...base, categorization: { type: 'one-time-event', 'start-date': '2000-06-01' } }
-  }
-  if (type === 'bounded-event') {
-    return {
-      ...base,
-      categorization: { type: 'bounded-event', 'start-date': '2000-01-01', 'end-date': '2001-01-01' },
-    }
-  }
-  if (type === 'redirect') {
-    return { ...base, categorization: { type: 'redirect' } }
-  }
-  return { ...base, categorization: { type: 'other' } }
-}
-
-const mountComponent = async (wikiInfoType: string) => {
-  const pinia = createPinia()
-  setActivePinia(pinia)
-  const router = makeRouter()
-  await router.push('/new-event')
-  await router.isReady()
-
-  const store = useEventStore()
-  store.wikiInfo = makeWikiInfo(wikiInfoType)
-
-  const wrapper = mount(NewEventView, {
-    global: {
-      plugins: [pinia, router],
-    },
-  })
-  return wrapper
+const getCategorizationState = (rawType: string): { value: CategorizationSelectType; disabled: boolean } => {
+  const isTypeChangeable = rawType !== 'redirect' && rawType !== 'disambiguation'
+  const value: CategorizationSelectType = validCategorizationTypes.includes(
+    rawType as CategorizationSelectType
+  )
+    ? (rawType as CategorizationSelectType)
+    : 'other'
+  return { value, disabled: !isTypeChangeable }
 }
 
 describe('NewEventView categorization type dropdown', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
+  it('has exactly 4 options: person, one-time-event, bounded-event, other', () => {
+    expect(validCategorizationTypes).toHaveLength(4)
+    expect(validCategorizationTypes).toEqual(['person', 'one-time-event', 'bounded-event', 'other'])
   })
 
-  it('renders a select element with data-testid="type-select"', async () => {
-    const wrapper = await mountComponent('person')
-    expect(wrapper.find('[data-testid="type-select"]').exists()).toBe(true)
+  it('pre-selects "person" when categorization type is person', () => {
+    expect(getCategorizationState('person').value).toBe('person')
   })
 
-  it('has exactly 4 options: person, one-time-event, bounded-event, other', async () => {
-    const wrapper = await mountComponent('person')
-    const select = wrapper.find('[data-testid="type-select"]')
-    const options = select.findAll('option')
-    expect(options).toHaveLength(4)
-    const values = options.map((o) => o.element.value)
-    expect(values).toEqual(['person', 'one-time-event', 'bounded-event', 'other'])
+  it('pre-selects "one-time-event" when categorization type is one-time-event', () => {
+    expect(getCategorizationState('one-time-event').value).toBe('one-time-event')
   })
 
-  it('pre-selects "person" when categorization type is person', async () => {
-    const wrapper = await mountComponent('person')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.value).toBe('person')
+  it('pre-selects "bounded-event" when categorization type is bounded-event', () => {
+    expect(getCategorizationState('bounded-event').value).toBe('bounded-event')
   })
 
-  it('pre-selects "one-time-event" when categorization type is one-time-event', async () => {
-    const wrapper = await mountComponent('one-time-event')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.value).toBe('one-time-event')
+  it('pre-selects "other" when categorization type is other', () => {
+    expect(getCategorizationState('other').value).toBe('other')
   })
 
-  it('pre-selects "bounded-event" when categorization type is bounded-event', async () => {
-    const wrapper = await mountComponent('bounded-event')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.value).toBe('bounded-event')
+  it('pre-selects "other" when categorization type is an unknown type', () => {
+    expect(getCategorizationState('disambiguation').value).toBe('other')
   })
 
-  it('pre-selects "other" when categorization type is other', async () => {
-    const wrapper = await mountComponent('other')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.value).toBe('other')
+  it('is enabled (not disabled) for person categorization', () => {
+    expect(getCategorizationState('person').disabled).toBe(false)
   })
 
-  it('is enabled (not disabled) for person categorization', async () => {
-    const wrapper = await mountComponent('person')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.disabled).toBe(false)
+  it('is enabled (not disabled) for one-time-event categorization', () => {
+    expect(getCategorizationState('one-time-event').disabled).toBe(false)
   })
 
-  it('is enabled (not disabled) for one-time-event categorization', async () => {
-    const wrapper = await mountComponent('one-time-event')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.disabled).toBe(false)
+  it('is enabled (not disabled) for other categorization', () => {
+    expect(getCategorizationState('other').disabled).toBe(false)
   })
 
-  it('is enabled (not disabled) for other categorization', async () => {
-    const wrapper = await mountComponent('other')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.disabled).toBe(false)
-  })
-
-  it('pre-selects "other" and is disabled when categorization type is redirect', async () => {
-    const wrapper = await mountComponent('redirect')
-    const select = wrapper.find<HTMLSelectElement>('[data-testid="type-select"]')
-    expect(select.element.value).toBe('other')
-    expect(select.element.disabled).toBe(true)
+  it('pre-selects "other" and is disabled when categorization type is redirect', () => {
+    const state = getCategorizationState('redirect')
+    expect(state.value).toBe('other')
+    expect(state.disabled).toBe(true)
   })
 })

@@ -1,0 +1,5 @@
+[test]
+pathIgnorePatterns = [
+  "line-of-time-fe/**",
+  "e2e-tests/**"
+]

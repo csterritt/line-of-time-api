@@ -18,8 +18,8 @@ test.afterEach(async () => {
 
 const expectedTimelineBounds = {
   minYear: '1732',
-  minMonth: '01',
-  minDay: '01',
+  minMonth: '02',
+  minDay: '22',
   maxYear: '1969',
   maxMonth: '07',
   maxDay: '20',

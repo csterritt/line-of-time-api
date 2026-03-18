@@ -1,41 +1,43 @@
-# Plan: Categorization Type Dropdown in NewEventView
+# Julian Day Timestamp Migration Plan
 
-## Goal
-Replace the static type display in `NewEventView.vue` with an editable dropdown.
-Options: person, one-time-event, bounded-event, other.
-Exception: if categorization is 'redirect' (or 'disambiguation'), force 'other' and disable the dropdown.
+## Overview
+Change timestamp format from proprietary integer (days since Jan 1, 1 AD) to Julian Day Numbers (JDN). The `julian` package is installed; implementation uses the proleptic Gregorian calendar JDN algorithm directly to avoid TypeScript import issues.
 
-## Assumptions
-- No database schema changes needed (eventType field already accepts any string).
-- 'disambiguation' is not in the current TypeScript union type but is handled gracefully via the initialization logic.
-- The `handleSubmit` eventType logic should use the selected dropdown value, not the raw categorization type.
+## JDN Algorithm
+- `ymdToJDN(year, month, day)` → JDN (Gregorian formula)
+- `jdnToYMD(jdn)` → { year, month, day }
+- Astronomical year numbering: 0 = 1 BC, -1 = 2 BC, etc.
+- Min allowed JDN = 38 (Jan 1, 4713 BC, proleptic Gregorian)
 
-## Steps
+## Known JDN Values (seeded test events)
+| Date | Old timestamp | JDN |
+|------|--------------|-----|
+| Feb 22, 1732 (Washington birth) | 632234 | 2353712 |
+| Dec 14, 1799 (Washington death) | 657053 | 2378479 |
+| Jul 4, 1776 (Declaration) | 648490 | 2369916 |
+| Sep 1, 1939 (WWII start) | 708082 | 2429508 |
+| Sep 2, 1945 (WWII end) | 710275 | 2431701 |
+| Jul 20, 1969 (Moon Landing) | 718997 | 2440423 |
+| Jan 1, 2000 AD | — | 2451545 |
 
-### 1. Write tests first (Red)
-- Create `src/tests/NewEventView.spec.ts` with unit tests covering:
-  - Dropdown has exactly 4 options: person, one-time-event, bounded-event, other
-  - Each valid type pre-selects the correct option and leaves dropdown enabled
-  - 'redirect' categorization → 'other' pre-selected, dropdown disabled
+## Files to Change
+1. `src/lib/timestamp.ts` — rewrite with JDN; add `validateEventDates()`
+2. `tests/timestamp.test.ts` — rewrite for JDN values (Red/Green TDD)
+3. `tests/event-validator.test.ts` — update hardcoded timestamp 738534 → 2451545
+4. `line-of-time-fe/src/utils/timestamp.ts` — rewrite with JDN
+5. `src/routes/test/database.ts` — update seeded event timestamps
+6. `e2e-tests/time-info/01-get-events.spec.ts` — update URL ranges + expected value
+7. `e2e-tests/time-info/03-create-event.spec.ts` — update validEvent timestamps
+8. `e2e-tests/time-info/04-update-event.spec.ts` — update updatedEvent timestamps
 
-### 2. Implement changes to NewEventView.vue (Green)
-**Script:**
-- Replace `categorizationType` computed with a `ref`, initialized from categorization:
-  - 'redirect' or 'disambiguation' → 'other'
-  - valid type (person/one-time-event/bounded-event/other) → use it
-  - anything else → 'other'
-- Add `isTypeChangeable` computed: false if raw categorization was 'redirect' or 'disambiguation'
-- Update `handleSubmit` to derive `eventType` from `categorizationType.value`
+## No DB Schema Changes
+`startTimestamp` and `endTimestamp` remain `integer` columns — JDNs are integers. ✓
 
-**Template:**
-- Replace `<div data-testid="type-display">` with `<select data-testid="type-select">` bound via `v-model`
-- Options: person, one-time-event, bounded-event, other
-- `:disabled="!isTypeChangeable"`
-
-### 3. Run all tests and fix failures
-
-### 4. Start server and notify
-
-## Pitfalls
-- The component's `startInputs`/`endInputs` are initialized once from the categorization on mount, not reactively tied to the dropdown selection. Changing the type dropdown does NOT re-compute date fields. This is intentional (user may have already filled in dates).
-- `handleSubmit` currently sends `eventType: 'person' | 'event'` — after the change it still maps from the dropdown value ('person' → 'person', else → 'event').
+## Validation Rules (validateEventDates)
+- Only startYear required; startMonth/startDay optional
+- If no startMonth → startDay forbidden; defaults: month=1, day=1
+- If no endYear → endMonth/endDay forbidden
+- If endYear given but no endMonth → endDay forbidden; defaults: month=12, day=31
+- If endYear+endMonth given but no endDay → default: last day of month
+- end >= start (year, then month, then day)
+- Min date: Jan 1, 4713 BC (JDN ≥ 38)
