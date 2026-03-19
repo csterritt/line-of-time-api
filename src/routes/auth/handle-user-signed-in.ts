@@ -29,6 +29,7 @@ export const handleUserSignedIn = (app: Hono<{ Bindings: Bindings }>): void => {
           return c.json({
             'user-signed-in': true,
             name: user.name,
+            isAdmin: user.isAdmin ?? false,
           })
         }
 

@@ -59,6 +59,7 @@ test(
     expect(json).toEqual({
       'user-signed-in': true,
       name: TEST_USERS.KNOWN_USER.name,
+      isAdmin: false,
     })
 
     // Verify Content-Type header
@@ -82,6 +83,7 @@ test(
     expect(json).toEqual({
       'user-signed-in': true,
       name: TEST_USERS.KNOWN_USER.name,
+      isAdmin: false,
     })
 
     // Sign out by navigating to sign-out page and clicking sign-out

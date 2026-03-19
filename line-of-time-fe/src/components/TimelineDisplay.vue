@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { usePanelStore, type TimelineStore } from '@/stores/panel-store'
 import { useTimelineDisplay, endDescription } from '@/composables/useTimelineDisplay'
+import { useUserInfoStore } from '@/stores/user-info'
 import TimelineFilterControls from './TimelineFilterControls.vue'
 
 const props = defineProps<{
@@ -10,6 +12,8 @@ const props = defineProps<{
 }>()
 
 const panelStore = usePanelStore()
+const userInfo = useUserInfoStore()
+const router = useRouter()
 
 const {
   filterStartInputs,
@@ -99,20 +103,44 @@ watch(timelineRows, () => {
                 data-testid="timeline-separator"
                 :data-connector-id="`${row.type}-${row.event.id}`"
               ></div>
-              <div class="min-w-0 self-center" data-testid="timeline-row">
-                <template v-if="row.type === 'start'">
-                  <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
-                  <div
-                    class="truncate text-sm"
-                    :title="row.event.basicDescription"
-                    data-testid="event-description"
+              <div class="min-w-0 self-center flex flex-row items-center gap-2" data-testid="timeline-row">
+                <div class="min-w-0 flex-1">
+                  <template v-if="row.type === 'start'">
+                    <span class="font-bold" data-testid="event-name">{{ row.event.name }}</span>
+                    <div
+                      class="truncate text-sm"
+                      :title="row.event.basicDescription"
+                      data-testid="event-description"
+                    >
+                      {{ row.event.basicDescription }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
+                  </template>
+                </div>
+                <button
+                  v-if="userInfo.isAdmin && row.type === 'start'"
+                  class="btn btn-ghost btn-xs"
+                  :title="'Edit ' + row.event.name"
+                  :data-testid="'edit-event-' + row.event.id + '-action'"
+                  @click="router.push('/edit-event/' + row.event.id)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
                   >
-                    {{ row.event.basicDescription }}
-                  </div>
-                </template>
-                <template v-else>
-                  <em data-testid="event-end-description">{{ endDescription(row.event) }}</em>
-                </template>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15.232 5.232l3.536 3.536M9 11l-4 4v4h4l4-4-4-4zm6.232-5.768a2 2 0 012.828 2.828L12 14H8v-4l6.232-6.232z"
+                    />
+                  </svg>
+                </button>
               </div>
             </template>
           </div>

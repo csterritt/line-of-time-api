@@ -60,6 +60,7 @@ import { isTestRouteEnabled } from './lib/test-routes'
 import { eventsRouter } from './routes/time-info/events'
 import { eventRouter } from './routes/time-info/event'
 import { newEventRouter } from './routes/time-info/new-event'
+import { editEventRouter } from './routes/time-info/handle-edit-event'
 import { bulkEventsRouter } from './routes/time-info/bulk-events'
 import { searchRouter } from './routes/time-info/search'
 import { initialSearchRouter } from './routes/time-info/initial-search'
@@ -225,6 +226,7 @@ handleDeleteAccount(app)
 app.route(PATHS.TIME_INFO.EVENTS, eventsRouter)
 app.route(PATHS.TIME_INFO.EVENT, eventRouter)
 app.route(PATHS.TIME_INFO.NEW_EVENT, newEventRouter)
+app.route(PATHS.TIME_INFO.EDIT_EVENT, editEventRouter)
 app.route(PATHS.TIME_INFO.BULK_EVENTS, bulkEventsRouter)
 app.route(PATHS.TIME_INFO.SEARCH, searchRouter)
 app.route(PATHS.TIME_INFO.INITIAL_SEARCH, initialSearchRouter)

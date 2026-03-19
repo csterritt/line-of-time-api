@@ -1,49 +1,34 @@
-## Required Changes for Admin User Support
+## Add Admin-Only Back End Event Edit Route
 
-### 1. **Create Admin Authorization Middleware**
+We want to add a new backend route to support POST requests for editing existing events, restricted to admin users only.
 
-You'll need a new middleware file `src/middleware/admin-access.ts`:
+### Step 1: Create Event Edit Handler
 
-```typescript
-export const adminAccess = createMiddleware<{ Bindings: Bindings }>(
-  async (c: Context, next): Promise<Response | void> => {
-    const user = c.get('user')
-    const session = c.get('session')
+Create the handler for processing event edit requests:
 
-    if (!user || !session) {
-      return redirectWithError(c, PATHS.AUTH.SIGN_IN, 'Admin access required')
-    }
+**File: `src/routes/time-info/handle-edit-event.ts`**
 
-    if (!user.isAdmin) {
-      return c.text('Admin access required', HTML_STATUS.FORBIDDEN)
-    }
+This will use the new middleware `adminAccess` to make sure the user is an admin.
 
-    setupNoCacheHeaders(c)
-    await next()
-  }
-)
-```
+Follow the patterns used in other handlers like `handle-new-event.ts`.
 
-### 2. **Update Better-Auth Configuration**
+### Step 2: Create Event Validator
 
-In `src/lib/auth.ts`, modify the auth configuration to include admin role in the session:
+Create a validator for edit event input data in `src/lib/event-validator.ts`.
 
-```typescript
-// Add after line 100
-  advanced: {
-    generateId: false, // Use default ID generation
-    crossSubDomainCookies: false,
-  },
-  // Add user object to session
-  session: {
-    // ... existing config
-    cookieCache: {
-      enabled: true,
-      maxAge: DURATIONS.FIVE_MINUTES_IN_SECONDS,
-    },
-    // Add user data to session
-    userData: {
-      include: ['isAdmin'],
-    },
-  },
-```
+Follow the patterns used in other validators in `event-validator.ts`.
+
+### Step 3: Register Admin Routes
+
+Follow the patterns used in other routes in `src/index.ts`.
+
+## Update the Front End
+
+We need to add a form to the front end to allow admins to edit events.
+
+Follow the patterns used in NewEventView.vue and ensure the form is only visible to admins.
+
+When the user is an admin, add a button to the row of the event list that will open the edit form
+on that event. It should have a pencil icon.
+
+Update the event-store.ts to include the edit event functionality, which will call the backend route.

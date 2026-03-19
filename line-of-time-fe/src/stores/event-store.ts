@@ -101,6 +101,40 @@ export const useEventStore = defineStore('event-store', () => {
     }
   }
 
+  const editEvent = async (id: string, eventData: EventInput): Promise<boolean> => {
+    clearMessages()
+    try {
+      const response = await fetch(`/time-info/edit-event/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      })
+
+      if (response.status === 200) {
+        const updated = (await response.json()) as EventResponse
+        const idx = allEvents.value.findIndex((e) => e.id === id)
+        if (idx !== -1) {
+          allEvents.value[idx] = updated
+        }
+        successMessage.value = 'Event updated successfully!'
+        return true
+      }
+
+      const data = await response.json()
+      if (Array.isArray(data.error)) {
+        errorMessage.value = data.error.join(', ')
+      } else if (typeof data.error === 'string') {
+        errorMessage.value = data.error
+      } else {
+        errorMessage.value = 'Failed to update event.'
+      }
+      return false
+    } catch {
+      errorMessage.value = 'Network error. Please try again.'
+      return false
+    }
+  }
+
   const wikiInfo = ref<WikiInfo | null>(null)
   const wikiLoading = ref(false)
 
@@ -221,6 +255,7 @@ export const useEventStore = defineStore('event-store', () => {
     errorMessage,
     clearMessages,
     createNewEvent,
+    editEvent,
     wikiInfo,
     wikiLoading,
     getInfo,

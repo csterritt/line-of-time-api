@@ -1,38 +1,68 @@
-# Plan: Implement Admin User Support
+# Plan: Add Admin-Only Event Edit Route + Frontend UI
 
 ## Assumptions
-- The `isAdmin` field already exists in the database schema (confirmed in schema.ts:21)
+- `adminAccess` middleware already exists in `src/middleware/admin-access.ts`
+- `updateEventById` already exists in `src/lib/db-access.ts`
+- `validateEventInput` in `src/validators/event-validator.ts` can be reused for edit validation
+- The edit route uses POST (not PUT) to a new path `/time-info/edit-event/:id`
+- `isAdmin` is already in the user object returned by better-auth
 - No database schema changes are required
-- Admin middleware will follow the same pattern as `signedInAccess` middleware
-- Better-auth supports custom user data in sessions via `session.userData` configuration
 
-## Implementation Steps
+## Backend Steps
 
-### 1. Create Admin Authorization Middleware
-- Create `src/middleware/admin-access.ts`
-- Check for authenticated user and session
-- Verify `user.isAdmin` is true
-- Return 403 Forbidden if not admin
-- Set no-cache headers
+### 1. Add EDIT_EVENT path to `src/constants.ts`
+- Add `EDIT_EVENT: '/time-info/edit-event'` to `PATHS.TIME_INFO`
 
-### 2. Update Better-Auth Configuration
-- Modify `src/lib/auth.ts` to include `isAdmin` in session userData
-- Add `session.userData.include: ['isAdmin']` to the auth config
-- This ensures the `isAdmin` field is available in the session context
+### 2. Create `src/routes/time-info/handle-edit-event.ts`
+- POST `/:id` handler using `adminAccess` middleware
+- Validates body with `validateEventInput`
+- Calls `updateEventById` from db-access
+- Returns updated event JSON
 
-### 3. Plan Tests
-- Test admin middleware rejects non-admin users
-- Test admin middleware allows admin users
-- Test admin middleware redirects unauthenticated users
-- Update any existing tests that may be affected
+### 3. Register route in `src/index.ts`
+- Import `editEventRouter`
+- Add `app.route(PATHS.TIME_INFO.EDIT_EVENT, editEventRouter)`
 
-### 4. Implement and Run Tests
-- Write tests following Red/Green TDD
-- Ensure all e2e-tests pass
-- Ensure all unit tests pass
+### 4. Update `src/routes/auth/handle-user-signed-in.ts`
+- Return `isAdmin: user.isAdmin` in the JSON response (for frontend)
+
+## Frontend Steps
+
+### 5. Update `user-info.ts` store
+- Add `isAdmin` ref
+- Populate from `/auth/user-signed-in` response
+
+### 6. Add `editEvent` to `event-store.ts`
+- POST to `/time-info/edit-event/:id` with event data
+- Update `allEvents` on success
+
+### 7. Create `EditEventView.vue`
+- Form pre-populated with existing event data (year/month/day inputs)
+- Submit calls `eventStore.editEvent`
+- Only accessible when user is admin
+
+### 8. Add pencil icon button to `TimelineDisplay.vue`
+- Show only when `userInfo.isAdmin`
+- Clicking navigates to `/edit-event/:id` route
+
+### 9. Register `/edit-event/:id` route in `router/index.ts`
+
+## Tests
+
+### 10. E2E backend tests: `e2e-tests/time-info/11-edit-event.spec.ts`
+- Admin can edit an event via POST
+- Non-admin gets 403
+- Unauthenticated gets redirected
+- Returns 400 for invalid input
+- Returns 404 for non-existent event
+
+### 11. E2E frontend tests: `e2e-tests/admin/02-edit-event-ui.spec.ts`
+- Admin sees pencil button on event rows
+- Non-admin does not see pencil button
+- Edit form is pre-populated with event data
+- Successful edit redirects to home
 
 ## Potential Pitfalls
-- Better-auth may require specific configuration format for userData
-- Session caching may need to be cleared/refreshed after adding userData config
-- Need to verify the user object structure returned by better-auth includes custom fields
-- Admin routes will need to use this middleware (not implemented in this plan)
+- The `handle-edit-event.ts` uses POST (not PUT) — distinct from existing PUT on `/time-info/event/:id`
+- `isAdmin` must be exposed by `/auth/user-signed-in` for frontend to know
+- Need to import `Pencil` icon from lucide-vue-next or use inline SVG (lucide may not be installed)
