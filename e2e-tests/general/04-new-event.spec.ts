@@ -583,3 +583,29 @@ test('type display shows categorization type next to name', async ({
     expect(Math.abs(nameRect.y - typeRect.y)).toBeLessThan(20)
   }
 })
+
+test('Cancel button is visible on new-event page', async ({ page }) => {
+  await signInAndOpenSearch(page)
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await waitForWikipediaNewEventPage(page)
+  expect(await isElementVisible(page, 'cancel-action')).toBe(true)
+})
+
+test('clicking Cancel button navigates back to home page', async ({ page }) => {
+  await signInAndOpenSearch(page)
+
+  await fillInput(page, 'name-input', 'Mercury')
+  await clickLink(page, 'search-wikipedia-action')
+
+  await waitForWikipediaNewEventPage(page)
+  await clickLink(page, 'cancel-action')
+
+  await page.waitForSelector('[data-testid="welcome-message"]', {
+    timeout: signInReadyTimeoutMs,
+  })
+  expect(page.url()).toContain('/ui/')
+  expect(await isElementVisible(page, 'welcome-message')).toBe(true)
+})

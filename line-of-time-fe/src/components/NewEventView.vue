@@ -96,11 +96,13 @@ const validCategorizationTypes = ['person', 'one-time-event', 'bounded-event', '
 type CategorizationSelectType = (typeof validCategorizationTypes)[number]
 
 const rawCategorizationType = eventStore.wikiInfo?.categorization?.type ?? 'other'
-const isTypeChangeable = rawCategorizationType !== 'redirect' && rawCategorizationType !== 'disambiguation'
-const initialCategorizationType: CategorizationSelectType =
-  validCategorizationTypes.includes(rawCategorizationType as CategorizationSelectType)
-    ? (rawCategorizationType as CategorizationSelectType)
-    : 'other'
+const isTypeChangeable =
+  rawCategorizationType !== 'redirect' && rawCategorizationType !== 'disambiguation'
+const initialCategorizationType: CategorizationSelectType = validCategorizationTypes.includes(
+  rawCategorizationType as CategorizationSelectType
+)
+  ? (rawCategorizationType as CategorizationSelectType)
+  : 'other'
 
 const name = computed(() => eventStore.wikiInfo?.name ?? '')
 const categorizationType = ref<CategorizationSelectType>(initialCategorizationType)
@@ -121,6 +123,12 @@ const handleSearchAgain = () => {
   eventStore.wikiInfo = null
   eventStore.clearMessages()
   router.push('/search')
+}
+
+const handleCancel = () => {
+  eventStore.wikiInfo = null
+  eventStore.clearMessages()
+  router.push('/')
 }
 
 const handleSubmit = async () => {
@@ -315,17 +323,28 @@ const handleSubmit = async () => {
           />
         </div>
 
-        <div class="form-control mt-6 flex flex-row gap-2">
-          <button type="submit" class="btn btn-primary" data-testid="create-event-action">
-            Create Event
-          </button>
+        <div class="flex flex-row justify-between items-center mt-6">
+          <div class="form-control flex flex-row gap-2">
+            <button type="submit" class="btn btn-primary" data-testid="create-event-action">
+              Create Event
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-testid="search-again-action"
+              @click="handleSearchAgain"
+            >
+              Search again
+            </button>
+          </div>
+
           <button
             type="button"
             class="btn btn-secondary"
-            data-testid="search-again-action"
-            @click="handleSearchAgain"
+            data-testid="cancel-action"
+            @click="handleCancel"
           >
-            Search again
+            Cancel
           </button>
         </div>
       </form>
