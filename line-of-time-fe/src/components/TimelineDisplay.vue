@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { usePanelStore, type TimelineStore } from '@/stores/panel-store'
 import { useTimelineDisplay, endDescription } from '@/composables/useTimelineDisplay'
+import { isTimestampBC } from '@/utils/timestamp'
 import { useUserInfoStore } from '@/stores/user-info'
 import TimelineFilterControls from './TimelineFilterControls.vue'
 
@@ -95,7 +96,13 @@ watch(timelineRows, () => {
               v-for="(row, idx) in timelineRows"
               :key="`${row.event.id}-${row.type}-${idx}`"
             >
-              <div class="font-mono text-sm text-right" data-testid="timeline-date-cell">
+              <div
+                :class="[
+                  'font-mono text-sm text-right',
+                  isTimestampBC(row.timestamp) ? 'bg-base-200 italic' : '',
+                ]"
+                data-testid="timeline-date-cell"
+              >
                 <span v-if="row.isFirstInGroup">{{ row.dateLabel }}</span>
               </div>
               <div

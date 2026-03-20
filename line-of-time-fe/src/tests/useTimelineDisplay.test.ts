@@ -109,7 +109,7 @@ describe('timestampToFilterInputs', () => {
 
 describe('toTimestampWithDefaults', () => {
   it('converts valid year/month/day to timestamp and normalized values', () => {
-    const inputs: FilterInputs = { year: '1969', month: '7', day: '20' }
+    const inputs: FilterInputs = { year: '1969', month: '7', day: '20', era: 'AD' }
     const result = toTimestampWithDefaults(inputs)
     expect(result).not.toBeNull()
     expect(result!.timestamp).toBe(dateInputToTimestamp('1969-07-20'))
@@ -118,7 +118,7 @@ describe('toTimestampWithDefaults', () => {
   })
 
   it('defaults month to 1 when empty', () => {
-    const inputs: FilterInputs = { year: '1969', month: '', day: '' }
+    const inputs: FilterInputs = { year: '1969', month: '', day: '', era: 'AD' }
     const result = toTimestampWithDefaults(inputs)
     expect(result).not.toBeNull()
     expect(result!.timestamp).toBe(dateInputToTimestamp('1969-01-01'))
@@ -127,7 +127,7 @@ describe('toTimestampWithDefaults', () => {
   })
 
   it('defaults day to 1 when empty', () => {
-    const inputs: FilterInputs = { year: '1969', month: '7', day: '' }
+    const inputs: FilterInputs = { year: '1969', month: '7', day: '', era: 'AD' }
     const result = toTimestampWithDefaults(inputs)
     expect(result).not.toBeNull()
     expect(result!.timestamp).toBe(dateInputToTimestamp('1969-07-01'))
@@ -135,17 +135,17 @@ describe('toTimestampWithDefaults', () => {
   })
 
   it('returns null for empty year', () => {
-    const inputs: FilterInputs = { year: '', month: '1', day: '1' }
+    const inputs: FilterInputs = { year: '', month: '1', day: '1', era: 'AD' }
     expect(toTimestampWithDefaults(inputs)).toBeNull()
   })
 
   it('returns null for invalid month (>12)', () => {
-    const inputs: FilterInputs = { year: '1969', month: '13', day: '1' }
+    const inputs: FilterInputs = { year: '1969', month: '13', day: '1', era: 'AD' }
     expect(toTimestampWithDefaults(inputs)).toBeNull()
   })
 
   it('returns null for invalid day (>31)', () => {
-    const inputs: FilterInputs = { year: '1969', month: '7', day: '32' }
+    const inputs: FilterInputs = { year: '1969', month: '7', day: '32', era: 'AD' }
     expect(toTimestampWithDefaults(inputs)).toBeNull()
   })
 })
@@ -259,7 +259,7 @@ describe('useTimelineDisplay filteredEvents', () => {
     const td = useTimelineDisplay(store)
     td.initializeFilterBounds()
 
-    td.filterStartInputs.value = { year: '1900', month: '1', day: '1' }
+    td.filterStartInputs.value = { year: '1900', month: '1', day: '1', era: 'AD' }
     td.applyMinFilter()
 
     expect(td.filteredEvents.value.length).toBe(1)
@@ -338,7 +338,7 @@ describe('useTimelineDisplay applyMinFilter / applyMaxFilter', () => {
     const td = useTimelineDisplay(store)
     td.initializeFilterBounds()
 
-    td.filterStartInputs.value = { year: '1800', month: '1', day: '1' }
+    td.filterStartInputs.value = { year: '1800', month: '1', day: '1', era: 'AD' }
     td.applyMinFilter()
 
     expect(td.appliedStart.value).toBe(dateInputToTimestamp('1800-01-01'))
@@ -354,7 +354,7 @@ describe('useTimelineDisplay applyMinFilter / applyMaxFilter', () => {
     const td = useTimelineDisplay(store)
     td.initializeFilterBounds()
 
-    td.filterEndInputs.value = { year: '1945', month: '1', day: '1' }
+    td.filterEndInputs.value = { year: '1945', month: '1', day: '1', era: 'AD' }
     td.applyMaxFilter()
 
     expect(td.appliedEnd.value).toBe(dateInputToTimestamp('1945-01-01'))
@@ -368,7 +368,7 @@ describe('useTimelineDisplay applyMinFilter / applyMaxFilter', () => {
     td.initializeFilterBounds()
     const before = td.appliedStart.value
 
-    td.filterStartInputs.value = { year: '', month: '1', day: '1' }
+    td.filterStartInputs.value = { year: '', month: '1', day: '1', era: 'AD' }
     td.applyMinFilter()
 
     expect(td.appliedStart.value).toBe(before)
@@ -387,7 +387,7 @@ describe('useTimelineDisplay resetMin / resetMax', () => {
 
     const originalStartTs = td.appliedStart.value
 
-    td.filterStartInputs.value = { year: '1900', month: '1', day: '1' }
+    td.filterStartInputs.value = { year: '1900', month: '1', day: '1', era: 'AD' }
     td.applyMinFilter()
     expect(td.appliedStart.value).not.toBe(originalStartTs)
 
@@ -407,7 +407,7 @@ describe('useTimelineDisplay resetMin / resetMax', () => {
 
     const originalEndTs = td.appliedEnd.value
 
-    td.filterEndInputs.value = { year: '1945', month: '1', day: '1' }
+    td.filterEndInputs.value = { year: '1945', month: '1', day: '1', era: 'AD' }
     td.applyMaxFilter()
     expect(td.appliedEnd.value).not.toBe(originalEndTs)
 
@@ -495,5 +495,100 @@ describe('useTimelineDisplay formatEventDate', () => {
 
     const ts = dateInputToTimestamp('1939-09-01')
     expect(td.formatEventDate(ts)).toBe('1939-09')
+  })
+})
+
+// ========================================
+// BC/AD era support tests
+// ========================================
+
+describe('timestampToFilterInputs with BC dates', () => {
+  it('returns era BC and positive year for 1 BC date', () => {
+    // JDN for Jan 1, 1 BC (astronomical year 0)
+    const jdn = dateInputToTimestamp('0-01-01')
+    const result = timestampToFilterInputs(jdn)
+    expect(result.era).toBe('BC')
+    expect(result.year).toBe('1')
+  })
+
+  it('returns era AD for AD date', () => {
+    const jdn = dateInputToTimestamp('1969-07-20')
+    const result = timestampToFilterInputs(jdn)
+    expect(result.era).toBe('AD')
+    expect(result.year).toBe('1969')
+  })
+
+  it('returns era BC and correct year for 500 BC', () => {
+    // 500 BC = astronomical year -499
+    const jdn = dateInputToTimestamp('-499-01-01')
+    const result = timestampToFilterInputs(jdn)
+    expect(result.era).toBe('BC')
+    expect(result.year).toBe('500')
+  })
+})
+
+describe('toTimestampWithDefaults with era field', () => {
+  it('converts BC era with year 1 to astronomical year 0', () => {
+    const inputs: FilterInputs = { year: '1', month: '1', day: '1', era: 'BC' }
+    const result = toTimestampWithDefaults(inputs)
+    expect(result).not.toBeNull()
+    expect(result!.timestamp).toBe(dateInputToTimestamp('0-01-01'))
+  })
+
+  it('converts BC era with year 500 to astronomical year -499', () => {
+    const inputs: FilterInputs = { year: '500', month: '1', day: '1', era: 'BC' }
+    const result = toTimestampWithDefaults(inputs)
+    expect(result).not.toBeNull()
+    expect(result!.timestamp).toBe(dateInputToTimestamp('-499-01-01'))
+  })
+
+  it('converts AD era normally', () => {
+    const inputs: FilterInputs = { year: '1969', month: '7', day: '20', era: 'AD' }
+    const result = toTimestampWithDefaults(inputs)
+    expect(result).not.toBeNull()
+    expect(result!.timestamp).toBe(dateInputToTimestamp('1969-07-20'))
+  })
+
+  it('defaults era to AD when not provided', () => {
+    const inputs: FilterInputs = { year: '1969', month: '7', day: '20', era: 'AD' }
+    const result = toTimestampWithDefaults(inputs)
+    expect(result).not.toBeNull()
+    expect(result!.timestamp).toBe(dateInputToTimestamp('1969-07-20'))
+  })
+
+  it('preserves era in normalized output', () => {
+    const inputs: FilterInputs = { year: '500', month: '', day: '', era: 'BC' }
+    const result = toTimestampWithDefaults(inputs)
+    expect(result).not.toBeNull()
+    expect(result!.normalized.era).toBe('BC')
+  })
+})
+
+describe('useTimelineDisplay with BC events', () => {
+  it('initializes filter bounds spanning BC to AD', () => {
+    const events = [
+      makeEvent('Ancient Event', '-499-01-01'),
+      makeEvent('Modern Event', '1969-07-20'),
+    ]
+    const store = makeMockTimelineStore(events)
+    const td = useTimelineDisplay(store)
+    td.initializeFilterBounds()
+
+    expect(td.filterStartInputs.value.era).toBe('BC')
+    expect(td.filterStartInputs.value.year).toBe('500')
+    expect(td.filterEndInputs.value.era).toBe('AD')
+    expect(td.filterEndInputs.value.year).toBe('1969')
+  })
+
+  it('filters events correctly with BC timestamps', () => {
+    const events = [
+      makeEvent('Ancient Event', '-499-01-01'),
+      makeEvent('Modern Event', '1969-07-20'),
+    ]
+    const store = makeMockTimelineStore(events)
+    const td = useTimelineDisplay(store)
+    td.initializeFilterBounds()
+
+    expect(td.filteredEvents.value.length).toBe(2)
   })
 })

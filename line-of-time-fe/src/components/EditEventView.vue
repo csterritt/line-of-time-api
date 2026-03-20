@@ -4,7 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useEventStore } from '@/stores/event-store'
 import { useUserInfoStore } from '@/stores/user-info'
 import type { EventInput } from '@/stores/event-store'
-import { dateInputToTimestamp, timestampToYmd } from '@/utils/timestamp'
+import { dateInputToTimestamp, timestampToYmd, isTimestampBC } from '@/utils/timestamp'
+import BcAdSwap from './BcAdSwap.vue'
 
 // const basicDescriptionMax = 1000 // PRODUCTION:UNCOMMENT
 const basicDescriptionMax = 1002 // PRODUCTION:REMOVE
@@ -14,13 +15,16 @@ const route = useRoute()
 const eventStore = useEventStore()
 const userInfo = useUserInfoStore()
 
+type Era = 'AD' | 'BC'
+
 type DateInputs = {
   year: string
   month: string
   day: string
+  era: Era
 }
 
-const emptyDateInputs = (): DateInputs => ({ year: '', month: '', day: '' })
+const emptyDateInputs = (): DateInputs => ({ year: '', month: '', day: '', era: 'AD' })
 
 const timestampToDateInputs = (ts: number | null): DateInputs => {
   if (ts == null) {
@@ -28,7 +32,8 @@ const timestampToDateInputs = (ts: number | null): DateInputs => {
   }
   const ymd = timestampToYmd(ts)
   const [year = '', month = '', day = ''] = ymd.split('-')
-  return { year, month, day }
+  const era: Era = isTimestampBC(ts) ? 'BC' : 'AD'
+  return { year, month, day, era }
 }
 
 const parsePositiveInteger = (value: string): number | null => {
@@ -55,9 +60,13 @@ const dateInputsToTimestamp = (inputs: DateInputs): number | null => {
   if (day == null || day > 31) {
     return null
   }
+  const era: Era = inputs.era ?? 'AD'
+  const astronomicalYear = era === 'BC' ? 1 - year : year
   const monthStr = String(month).padStart(2, '0')
   const dayStr = String(day).padStart(2, '0')
-  return dateInputToTimestamp(`${inputs.year.padStart(4, '0')}-${monthStr}-${dayStr}`)
+  const yearStr = String(Math.abs(astronomicalYear)).padStart(4, '0')
+  const yearPrefix = astronomicalYear < 0 ? '-' : ''
+  return dateInputToTimestamp(`${yearPrefix}${yearStr}-${monthStr}-${dayStr}`)
 }
 
 const eventId = route.params.id as string
@@ -190,15 +199,22 @@ const handleCancel = () => {
             <div class="flex flex-row gap-2 items-end" data-testid="edit-start-timestamp-input">
               <label class="form-control mr-2">
                 <span class="label-text text-xs mb-1 mr-2">Year</span>
-                <input
-                  v-model="startInputs.year"
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  class="input input-bordered input-sm w-20"
-                  required
-                  data-testid="edit-start-year-input"
-                />
+                <div class="flex flex-row items-end gap-1">
+                  <input
+                    v-model="startInputs.year"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    class="input input-bordered input-sm w-20"
+                    required
+                    data-testid="edit-start-year-input"
+                  />
+                  <BcAdSwap
+                    :model-value="startInputs.era"
+                    data-testid="edit-start-era-swap"
+                    @update:model-value="startInputs.era = $event"
+                  />
+                </div>
               </label>
               <label class="form-control mr-2">
                 <span class="label-text text-xs mb-1 mr-2">Month</span>
@@ -232,14 +248,21 @@ const handleCancel = () => {
             <div class="flex flex-row gap-2 items-end" data-testid="edit-end-timestamp-input">
               <label class="form-control mr-2">
                 <span class="label-text text-xs mb-1 mr-2">Year</span>
-                <input
-                  v-model="endInputs.year"
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  class="input input-bordered input-sm w-20"
-                  data-testid="edit-end-year-input"
-                />
+                <div class="flex flex-row items-end gap-1">
+                  <input
+                    v-model="endInputs.year"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    class="input input-bordered input-sm w-20"
+                    data-testid="edit-end-year-input"
+                  />
+                  <BcAdSwap
+                    :model-value="endInputs.era"
+                    data-testid="edit-end-era-swap"
+                    @update:model-value="endInputs.era = $event"
+                  />
+                </div>
               </label>
               <label class="form-control mr-2">
                 <span class="label-text text-xs mb-1 mr-2">Month</span>

@@ -6,8 +6,8 @@ import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
 import { createAuth } from '../../lib/auth'
-import { redirectWithError } from '../../lib/redirects'
-import { PATHS, STANDARD_SECURE_HEADERS, MESSAGES } from '../../constants'
+import { redirectWithError, redirectWithMessage } from '../../lib/redirects'
+import { PATHS, STANDARD_SECURE_HEADERS, MESSAGES, COOKIES } from '../../constants'
 import type { Bindings } from '../../local-types'
 import { createDbClient } from '../../db/client'
 import { validateRequest, SignUpFormSchema } from '../../lib/validators'
@@ -18,7 +18,8 @@ import {
   updateAccountTimestampAfterSignUp,
   redirectToAwaitVerification,
 } from '../../lib/sign-up-utils'
-import { checkNameExists } from '../../lib/db-access'
+import { checkNameExists, getUserIdByEmail } from '../../lib/db-access'
+import { addCookie } from '../../lib/cookie-support'
 
 interface SignUpData {
   name: string
@@ -69,6 +70,29 @@ export const handleSignUp = (app: Hono<{ Bindings: Bindings }>): void => {
             c,
             PATHS.AUTH.SIGN_UP,
             MESSAGES.NAME_ALREADY_TAKEN
+          )
+        }
+
+        // Check if email already exists (unverified duplicate)
+        const emailExistsResult = await getUserIdByEmail(dbClient, email)
+        if (emailExistsResult.isErr) {
+          console.error(
+            'Error checking email existence:',
+            emailExistsResult.error
+          )
+          return redirectWithError(
+            c,
+            PATHS.AUTH.SIGN_UP,
+            MESSAGES.GENERIC_ERROR_TRY_AGAIN
+          )
+        }
+
+        if (emailExistsResult.value.length > 0) {
+          addCookie(c, COOKIES.EMAIL_ENTERED, email)
+          return redirectWithMessage(
+            c,
+            PATHS.AUTH.AWAIT_VERIFICATION,
+            MESSAGES.ACCOUNT_ALREADY_EXISTS
           )
         }
 

@@ -54,9 +54,15 @@ const jdnToYMD = (jdn: number): { year: number; month: number; day: number } => 
   }
 }
 
+export const isTimestampBC = (jdn: number): boolean => {
+  const { year } = jdnToYMD(jdn)
+  return year <= 0
+}
+
 export const timestampToYmd = (jdn: number): string => {
   const { year, month, day } = jdnToYMD(jdn)
-  const yStr = String(Math.abs(year))
+  const displayYear = year <= 0 ? 1 - year : year
+  const yStr = String(displayYear)
   const mStr = String(month).padStart(2, '0')
   const dStr = String(day).padStart(2, '0')
   return `${yStr}-${mStr}-${dStr}`
@@ -64,12 +70,14 @@ export const timestampToYmd = (jdn: number): string => {
 
 export const timestampToYear = (jdn: number): string => {
   const { year } = jdnToYMD(jdn)
-  return String(Math.abs(year))
+  const displayYear = year <= 0 ? 1 - year : year
+  return String(displayYear)
 }
 
 export const timestampToYearMonth = (jdn: number): string => {
   const { year, month } = jdnToYMD(jdn)
-  const yStr = String(Math.abs(year))
+  const displayYear = year <= 0 ? 1 - year : year
+  const yStr = String(displayYear)
   const mStr = String(month).padStart(2, '0')
   return `${yStr}-${mStr}`
 }
@@ -79,11 +87,13 @@ export const timestampToDateInput = (jdn: number): string => {
 }
 
 export const dateInputToTimestamp = (dateStr: string): number => {
-  const parts = dateStr.split('-')
+  const isNegative = dateStr.startsWith('-')
+  const trimmed = isNegative ? dateStr.slice(1) : dateStr
+  const parts = trimmed.split('-')
   if (parts.length !== 3) {
     return 0
   }
-  const year = parseInt(parts[0]!, 10)
+  const year = parseInt(parts[0]!, 10) * (isNegative ? -1 : 1)
   const month = parseInt(parts[1]!, 10)
   const day = parseInt(parts[2]!, 10)
   return ymdToJDN(year, month, day)

@@ -116,4 +116,27 @@ test.describe('Edit Event UI', () => {
 
     await page.waitForURL(/\/$|\/ui$|\/ui\//)
   })
+
+  test('BC/AD swap is visible on edit form', async ({ page }) => {
+    await page.goto(BASE_URLS.SIGN_IN)
+    await submitSignInForm(page, TEST_USERS.ADMIN_USER)
+    await page.waitForURL(/\/ui/)
+    await page.waitForSelector('[data-testid="event-list"]')
+
+    const editButton = page.locator('[data-testid="edit-event-test-event-1-action"]').first()
+    await editButton.click()
+
+    await page.waitForURL(/\/edit-event\//)
+
+    // Verify BC/AD swap components are visible
+    const startEraSwap = page.locator('[data-testid="edit-start-era-swap"]')
+    const endEraSwap = page.locator('[data-testid="edit-end-era-swap"]')
+    
+    await expect(startEraSwap).toBeVisible()
+    await expect(endEraSwap).toBeVisible()
+    
+    // Check default state shows AD
+    await expect(startEraSwap.locator('.swap-off')).toContainText('AD')
+    await expect(startEraSwap.locator('.swap-on')).toContainText('BC')
+  })
 })

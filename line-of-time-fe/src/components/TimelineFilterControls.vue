@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FilterInputs } from '../composables/useTimelineDisplay'
+import BcAdSwap from './BcAdSwap.vue'
 
 defineProps<{
   filterStartInputs: FilterInputs
@@ -16,18 +17,25 @@ const emit = defineEmits<{
 
 <template>
   <div class="mb-4 grid gap-3 lg:grid-cols-2" data-testid="filter-controls">
-    <form class="grid grid-cols-4 items-end gap-2" @submit.prevent="emit('applyMin')">
-      <label class="form-control">
-        <span class="label-text text-xs mb-1">Min year</span>
-        <input
-          v-model="filterStartInputs.year"
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          class="input input-bordered input-sm w-20"
-          data-testid="filter-min-year"
+    <form class="grid grid-cols-5 items-end gap-2" @submit.prevent="emit('applyMin')">
+      <div class="flex flex-row items-end gap-1">
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Min year</span>
+          <input
+            v-model="filterStartInputs.year"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="input input-bordered input-sm w-20"
+            data-testid="filter-min-year"
+          />
+        </label>
+        <BcAdSwap
+          :model-value="filterStartInputs.era"
+          data-testid="filter-min-era-swap"
+          @update:model-value="filterStartInputs.era = $event"
         />
-      </label>
+      </div>
       <label class="form-control">
         <span class="label-text text-xs mb-1">Min month</span>
         <input
@@ -59,18 +67,25 @@ const emit = defineEmits<{
         Reset min
       </button>
     </div>
-    <form class="grid grid-cols-4 items-end gap-2" @submit.prevent="emit('applyMax')">
-      <label class="form-control">
-        <span class="label-text text-xs mb-1">Max year</span>
-        <input
-          v-model="filterEndInputs.year"
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          class="input input-bordered input-sm w-20"
-          data-testid="filter-max-year"
+    <form class="grid grid-cols-5 items-end gap-2" @submit.prevent="emit('applyMax')">
+      <div class="flex flex-row items-end gap-1">
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Max year</span>
+          <input
+            v-model="filterEndInputs.year"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="input input-bordered input-sm w-20"
+            data-testid="filter-max-year"
+          />
+        </label>
+        <BcAdSwap
+          :model-value="filterEndInputs.era"
+          data-testid="filter-max-era-swap"
+          @update:model-value="filterEndInputs.era = $event"
         />
-      </label>
+      </div>
       <label class="form-control">
         <span class="label-text text-xs mb-1">Max month</span>
         <input

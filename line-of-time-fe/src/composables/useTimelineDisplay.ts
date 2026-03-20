@@ -8,14 +8,18 @@ import {
   timestampToDateInput,
   timestampToYear,
   timestampToYearMonth,
+  isTimestampBC,
   DAYS_PER_YEAR,
 } from '../utils/timestamp'
 import { connectorColor } from '../utils/pastel-colors'
+
+export type Era = 'AD' | 'BC'
 
 export type FilterInputs = {
   year: string
   month: string
   day: string
+  era: Era
 }
 
 export type TimelineEntry = {
@@ -58,7 +62,8 @@ export const parsePositiveInteger = (value: string): number | null => {
 
 export const timestampToFilterInputs = (timestamp: number): FilterInputs => {
   const [year = '', month = '', day = ''] = timestampToDateInput(timestamp).split('-')
-  return { year, month, day }
+  const bc = isTimestampBC(timestamp)
+  return { year, month, day, era: bc ? 'BC' : 'AD' }
 }
 
 export const toTimestampWithDefaults = (
@@ -79,9 +84,14 @@ export const toTimestampWithDefaults = (
     return null
   }
 
+  const era: Era = inputs.era ?? 'AD'
+  const astronomicalYear = era === 'BC' ? 1 - year : year
+
   const monthStr = String(month).padStart(2, '0')
   const dayStr = String(day).padStart(2, '0')
-  const timestamp = dateInputToTimestamp(`${inputs.year.padStart(4, '0')}-${monthStr}-${dayStr}`)
+  const yearStr = String(Math.abs(astronomicalYear)).padStart(4, '0')
+  const yearPrefix = astronomicalYear < 0 ? '-' : ''
+  const timestamp = dateInputToTimestamp(`${yearPrefix}${yearStr}-${monthStr}-${dayStr}`)
 
   return {
     timestamp,
@@ -89,6 +99,7 @@ export const toTimestampWithDefaults = (
       year: inputs.year,
       month: String(month),
       day: String(day),
+      era,
     },
   }
 }
