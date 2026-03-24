@@ -90,7 +90,11 @@ export const dateInputToTimestamp = (dateStr: string): number => {
   const isNegative = dateStr.startsWith('-')
   const trimmed = isNegative ? dateStr.slice(1) : dateStr
   const parts = trimmed.split('-')
-  if (parts.length !== 3) {
+  console.log(`parts is ${JSON.stringify(parts)}`)
+  if (
+    (parts.length !== 3 && parts.length !== 4) ||
+    (parts.length === 4 && parts[3] !== 'BC' && parts[3] !== 'AD')
+  ) {
     return 0
   }
   const year = parseInt(parts[0]!, 10) * (isNegative ? -1 : 1)

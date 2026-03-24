@@ -403,8 +403,8 @@ test('person categorization displays type and prefills birth/death dates', async
 }) => {
   await setAiMock({
     type: 'person',
-    'birth-date': '1732-02-22',
-    'death-date': '1799-12-14',
+    'birth-date': '1732-02-22-AD',
+    'death-date': '1799-12-14-AD',
   })
 
   await signInAndOpenSearch(page)
@@ -430,7 +430,7 @@ test('person categorization without death date leaves end date empty', async ({
 }) => {
   await setAiMock({
     type: 'person',
-    'birth-date': '1946-08-19',
+    'birth-date': '1946-08-19-AD',
   })
 
   await signInAndOpenSearch(page)
@@ -456,7 +456,7 @@ test('one-time-event categorization prefills start date only', async ({
 }) => {
   await setAiMock({
     type: 'one-time-event',
-    'start-date': '1969-07-20',
+    'start-date': '1969-07-20-AD',
   })
 
   await signInAndOpenSearch(page)
@@ -482,8 +482,8 @@ test('bounded-event categorization prefills start and end dates', async ({
 }) => {
   await setAiMock({
     type: 'bounded-event',
-    'start-date': '1739-10-22',
-    'end-date': '1748-10-18',
+    'start-date': '1739-10-22-AD',
+    'end-date': '1748-10-18-AD',
   })
 
   await signInAndOpenSearch(page)
@@ -555,8 +555,8 @@ test('type display shows categorization type next to name', async ({
 }) => {
   await setAiMock({
     type: 'person',
-    'birth-date': '1732-02-22',
-    'death-date': '1799-12-14',
+    'birth-date': '1732-02-22-AD',
+    'death-date': '1799-12-14-AD',
   })
 
   await signInAndOpenSearch(page)

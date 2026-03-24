@@ -2217,9 +2217,6 @@
   .mb-6 {
     margin-bottom: calc(var(--spacing) * 6);
   }
-  .ml-2 {
-    margin-left: calc(var(--spacing) * 2);
-  }
   .status {
     @layer daisyui.l1.l2.l3 {
       display: inline-block;
@@ -2567,12 +2564,6 @@
   .list-none {
     list-style-type: none;
   }
-  .grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  .grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
   .grid-cols-\[auto_auto_1fr\] {
     grid-template-columns: auto auto 1fr;
   }
@@ -2614,9 +2605,6 @@
   }
   .gap-8 {
     gap: calc(var(--spacing) * 8);
-  }
-  .gap-22 {
-    gap: calc(var(--spacing) * 22);
   }
   .space-y-1 {
     :where(& > :not(:last-child)) {
@@ -2925,11 +2913,6 @@
     @layer daisyui.l1.l2.l3 {
       --btn-color: var(--color-secondary);
       --btn-fg: var(--color-secondary-content);
-    }
-  }
-  .lg\:grid-cols-2 {
-    @media (width >= 64rem) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 }

@@ -42,7 +42,7 @@ test.describe('Edit Event BC Support', () => {
         },
         categorization: {
           type: 'other',
-          'start-date': '2000-01-01',
+          'start-date': '2000-01-01-AD',
         },
       },
     })
@@ -64,7 +64,7 @@ test.describe('Edit Event BC Support', () => {
         },
         categorization: {
           type: 'other',
-          'start-date': '500-01-01',
+          'start-date': '500-01-01-AD',
         },
       },
     })

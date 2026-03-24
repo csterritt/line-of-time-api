@@ -86,7 +86,7 @@ describe('dateInputToTimestamp with negative years', () => {
   })
 
   it('round-trips an AD date', () => {
-    const jdn = dateInputToTimestamp('2000-01-01')
+    const jdn = dateInputToTimestamp('2000-01-01-AD')
     expect(jdn).toBe(2451545)
   })
 })

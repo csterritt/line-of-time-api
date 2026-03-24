@@ -39,8 +39,8 @@ test.describe('POST /time-info/initial-search — categorization via AI', () => 
   }) => {
     await setAiMock({
       type: 'person',
-      'birth-date': '1732-02-22',
-      'death-date': '1799-12-14',
+      'birth-date': '1732-02-22-AD',
+      'death-date': '1799-12-14-AD',
     })
 
     const response = await request.post(BASE_URLS.TIME_INFO_INITIAL_SEARCH, {
@@ -52,8 +52,8 @@ test.describe('POST /time-info/initial-search — categorization via AI', () => 
 
     expect(body.categorization).toBeDefined()
     expect(body.categorization.type).toBe('person')
-    expect(body.categorization['birth-date']).toBe('1732-02-22')
-    expect(body.categorization['death-date']).toBe('1799-12-14')
+    expect(body.categorization['birth-date']).toBe('1732-02-22-AD')
+    expect(body.categorization['death-date']).toBe('1799-12-14-AD')
   })
 
   test('returns categorization field from AI mock when type is other', async ({
