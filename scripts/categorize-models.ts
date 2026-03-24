@@ -137,7 +137,7 @@ function main() {
   const files = fs.readdirSync(modelsDir).filter((file) => file.endsWith('.md'))
 
   // CSV header
-  console.log('name,description,service_type,is_beta,unit_pricing')
+  console.log('name,service_type,is_beta,unit_pricing,description')
 
   for (const file of files) {
     const filePath = path.join(modelsDir, file)
@@ -158,10 +158,10 @@ function main() {
 
       const row = [
         escapeCsvField(modelInfo.name),
-        escapeCsvField(modelInfo.description),
         escapeCsvField(modelInfo.serviceType),
         modelInfo.isBeta ? 'true' : 'false',
         modelInfo.unitPricing ? escapeCsvField(modelInfo.unitPricing) : '',
+        escapeCsvField(modelInfo.description),
       ]
 
       console.log(row.join(','))

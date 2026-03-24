@@ -9,7 +9,6 @@ import {
   timestampToYear,
   timestampToYearMonth,
   timestampToYmd,
-  timestampToDateInput,
   dateInputToTimestamp,
 } from '../utils/timestamp'
 
